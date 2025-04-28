@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { BlankComponent } from './layouts/blank/blank.component';
 import { FullComponent } from './layouts/full/full.component';
+import { CreateStructureComponent } from './pages/create-structure/create-structure.component';
 
 export const routes: Routes = [
   {
@@ -19,8 +20,7 @@ export const routes: Routes = [
       },
       {
         path: 'create-structure',
-        loadChildren: () =>
-          import('./pages/pages.routes').then((m) => m.PagesRoutes),
+        component: CreateStructureComponent,
       },
       
       {

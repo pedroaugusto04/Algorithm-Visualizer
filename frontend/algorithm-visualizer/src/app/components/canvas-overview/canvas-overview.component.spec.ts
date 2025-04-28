@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CreateStructureComponent } from './create-structure.component';
+import { CanvasOverviewComponent } from './canvas-overview.component';
 
-describe('CreateStructureComponent', () => {
-  let component: CreateStructureComponent;
-  let fixture: ComponentFixture<CreateStructureComponent>;
+describe('OverviewComponent', () => {
+  let component: CanvasOverviewComponent;
+  let fixture: ComponentFixture<CanvasOverviewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CreateStructureComponent]
+      imports: [CanvasOverviewComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(CreateStructureComponent);
+    fixture = TestBed.createComponent(CanvasOverviewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

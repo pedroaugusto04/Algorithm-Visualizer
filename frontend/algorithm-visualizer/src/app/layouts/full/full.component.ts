@@ -13,8 +13,7 @@ import { TablerIconsModule } from 'angular-tabler-icons';
 import { HeaderComponent } from './header/header.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { AppNavItemComponent } from './sidebar/nav-item/nav-item.component';
-import { navItems } from './sidebar/sidebar-data';
-import { AppTopstripComponent } from './top-strip/topstrip.component';
+import { NavItem } from './sidebar/nav-item/nav-item';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -37,7 +36,6 @@ const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
   encapsulation: ViewEncapsulation.None
 })
 export class FullComponent implements OnInit {
-  navItems = navItems;
 
   @ViewChild('leftsidenav')
   public sidenav: MatSidenav;
@@ -50,6 +48,82 @@ export class FullComponent implements OnInit {
   private isContentWidthFixed = true;
   private isCollapsedWidthFixed = false;
   private htmlElement!: HTMLHtmlElement;
+
+  navItems: NavItem[] = [
+    {
+      navCap: 'Home',
+    },
+    {
+      displayName: 'Home',
+      iconName: 'home',
+      route: '/home',
+    },
+    {
+      displayName: 'My Data Structures',
+      iconName: 'git-merge',
+      children: [
+        {
+          displayName: 'Graphs',
+          iconName: 'point',
+        },
+        {
+          displayName: 'Arrays',
+          iconName: 'point',
+        },
+      ],
+    },
+    {
+      displayName: 'Create Data Structure',
+      iconName: 'apps',
+      route: '/create-structure',
+    },
+    {
+      navCap: 'Auth',
+    },
+    {
+      displayName: 'Login',
+      iconName: 'login',
+      route: '/authentication',
+      children: [
+        {
+          displayName: 'Login',
+          iconName: 'point',
+          route: '/authentication/login',
+        },
+        {
+          displayName: 'Side Login',
+          iconName: 'point',
+          external: true,
+          chip: true,
+          chipClass: 'bg-primary text-white', 
+          chipContent: 'PRO',
+          route: 'https://materialpro-angular-main.netlify.app/authentication/login',
+        },
+      ],
+    },
+    {
+      displayName: 'Register',
+      iconName: 'user-plus',
+      route: '/authentication',
+      children: [
+        {
+          displayName: 'Register',
+          iconName: 'point',
+          route: '/authentication/register',
+        },
+        {
+          displayName: 'Side Register',
+          iconName: 'point',
+          external: true,
+          chip: true,
+          chipClass: 'bg-primary text-white',
+          chipContent: 'PRO',
+          route: 'https://materialpro-angular-main.netlify.app/authentication/side-register',
+        },
+      ],
+    }
+  ];
+  
 
   get isOver(): boolean {
     return this.isMobileScreen;
@@ -84,7 +158,19 @@ export class FullComponent implements OnInit {
       });
   }
 
-  ngOnInit(): void { }
+  ngOnInit(): void { 
+    this.loadUserGraphs();
+    this.loadUserArrays();
+  }
+
+  loadUserGraphs() {
+
+  }
+
+
+  loadUserArrays(){
+
+  }
 
   ngOnDestroy() {
     this.layoutChangesSubscription.unsubscribe();
