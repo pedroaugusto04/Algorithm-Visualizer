@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ArrayStructure } from '../models/ArrayStructure';
+import { MatrixStructure } from '../models/MatrixStructure';
 import { GraphStructure } from '../models/GraphStructure';
 
 @Injectable({
@@ -18,10 +18,10 @@ export class UserService {
     return this.httpClient.get<GraphStructure[]>(getUserGraphsUrl);
   }
 
-  loadUserArrays(): Observable<ArrayStructure[]> {
-    const getUserArraysUrl = new URL(environment.apiGetUserArrayData, environment.baseUrl).toString();
+  loadUserMatrices(): Observable<MatrixStructure[]> {
+    const getUserMatricesUrl = new URL(environment.apiGetUserMatrixData, environment.baseUrl).toString();
 
-    return this.httpClient.get<ArrayStructure[]>(getUserArraysUrl);
+    return this.httpClient.get<MatrixStructure[]>(getUserMatricesUrl);
   }
 
 }

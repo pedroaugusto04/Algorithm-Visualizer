@@ -1,7 +1,8 @@
 import { Routes } from '@angular/router';
 import { BlankComponent } from './layouts/blank/blank.component';
 import { FullComponent } from './layouts/full/full.component';
-import { CreateStructureComponent } from './pages/create-structure/create-structure.component';
+import { CreateGraphStructureComponent } from './pages/create-graph-structure/create-graph-structure.component';
+import { CreateMatrixStructureComponent } from './pages/create-matrix-structure/create-matrix-structure.component';
 
 export const routes: Routes = [
   {
@@ -19,8 +20,12 @@ export const routes: Routes = [
           import('./pages/pages.routes').then((m) => m.PagesRoutes),
       },
       {
-        path: 'create-structure',
-        component: CreateStructureComponent,
+        path: 'create-graph-structure',
+        component: CreateGraphStructureComponent,
+      },
+      {
+        path: 'create-matrix-structure',
+        component: CreateMatrixStructureComponent,
       },
       
       {

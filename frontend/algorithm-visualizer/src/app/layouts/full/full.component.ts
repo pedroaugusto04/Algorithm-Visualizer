@@ -1,4 +1,4 @@
-import { BreakpointObserver, MediaMatcher } from '@angular/cdk/layout';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, OnInit, ViewChild, ViewEncapsulation } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { MatSidenav, MatSidenavContent } from '@angular/material/sidenav';
@@ -14,6 +14,7 @@ import { HeaderComponent } from './header/header.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { AppNavItemComponent } from './sidebar/nav-item/nav-item.component';
 import { NavItem } from './sidebar/nav-item/nav-item';
+import { UserService } from 'src/app/services/user.service';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -49,6 +50,10 @@ export class FullComponent implements OnInit {
   private isCollapsedWidthFixed = false;
   private htmlElement!: HTMLHtmlElement;
 
+  private GRAPH_TYPE = "Graph"
+  private MATRIX_TYPE = "Matrix"
+  private DATA_STRUCTURE_TYPE = "DataStructure"
+
   navItems: NavItem[] = [
     {
       navCap: 'Home',
@@ -65,17 +70,33 @@ export class FullComponent implements OnInit {
         {
           displayName: 'Graphs',
           iconName: 'point',
+          type: 'Graph',
+          children: []
         },
         {
-          displayName: 'Arrays',
+          displayName: 'Matrices',
           iconName: 'point',
+          type: 'Matrix',
+          children: []
         },
       ],
+      type: "DataStructure"
     },
     {
-      displayName: 'Create Data Structure',
+      displayName: 'Create Structure',
       iconName: 'apps',
-      route: '/create-structure',
+      children:[
+        {
+          displayName: 'Graph',
+          iconName: 'apps',
+          route: '/create-graph-structure',
+        },
+        {
+          displayName: 'Matrix',
+          iconName: 'apps',
+          route: '/create-matrix-structure',
+        }
+      ]
     },
     {
       navCap: 'Auth',
@@ -134,6 +155,7 @@ export class FullComponent implements OnInit {
     private settings: CoreService,
     private router: Router,
     private breakpointObserver: BreakpointObserver,
+    private userService: UserService
   ) {
     this.htmlElement = document.querySelector('html')!;
     this.layoutChangesSubscription = this.breakpointObserver
@@ -160,16 +182,46 @@ export class FullComponent implements OnInit {
 
   ngOnInit(): void { 
     this.loadUserGraphs();
-    this.loadUserArrays();
+    this.loadUserMatrices();
   }
 
   loadUserGraphs() {
 
+    let dataStructuresItem: NavItem | undefined = this.navItems.find(item => item.type === this.DATA_STRUCTURE_TYPE);
+
+    if (!dataStructuresItem || !dataStructuresItem.children) return;
+
+    let graphItem = dataStructuresItem.children.find(item => item.type === this.GRAPH_TYPE);
+
+    if (!graphItem) return;
+
+    this.userService.loadUserGraphs().subscribe({
+      next:(graphs) => {
+        graphItem.children = graphs;
+      },
+      error:() => {
+      }
+    });
   }
 
 
-  loadUserArrays(){
+  loadUserMatrices() {
+    let dataStructuresItem: NavItem | undefined = this.navItems.find(item => item.type === this.DATA_STRUCTURE_TYPE);
 
+    if (!dataStructuresItem || !dataStructuresItem.children) return;
+
+    let matrixItem = dataStructuresItem.children.find(item => item.type === this.GRAPH_TYPE);
+
+    if (!matrixItem) return;
+
+    this.userService.loadUserMatrices().subscribe({
+      next:(matrices) => {
+        matrixItem.children = matrices;
+      },
+      error:() => {
+
+      }
+    });
   }
 
   ngOnDestroy() {

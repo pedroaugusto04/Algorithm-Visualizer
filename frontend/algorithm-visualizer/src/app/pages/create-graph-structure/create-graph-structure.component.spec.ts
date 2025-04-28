@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { CreateStructureComponent } from './create-structure.component';
+import { CreateStructureComponent } from './create-graph-structure.component';
 
 describe('CreateStructureComponent', () => {
   let component: CreateStructureComponent;
