@@ -1,6 +1,6 @@
 import { GraphItem } from "../GraphItem";
 
-export const GRAPH_NOT_WEIGHTED_ITEMS: GraphItem[] = [
+export const GRAPH_UNWEIGHTED_ITEMS: GraphItem[] = [
   { text: '1 4' },
   { text: '1 3' },
   { text: '3 2' },

@@ -39,7 +39,7 @@ canvas {
     overflow-y: auto; 
     border: 1px solid #ccc; 
     padding: 10px;
-    min-width: 10rem;
+    min-width: 15rem;
     max-width: 20rem;     
     overflow-x: hidden;
     height: 80%;
@@ -57,11 +57,30 @@ canvas {
     margin-left: 2rem;
 }
 
+.create-button {
+    margin: 2rem;
+    width: 100%;
+}
+
 .graph-input {
     display: flex;
     justify-content: start;
     align-items: start;
     flex-direction: row;
+}
+
+.options {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    width: 100%;
+}
+
+.graph-save {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .graph-options {

@@ -1,9 +1,14 @@
+import { Observable } from "rxjs";
 import { GraphItem } from "../GraphItem";
-import { GRAPH_NOT_WEIGHTED_ITEMS } from "../Utils/GraphItemUtils";
+import { GRAPH_UNWEIGHTED_ITEMS } from "../Utils/GraphItemUtils";
 import { GraphStrategy } from "./GraphStrategy";
 import * as d3 from 'd3';
 
 export class GraphStrategyDirectedNotWeighted implements GraphStrategy {
+  
+  createGraph(): Observable<void> {
+    throw new Error("Method not implemented.");
+  }
 
   onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void {
     setTimeout(() => {
@@ -38,7 +43,7 @@ export class GraphStrategyDirectedNotWeighted implements GraphStrategy {
   }
 
   getInitialItems(): GraphItem[] {
-    return GRAPH_NOT_WEIGHTED_ITEMS;
+    return GRAPH_UNWEIGHTED_ITEMS;
   }
 
   getPlaceholder(): string {

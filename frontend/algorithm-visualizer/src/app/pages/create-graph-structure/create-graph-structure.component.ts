@@ -19,7 +19,7 @@ export class CreateGraphStructureComponent {
   GRAPH_TYPE_UNDIRECTED = "1"
 
   GRAPH_WEIGHT_TYPE_WEIGHTED = "0"
-  GRAPH_WEIGHT_TYPE_NOT_WEIGHTED = "1"
+  GRAPH_WEIGHT_TYPE_UNWEIGHTED = "1"
 
   @ViewChild('graphContainer', { static: true }) graphContainer!: ElementRef<HTMLDivElement>;
   @ViewChildren('graphInput') inputs!: QueryList<any>;
@@ -83,6 +83,7 @@ export class CreateGraphStructureComponent {
 
   onInput() {
     this.graphStrategy.renderizeGraph(this.svg,this.items,this.graphContainer);
+    console.log(this.items)
   }
 
   private focusLastInput() {
@@ -100,5 +101,9 @@ export class CreateGraphStructureComponent {
   
   getGraphPlaceholder(): string {
     return this.graphStrategy.getPlaceholder();
+  }
+
+  onCreate() {
+    this.graphStrategy.createGraph();
   }
 }
