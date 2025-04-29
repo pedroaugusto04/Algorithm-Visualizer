@@ -1,1 +1,38 @@
-<p>create graph structure works!</p>
+<div class = "content">
+    <div class="form-graph">
+        <div class="row">
+          <div class="col-sm-12 d-flex align-items-center">
+            <mat-label class="f-s-14 f-w-600 d-block m-b-16">Graph Inputs</mat-label>
+            <button class="clear-button" mat-flat-button color="warn" (click)="onClear()">Clear</button>
+          </div>
+            <div class="col-sm-12">
+                <table class="w-100">
+                    <tbody>
+                      @for (item of items; track item; let i = $index) {
+                        <tr>
+                          <td class="p-r-8">{{ i + 1 }}</td>
+                          <td class="w-100">
+                            <mat-form-field appearance="outline" class="w-100">
+                              <input
+                                matInput
+                                #graphInput
+                                type="text"
+                                placeholder="v1 v2"
+                                [(ngModel)]="item.text"
+                                (keydown.enter)="onEnter(i)"
+                                (paste)="onPaste($event, i)"
+                                (input)="onInput()"
+                              />
+                            </mat-form-field>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                </table>
+          </div>
+        </div>
+    </div>
+      <div class = "graph-draw" #graphContainer style="margin-top: 20px;">
+
+      </div>
+</div>
