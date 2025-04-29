@@ -9,31 +9,31 @@ export class GraphStrategyUndirectedNotWeighted implements GraphStrategy {
         setTimeout(() => {
             const input = inputs.toArray()[index]?.nativeElement as HTMLInputElement;
             const value = input.value.trim();
-      
+
             const parts = value.split(/\s+/);
-      
+
             if (parts.length > 1) {
-              const newItems = [];
-      
-              for (let i = 0; i < parts.length; i += 2) {
-                const pair = [parts[i], parts[i + 1]].filter(Boolean).join(' ');
-                if (pair) {
-                  newItems.push({ text: pair });
+                const newItems = [];
+
+                for (let i = 0; i < parts.length; i += 2) {
+                    const pair = [parts[i], parts[i + 1]].filter(Boolean).join(' ');
+                    if (pair) {
+                        newItems.push({ text: pair });
+                    }
                 }
-              }
-      
-              items.splice(index, 1, ...newItems);
-      
-              setTimeout(() => this.focusLastInput(inputs), 0);
+
+                items.splice(index, 1, ...newItems);
+
+                setTimeout(() => this.focusLastInput(inputs), 0);
             }
-            this.renderizeGraph(svg,items,graphContainer);
-          }, 0);
+            this.renderizeGraph(svg, items, graphContainer);
+        }, 0);
     }
 
     private focusLastInput(inputs: any) {
         const inputsArray = inputs.toArray();
         if (inputsArray.length > 0) {
-          inputsArray[inputsArray.length - 1].nativeElement.focus();
+            inputsArray[inputsArray.length - 1].nativeElement.focus();
         }
     }
 
