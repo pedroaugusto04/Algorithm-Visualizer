@@ -30,6 +30,12 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name="role_id"))
     private List<Role> roles;
+
+    public User(String email, String password, List<Role> roles){
+        this.email = email;
+        this.password = password;
+        this.roles = roles;
+    }
     
 
     public UUID getId() {

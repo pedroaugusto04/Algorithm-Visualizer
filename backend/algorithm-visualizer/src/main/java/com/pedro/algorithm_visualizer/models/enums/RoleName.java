@@ -2,7 +2,6 @@ package com.pedro.algorithm_visualizer.models.enums;
 
 public enum RoleName {
 
-    ROLE_CUSTOMER,
-    ROLE_ADMINISTRATOR
+    ROLE_USER
 
 }

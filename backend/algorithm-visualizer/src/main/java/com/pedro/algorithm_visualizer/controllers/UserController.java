@@ -1,14 +1,15 @@
 package com.pedro.algorithm_visualizer.controllers;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.pedro.algorithm_visualizer.models.DTO.UserDTO;
-import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
-import com.pedro.algorithm_visualizer.models.User;
+import com.pedro.algorithm_visualizer.models.DTO.JwtTokenDTO;
+import com.pedro.algorithm_visualizer.models.DTO.LoginUserDTO;
+import com.pedro.algorithm_visualizer.models.DTO.RegisterUserDTO;
 import com.pedro.algorithm_visualizer.services.UserService;
 
 @RestController
@@ -20,12 +21,15 @@ public class UserController {
     UserController(UserService userService){
     }
     
-    @PostMapping("/create")
-    public ResponseEntity<Void> createGraphUndirectedUnweighted(@RequestBody UserDTO user) {
+    @PostMapping("/login")
+    public ResponseEntity<JwtTokenDTO> authenticateUser(@RequestBody LoginUserDTO loginUserDto) {
+        JwtTokenDTO token = userService.authenticateUser(loginUserDto);
+        return new ResponseEntity<>(token, HttpStatus.OK);
+    }
 
-       //User user = modelMapper.map(userDTO, User.class);
-    //userService.saveUser(user);
-     return ResponseEntity.ok().build();
-
+    @PostMapping
+    public ResponseEntity<Void> createUser(@RequestBody RegisterUserDTO registerUserDTO) {
+        userService.createUser(registerUserDTO);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 }

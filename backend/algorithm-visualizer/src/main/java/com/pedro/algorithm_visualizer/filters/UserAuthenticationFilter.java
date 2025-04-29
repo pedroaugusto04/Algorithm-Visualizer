@@ -1,5 +1,6 @@
 package com.pedro.algorithm_visualizer.filters;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,12 +33,12 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // Verifica se o endpoint requer autenticação antes de processar a requisição
+        // Verifica se o endpoint requer autenticacao antes de processar a requisicao
         if (checkIfEndpointIsNotPublic(request)) {
-            String token = recoveryToken(request); // Recupera o token do cabeçalho Authorization da requisição
+            String token = recoveryToken(request); // Recupera o token do cabecalho authorization
             if (token != null) {
-                String subject = jwtTokenService.getSubjectFromToken(token); // Obtém o assunto (neste caso, o nome de usuário) do token
-                User user = userRepository.findByEmail(subject).get(); // Busca o usuário pelo email (que é o assunto do token)
+                String subject = jwtTokenService.getSubjectFromToken(token); // Obtem o assunto (neste caso, o nome de usuario) do token
+                User user = userRepository.findByEmail(subject).get(); // Busca o usuario pelo email (que eh o assunto do token)
                 UserDetailsImpl userDetails = new UserDetailsImpl(user); // Cria um UserDetails com o usuário encontrado
 
                 // Cria um objeto de autenticação do Spring Security
@@ -50,7 +51,7 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
                 throw new RuntimeException("O token está ausente.");
             }
         }
-        filterChain.doFilter(request, response); // Continua o processamento da requisição
+        filterChain.doFilter(request, response); // Continua o processamento da requisicao
     }
 
     // Recupera o token do cabeçalho Authorization da requisição
@@ -62,7 +63,7 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
         return null;
     }
 
-    // Verifica se o endpoint requer autenticação antes de processar a requisição
+    // Verifica se o endpoint requer autenticacao antes de processar a requisicao
     private boolean checkIfEndpointIsNotPublic(HttpServletRequest request) {
         String requestURI = request.getRequestURI();
         return !Arrays.asList(SecurityConfiguration.UNAUTHORIZED_ENDPOINTS).contains(requestURI);
