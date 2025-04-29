@@ -1,19 +1,24 @@
+import { Injectable } from "@angular/core";
 import { GraphStrategy } from "./GraphStrategy";
-import { GraphStrategyDirectedNotWeighted } from "./GraphStrategyDirectedNotWeighted";
-import { GraphStrategyUndirectedNotWeighted} from "./GraphStrategyUndirectedNotWeighted";
+import { GraphStrategyDirectedUnweighted } from "./GraphStrategyDirectedUnweighted";
+import { GraphStrategyUndirectedUnweighted } from "./GraphStrategyUndirectedUnweighted";
 import { GraphStrategyDirectedWeighted } from "./GraphStreategyDirectedWeighted";
 import { GraphStrategyUndirectedWeighted } from "./GraphStreategyUndirectedWeighted";
+import { GraphService } from "src/app/services/graph.service";
 
+@Injectable({ providedIn: 'root' })
 export class GraphStrategyFactory {
 
-    private static strategies: Record<string, GraphStrategy> = {
-        "0,0": new GraphStrategyDirectedNotWeighted(),
-        "0,1": new GraphStrategyDirectedWeighted(),
-        "1,0": new GraphStrategyUndirectedNotWeighted(),
-        "1,1": new GraphStrategyUndirectedWeighted()
+    constructor(private graphService: GraphService){}
+
+    private strategies: Record<string, GraphStrategy> = {
+        "0,0": new GraphStrategyDirectedUnweighted(this.graphService),
+        "0,1": new GraphStrategyDirectedWeighted(this.graphService),
+        "1,0": new GraphStrategyUndirectedUnweighted(this.graphService),
+        "1,1": new GraphStrategyUndirectedWeighted(this.graphService)
     };
 
-    static getGraphStrategy(x: string, y: string): GraphStrategy {
+     getGraphStrategy(x: string, y: string): GraphStrategy {
         const key = `${x},${y}`;
         const strategy = this.strategies[key];
 

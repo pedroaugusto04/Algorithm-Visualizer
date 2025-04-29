@@ -10,5 +10,5 @@ export interface GraphStrategy {
 
     onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void;
 
-    createGraph(): Observable<void>;
+    createGraph(graphItems: GraphItem[]): Observable<void>;
 }

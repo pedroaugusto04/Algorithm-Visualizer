@@ -3,11 +3,14 @@ import { GraphItem } from "../GraphItem";
 import { GRAPH_UNWEIGHTED_ITEMS } from "../Utils/GraphItemUtils";
 import { GraphStrategy } from "./GraphStrategy";
 import * as d3 from 'd3';
+import { GraphService } from "src/app/services/graph.service";
 
-export class GraphStrategyUndirectedNotWeighted implements GraphStrategy {
-    
-    createGraph(): Observable<void> {
-        throw new Error("Method not implemented.");
+export class GraphStrategyUndirectedUnweighted implements GraphStrategy {
+
+    constructor(private graphService: GraphService) { }
+
+    createGraph(graphItems: GraphItem[]): Observable<void> {
+        return this.graphService.createUndirectedUnweightedGraph(graphItems);
     }
 
     onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void {

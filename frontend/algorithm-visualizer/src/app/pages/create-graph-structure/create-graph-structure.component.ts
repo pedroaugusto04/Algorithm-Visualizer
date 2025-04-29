@@ -32,10 +32,12 @@ export class CreateGraphStructureComponent {
   graphWeightTypeControl = new FormControl("0");  
 
   // graph strategy (to renderize correct graph for options choosed)
-  graphStrategy: GraphStrategy = GraphStrategyFactory.
+  graphStrategy: GraphStrategy = this.graphStrategyFactory.
   getGraphStrategy(this.graphTypeControl.value || "", this.graphWeightTypeControl.value || "");
 
   items = this.graphStrategy.getInitialItems();
+
+  constructor(private graphStrategyFactory: GraphStrategyFactory){}
 
 
   ngAfterViewInit() {
@@ -52,7 +54,7 @@ export class CreateGraphStructureComponent {
 
 
   private updateStrategy(weightChanged: boolean = false) {
-    this.graphStrategy = GraphStrategyFactory.getGraphStrategy(
+    this.graphStrategy =  this.graphStrategyFactory.getGraphStrategy(
       this.graphTypeControl.value || "",
       this.graphWeightTypeControl.value || ""
     );
@@ -104,6 +106,13 @@ export class CreateGraphStructureComponent {
   }
 
   onCreate() {
-    this.graphStrategy.createGraph();
+    this.graphStrategy.createGraph(this.items).subscribe({
+      next:(data) => {
+        console.log(data);
+      },
+      error:(error) => {
+        console.log(error);
+      }
+    });
   }
 }

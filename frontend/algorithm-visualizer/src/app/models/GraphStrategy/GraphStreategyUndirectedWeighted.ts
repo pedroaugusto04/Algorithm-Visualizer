@@ -2,12 +2,15 @@ import { Observable } from "rxjs";
 import { GraphItem } from "../GraphItem";
 import { GRAPH_WEIGHTED_ITEMS } from "../Utils/GraphItemUtils";
 import { GraphStrategy } from "./GraphStrategy";
+import { GraphService } from "src/app/services/graph.service";
 import * as d3 from 'd3';
 
 export class GraphStrategyUndirectedWeighted implements GraphStrategy {
     
-    createGraph(): Observable<void> {
-        throw new Error("Method not implemented.");
+    constructor(private graphService: GraphService) { }
+    
+    createGraph(graphItems: GraphItem[]): Observable<void> {
+        return this.graphService.createUndirectedWeightedGraph(graphItems);
     }
 
     onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void {
