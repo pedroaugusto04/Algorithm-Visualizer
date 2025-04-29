@@ -14,12 +14,6 @@ import { GraphStrategyFactory } from 'src/app/models/GraphStrategy/GraphStrategy
   styleUrl: './create-graph-structure.component.scss'
 })
 export class CreateGraphStructureComponent {
-  items = [
-    { text: '1 4' },
-    { text: '1 3' },
-    { text: '3 2' },
-    { text: '3 4' }
-  ];
 
   GRAPH_TYPE_DIRECTED = "0"
   GRAPH_TYPE_UNDIRECTED = "1"
@@ -41,6 +35,8 @@ export class CreateGraphStructureComponent {
   graphStrategy: GraphStrategy = GraphStrategyFactory.
   getGraphStrategy(this.graphTypeControl.value || "", this.graphWeightTypeControl.value || "");
 
+  items = this.graphStrategy.getInitialItems();
+
 
   ngAfterViewInit() {
     this.updateStrategy();
@@ -50,17 +46,23 @@ export class CreateGraphStructureComponent {
     });
   
     this.graphWeightTypeControl.valueChanges.subscribe(() => {
-      this.updateStrategy();
+      this.updateStrategy(true);
     });
   }
 
 
-  private updateStrategy() {
+  private updateStrategy(weightChanged: boolean = false) {
     this.graphStrategy = GraphStrategyFactory.getGraphStrategy(
       this.graphTypeControl.value || "",
       this.graphWeightTypeControl.value || ""
     );
+
+    if (weightChanged) {
+      this.items = this.graphStrategy.getInitialItems();
+    }
+
     this.graphStrategy.renderizeGraph(this.svg,this.items,this.graphContainer);
+
   }
 
   onEnter(index: number) {
@@ -76,29 +78,7 @@ export class CreateGraphStructureComponent {
   }
 
   onPaste(event: ClipboardEvent, index: number) {
-    setTimeout(() => {
-      const input = this.inputs.toArray()[index]?.nativeElement as HTMLInputElement;
-      const value = input.value.trim();
-
-      const parts = value.split(/\s+/);
-
-      if (parts.length > 1) {
-        const newItems = [];
-
-        for (let i = 0; i < parts.length; i += 2) {
-          const pair = [parts[i], parts[i + 1]].filter(Boolean).join(' ');
-          if (pair) {
-            newItems.push({ text: pair });
-          }
-        }
-
-        this.items.splice(index, 1, ...newItems);
-
-        setTimeout(() => this.focusLastInput(), 0);
-      }
-
-      this.graphStrategy.renderizeGraph(this.svg,this.items,this.graphContainer);
-    }, 0);
+    this.graphStrategy.onPaste(event,index,this.inputs,this.items, this.svg, this.graphContainer);
   }
 
   onInput() {
@@ -113,8 +93,12 @@ export class CreateGraphStructureComponent {
   }
 
   onClear() {
-    this.items = [{ text: '' }];
+    this.items = [{text: ''}];
 
     this.graphStrategy.renderizeGraph(this.svg,this.items,this.graphContainer);
+  }
+  
+  getGraphPlaceholder(): string {
+    return this.graphStrategy.getPlaceholder();
   }
 }

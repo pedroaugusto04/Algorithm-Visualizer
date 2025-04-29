@@ -195,13 +195,14 @@ export class FullComponent implements OnInit {
 
     if (!graphItem) return;
 
+    /*
     this.userService.loadUserGraphs().subscribe({
       next:(graphs) => {
         graphItem.children = graphs;
       },
       error:() => {
       }
-    });
+    });*/
   }
 
 

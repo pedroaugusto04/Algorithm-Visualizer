@@ -17,7 +17,7 @@
                                 matInput
                                 #graphInput
                                 type="text"
-                                placeholder="v1 v2"
+                                [placeholder]="getGraphPlaceholder()"
                                 [(ngModel)]="item.text"
                                 (keydown.enter)="onEnter(i)"
                                 (paste)="onPaste($event, i)"
