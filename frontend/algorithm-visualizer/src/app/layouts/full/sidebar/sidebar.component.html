@@ -29,7 +29,7 @@
             class="icon-18 d-flex"></i-tabler></mat-icon>
         Disable notifications
       </button>
-      <a mat-menu-item [routerLink]="['/authentication/login']"><mat-icon
+      <a mat-menu-item (click)="onLogOut()"><mat-icon
           class="d-flex align-items-center"><i-tabler name="logout" class="icon-18 d-flex"></i-tabler></mat-icon>
         Sign Out</a>
     </mat-menu>

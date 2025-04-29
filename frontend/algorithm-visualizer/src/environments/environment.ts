@@ -1,6 +1,8 @@
 export const environment = {
     production: false,
     baseUrl: 'http://localhost:8080',
+    apiUserLogin: '/users/login',
+    apiUserRegister: '/users/register',
     apiGetUserGraphData: '/user/graph',
     apiGetUserMatrixData: '/user/matrix',
     apiCreateDirectedUnweightedGraph: '/graph/createGraph/directed/unweighted',

@@ -5,3 +5,41 @@ body {
     height: 100%;
     margin: 0;
 }
+
+.success-snackbar.mat-mdc-snack-bar-container {
+
+    margin-top: 2rem !important;
+
+    .mdc-snackbar__surface {
+        background: green;
+
+        .mat-mdc-button {
+            color: white !important;
+        }
+    }
+
+    .mat-mdc-snack-bar-label.mdc-snackbar__label {
+        color: white;
+        font-weight: 500;
+        white-space: pre-wrap;
+    }
+}
+
+.error-snackbar.mat-mdc-snack-bar-container {
+
+    margin-top: 2rem !important;
+
+    .mdc-snackbar__surface {
+        background: red;
+
+        .mat-mdc-button {
+            color: white !important;
+        }
+    }
+
+    .mat-mdc-snack-bar-label.mdc-snackbar__label {
+        color: white;
+        font-weight: 500;
+        white-space: pre-wrap;
+    }
+}
