@@ -30,6 +30,16 @@
                     </tbody>
                 </table>
           </div>
+          <div class = "graph-options">
+            <mat-button-toggle-group [formControl]="graphTypeControl" aria-label="Graph Type">
+              <mat-button-toggle value="0">Directed</mat-button-toggle>
+              <mat-button-toggle value="1">Undirected</mat-button-toggle>
+            </mat-button-toggle-group>
+            <mat-button-toggle-group [formControl]="graphWeightTypeControl" aria-label="Graph Weight Type">
+              <mat-button-toggle value="0">Not Weighted</mat-button-toggle>
+              <mat-button-toggle value="1">Weighted</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
         </div>
     </div>
       <div class = "graph-draw" #graphContainer style="margin-top: 20px;">
