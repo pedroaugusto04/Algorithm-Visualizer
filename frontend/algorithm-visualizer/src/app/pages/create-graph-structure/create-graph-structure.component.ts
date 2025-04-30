@@ -5,6 +5,7 @@ import { MatInputModule } from '@angular/material/input';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { GraphStrategy } from 'src/app/models/GraphStrategy/GraphStrategy';
 import { GraphStrategyFactory } from 'src/app/models/GraphStrategy/GraphStrategyFactory';
+import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
 
 
 @Component({
@@ -37,7 +38,7 @@ export class CreateGraphStructureComponent {
 
   items = this.graphStrategy.getInitialItems();
 
-  constructor(private graphStrategyFactory: GraphStrategyFactory){}
+  constructor(private graphStrategyFactory: GraphStrategyFactory, private snackBarService: SnackBarService){}
 
 
   ngAfterViewInit() {
@@ -107,11 +108,11 @@ export class CreateGraphStructureComponent {
 
   onCreate() {
     this.graphStrategy.createGraph(this.items).subscribe({
-      next:(data) => {
-        console.log(data);
+      next:() => {
+        this.snackBarService.showSnackBarSuccess("Graph created successfully");
       },
-      error:(error) => {
-        console.log(error);
+      error:() => {
+        this.snackBarService.showSnackBarError("Internal error while creating graph");
       }
     });
   }

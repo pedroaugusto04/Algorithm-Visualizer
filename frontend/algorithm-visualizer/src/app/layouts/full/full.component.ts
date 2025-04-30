@@ -36,7 +36,7 @@ const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
   styleUrls: [],
   encapsulation: ViewEncapsulation.None
 })
-export class FullComponent implements OnInit {
+export class FullComponent {
 
   @ViewChild('leftsidenav')
   public sidenav: MatSidenav;
@@ -49,10 +49,6 @@ export class FullComponent implements OnInit {
   private isContentWidthFixed = true;
   private isCollapsedWidthFixed = false;
   private htmlElement!: HTMLHtmlElement;
-
-  private GRAPH_TYPE = "Graph"
-  private MATRIX_TYPE = "Matrix"
-  private DATA_STRUCTURE_TYPE = "DataStructure"
 
   navItems: NavItem[] = [
     {
@@ -178,51 +174,6 @@ export class FullComponent implements OnInit {
       .subscribe((e) => {
         this.content.scrollTo({ top: 0 });
       });
-  }
-
-  ngOnInit(): void { 
-    this.loadUserGraphs();
-    this.loadUserMatrices();
-  }
-
-  loadUserGraphs() {
-
-    let dataStructuresItem: NavItem | undefined = this.navItems.find(item => item.type === this.DATA_STRUCTURE_TYPE);
-
-    if (!dataStructuresItem || !dataStructuresItem.children) return;
-
-    let graphItem = dataStructuresItem.children.find(item => item.type === this.GRAPH_TYPE);
-
-    if (!graphItem) return;
-
-    /*
-    this.userService.loadUserGraphs().subscribe({
-      next:(graphs) => {
-        graphItem.children = graphs;
-      },
-      error:() => {
-      }
-    });*/
-  }
-
-
-  loadUserMatrices() {
-    let dataStructuresItem: NavItem | undefined = this.navItems.find(item => item.type === this.DATA_STRUCTURE_TYPE);
-
-    if (!dataStructuresItem || !dataStructuresItem.children) return;
-
-    let matrixItem = dataStructuresItem.children.find(item => item.type === this.GRAPH_TYPE);
-
-    if (!matrixItem) return;
-
-    this.userService.loadUserMatrices().subscribe({
-      next:(matrices) => {
-        matrixItem.children = matrices;
-      },
-      error:() => {
-
-      }
-    });
   }
 
   ngOnDestroy() {

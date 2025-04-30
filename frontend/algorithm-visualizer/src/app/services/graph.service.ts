@@ -21,7 +21,7 @@ export class GraphService {
     
     const createUrl = new URL(environment.apiCreateUndirectedUnweightedGraph, environment.baseUrl).toString();
 
-    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers});
+    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
   createUndirectedWeightedGraph(graphItems: GraphItem[]): Observable<void> {
@@ -30,7 +30,7 @@ export class GraphService {
     
     const createUrl = new URL(environment.apiCreateUndirectedWeightedGraph, environment.baseUrl).toString();
     
-    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers});
+    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
   createDirectedUnweightedGraph(graphItems: GraphItem[]): Observable<void> {
@@ -39,7 +39,7 @@ export class GraphService {
     
     const createUrl = new URL(environment.apiCreateDirectedUnweightedGraph, environment.baseUrl).toString();
 
-    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers});
+    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
   createDirectedWeightedGraph(graphItems: GraphItem[]): Observable<void> {
@@ -48,7 +48,7 @@ export class GraphService {
     
     const createUrl = new URL(environment.apiCreateDirectedWeightedGraph, environment.baseUrl).toString();
 
-    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers});
+    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
 }

@@ -27,13 +27,13 @@ export class UserService {
   loadUserGraphs(): Observable<GraphStructure[]> {
     const getUserGraphsUrl = new URL(environment.apiGetUserGraphData, environment.baseUrl).toString();
 
-    return this.httpClient.get<GraphStructure[]>(getUserGraphsUrl);
+    return this.httpClient.get<GraphStructure[]>(getUserGraphsUrl, {headers: this.headers, withCredentials: true});
   }
 
   loadUserMatrices(): Observable<MatrixStructure[]> {
     const getUserMatricesUrl = new URL(environment.apiGetUserMatrixData, environment.baseUrl).toString();
 
-    return this.httpClient.get<MatrixStructure[]>(getUserMatricesUrl);
+    return this.httpClient.get<MatrixStructure[]>(getUserMatricesUrl, {headers: this.headers, withCredentials: true});
   }
 
 }
