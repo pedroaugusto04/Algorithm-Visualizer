@@ -17,9 +17,14 @@ import com.pedro.algorithm_visualizer.mappers.GraphMapperStrategy.UndirectedUnwe
 import com.pedro.algorithm_visualizer.mappers.GraphMapperStrategy.UndirectedWeightedStrategy;
 import com.pedro.algorithm_visualizer.models.DTO.GraphDTO;
 import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
+import com.pedro.algorithm_visualizer.models.DataStructures.StructureType;
 import com.pedro.algorithm_visualizer.models.User;
+import com.pedro.algorithm_visualizer.models.enums.StructureTypeEnum;
+import com.pedro.algorithm_visualizer.repositories.StructureTypeRepository;
 import com.pedro.algorithm_visualizer.services.GraphService;
 import com.pedro.algorithm_visualizer.services.UserDetailsServiceImpl;
+
+import jakarta.persistence.EntityNotFoundException;
 
 @RestController
 @RequestMapping("/graphs")
@@ -28,11 +33,14 @@ public class GraphController {
     private GraphService graphService;
     private GraphMapper graphMapper;
     private UserDetailsServiceImpl userDetailsService;
+    private StructureTypeRepository structureTypeRepository;
 
-    GraphController(GraphService graphService, GraphMapper graphMapper, UserDetailsServiceImpl userDetailsService) {
+    GraphController(GraphService graphService, GraphMapper graphMapper, UserDetailsServiceImpl userDetailsService,
+    StructureTypeRepository structureTypeRepository) {
         this.graphService = graphService;
         this.graphMapper = graphMapper;
         this.userDetailsService = userDetailsService;
+        this.structureTypeRepository = structureTypeRepository;
     }
 
     @PostMapping("/createGraph/undirected/unweighted")
@@ -40,9 +48,12 @@ public class GraphController {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
+        StructureType type = structureTypeRepository.findByName(StructureTypeEnum.UNDIRECTED_UNWEIGHTED_GRAPH)
+    .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+
         this.graphMapper.setStrategy(new UndirectedUnweightedStrategy());
 
-        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser);
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
         this.graphService.saveGraph(graph);
 
         return ResponseEntity.ok().build();
@@ -53,9 +64,12 @@ public class GraphController {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
+        StructureType type = structureTypeRepository.findByName(StructureTypeEnum.UNDIRECTED_WEIGHTED_GRAPH)
+    .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+
         this.graphMapper.setStrategy(new UndirectedWeightedStrategy());
 
-        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser);
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
 
         this.graphService.saveGraph(graph);
 
@@ -67,9 +81,12 @@ public class GraphController {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
+        StructureType type = structureTypeRepository.findByName(StructureTypeEnum.DIRECTED_UNWEIGHTED_GRAPH)
+    .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+
         this.graphMapper.setStrategy(new DirectedUnweightedStrategy());
 
-        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser);
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
 
         this.graphService.saveGraph(graph);
 
@@ -81,9 +98,12 @@ public class GraphController {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
+        StructureType type = structureTypeRepository.findByName(StructureTypeEnum.DIRECTED_WEIGHTED_GRAPH)
+    .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+
         this.graphMapper.setStrategy(new DirectedWeightedStrategy());
 
-        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser);
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
 
         this.graphService.saveGraph(graph);
 

@@ -6,16 +6,20 @@ import java.util.List;
 
 import com.pedro.algorithm_visualizer.models.DTO.GraphDTO;
 import com.pedro.algorithm_visualizer.models.DTO.GraphItemDTO;
+import com.pedro.algorithm_visualizer.models.DataStructures.DirectedUnweightedGraph;
 import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
+import com.pedro.algorithm_visualizer.models.DataStructures.StructureType;
 import com.pedro.algorithm_visualizer.models.Edge;
 import com.pedro.algorithm_visualizer.models.Node;
 import com.pedro.algorithm_visualizer.models.User;
 
 public class DirectedUnweightedStrategy implements GraphMapperStrategy {
-    
-    public Graph toGraph(GraphDTO graphDTO, User user) {
+
+    public Graph toGraph(GraphDTO graphDTO, User user, StructureType type) {
         
-        Graph graph = new Graph(user);
+        Graph graph = new DirectedUnweightedGraph(user);
+
+        graph.setStructureType(type);
 
         List<Node> nodes = new ArrayList<>();
         List<Edge> edges = new ArrayList<>();

@@ -34,7 +34,7 @@ public class User {
             inverseJoinColumns = @JoinColumn(name="role_id"))
     private List<Role> roles;
 
-    @OneToMany
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Graph> graphs;
 
     public User(){}

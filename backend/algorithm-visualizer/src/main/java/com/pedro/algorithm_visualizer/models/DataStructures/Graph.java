@@ -12,9 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
 @Entity
-public class Graph extends DataStructure{
-
-    private boolean directed = true;
+public abstract class Graph extends DataStructure {
 
     @OneToMany(mappedBy = "graph", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Node> nodes;
@@ -24,21 +22,6 @@ public class Graph extends DataStructure{
 
     @ManyToOne
     private User user;
-
-    public Graph(){}
-
-    public Graph(User user){
-        this.user = user;
-    }
-    
-    public Graph(boolean directed){
-        this.directed = directed;
-    }
-
-    public Graph(User user, boolean directed){
-        this.user = user;
-        this.directed = directed;
-    }
 
     public List<Node> getNodes() {
         return nodes;
@@ -62,13 +45,5 @@ public class Graph extends DataStructure{
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public boolean isDirected() {
-        return directed;
-    }
-
-    public void setDirected(boolean directed) {
-        this.directed = directed;
     }
 }

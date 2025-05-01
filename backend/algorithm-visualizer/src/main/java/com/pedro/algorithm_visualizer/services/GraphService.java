@@ -7,7 +7,10 @@ import org.springframework.stereotype.Service;
 
 import com.pedro.algorithm_visualizer.models.DTO.GraphDTO;
 import com.pedro.algorithm_visualizer.models.DTO.GraphItemDTO;
+import com.pedro.algorithm_visualizer.models.DataStructures.DirectedUnweightedGraph;
+import com.pedro.algorithm_visualizer.models.DataStructures.DirectedWeightedGraph;
 import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
+import com.pedro.algorithm_visualizer.models.DataStructures.UndirectedWeightedGraph;
 import com.pedro.algorithm_visualizer.repositories.GraphRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -29,9 +32,9 @@ public class GraphService {
 
         Graph graph = graphRepository.findById(graphId).orElseThrow(() -> new EntityNotFoundException());
 
-        boolean isDirected = graph.isDirected();
+        boolean isDirected = (graph instanceof DirectedUnweightedGraph || graph instanceof DirectedWeightedGraph);
 
-        boolean isWeighted = graph.getEdges().get(0).getWeight() != null;
+        boolean isWeighted = (graph instanceof DirectedWeightedGraph || graph instanceof UndirectedWeightedGraph);
 
         GraphDTO graphDTO = new GraphDTO(graph.getId(), isDirected, isWeighted, new LinkedList<>());
 
