@@ -1,2 +1,16 @@
-<div class = "graph-draw" #graphSeeContainer>
+<div class = "content">
+    <div class = "select">
+        <div class="col-lg-6">
+            <mat-label class="f-w-600 m-b-8 d-block">Selected Algorithm</mat-label>
+            <mat-form-field appearance="outline" class="w-100">
+              <mat-select [(value)]="selectedAlgorithmId">
+                @for(algorithm of algorithmOptions; track algorithm.id) {
+                <mat-option [value]="algorithm.id">{{algorithm.name}}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+    </div>
+    <div class = "graph-draw" #graphSeeContainer>
+    </div>
 </div>

@@ -6,6 +6,7 @@ import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { GraphStrategy } from 'src/app/models/GraphStrategy/GraphStrategy';
 import { GraphStrategyFactory } from 'src/app/models/GraphStrategy/GraphStrategyFactory';
 import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
+import { GraphStructure } from 'src/app/models/GraphStructure';
 
 
 @Component({
@@ -100,7 +101,14 @@ export class CreateGraphStructureComponent {
   }
 
   onCreate() {
-    this.graphStrategy.createGraph(this.items).subscribe({
+    const graph: GraphStructure = {
+
+      items: this.items,
+      directed: this.graphTypeControl.value || false,
+      weighted: this.graphWeightTypeControl.value || false
+    }
+
+    this.graphStrategy.createGraph(graph).subscribe({
       next:() => {
         this.snackBarService.showSnackBarSuccess("Graph created successfully");
       },

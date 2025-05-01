@@ -4,13 +4,14 @@ import { GRAPH_WEIGHTED_ITEMS } from "../Utils/GraphItemUtils";
 import { GraphStrategy } from "./GraphStrategy";
 import * as d3 from 'd3';
 import { GraphService } from "src/app/services/graph.service";
+import { GraphStructure } from "../GraphStructure";
 
 export class GraphStrategyDirectedWeighted implements GraphStrategy {
 
   constructor(private graphService: GraphService) { }
 
-  createGraph(graphItems: GraphItem[]): Observable<void> {
-    return this.graphService.createDirectedWeightedGraph(graphItems);
+  createGraph(graph: GraphStructure): Observable<void> {
+    return this.graphService.createDirectedWeightedGraph(graph);
   }
 
   onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void {

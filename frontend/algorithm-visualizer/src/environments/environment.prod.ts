@@ -6,6 +6,7 @@ export const environment = {
     apiGetUserGraphIdsData: '/users/graphs/id',
     apiGetGraphById: '/graphs/',
     apiGetUserMatrixData: '/users/matrices',
+    apiGetSupportedAlgorithmsByDataStructure: '/algorithms/getStructureSupportedAlgorithms/',
     apiCreateDirectedUnweightedGraph: '/graphs/createGraph/directed/unweighted',
     apiCreateDirectedWeightedGraph: '/graphs/createGraph/directed/weighted',
     apiCreateUndirectedUnweightedGraph: '/graphs/createGraph/undirected/unweighted',

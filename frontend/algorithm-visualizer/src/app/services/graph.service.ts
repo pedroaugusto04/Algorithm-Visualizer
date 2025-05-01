@@ -15,36 +15,36 @@ export class GraphService {
 
   constructor(private httpClient: HttpClient) { }
 
-  createUndirectedUnweightedGraph(graphItems: GraphItem[]): Observable<void> {
+  createUndirectedUnweightedGraph(graph: GraphStructure): Observable<void> {
 
-    const requestBody: string = JSON.stringify(graphItems);
+    const requestBody: string = JSON.stringify(graph);
     
     const createUrl = new URL(environment.apiCreateUndirectedUnweightedGraph, environment.baseUrl).toString();
 
     return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
-  createUndirectedWeightedGraph(graphItems: GraphItem[]): Observable<void> {
+  createUndirectedWeightedGraph(graph: GraphStructure): Observable<void> {
 
-    const requestBody: string = JSON.stringify(graphItems);
+    const requestBody: string = JSON.stringify(graph);
     
     const createUrl = new URL(environment.apiCreateUndirectedWeightedGraph, environment.baseUrl).toString();
     
     return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
-  createDirectedUnweightedGraph(graphItems: GraphItem[]): Observable<void> {
+  createDirectedUnweightedGraph(graph: GraphStructure): Observable<void> {
 
-    const requestBody: string = JSON.stringify(graphItems);
+    const requestBody: string = JSON.stringify(graph);
     
     const createUrl = new URL(environment.apiCreateDirectedUnweightedGraph, environment.baseUrl).toString();
 
     return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
-  createDirectedWeightedGraph(graphItems: GraphItem[]): Observable<void> {
+  createDirectedWeightedGraph(graph: GraphStructure): Observable<void> {
 
-    const requestBody: string = JSON.stringify(graphItems);
+    const requestBody: string = JSON.stringify(graph);
     
     const createUrl = new URL(environment.apiCreateDirectedWeightedGraph, environment.baseUrl).toString();
 

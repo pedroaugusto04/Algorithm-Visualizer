@@ -1,5 +1,6 @@
 import { Observable } from "rxjs";
 import { GraphItem } from "../GraphItem";
+import { GraphStructure } from "../GraphStructure";
 
 export interface GraphStrategy {
     renderizeGraph(svg: any, items: GraphItem[], graphContainer: any): void;
@@ -10,5 +11,5 @@ export interface GraphStrategy {
 
     onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void;
 
-    createGraph(graphItems: GraphItem[]): Observable<void>;
+    createGraph(graph: GraphStructure): Observable<void>;
 }
