@@ -16,12 +16,6 @@ import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
 })
 export class CreateGraphStructureComponent {
 
-  GRAPH_TYPE_DIRECTED = "0"
-  GRAPH_TYPE_UNDIRECTED = "1"
-
-  GRAPH_WEIGHT_TYPE_WEIGHTED = "0"
-  GRAPH_WEIGHT_TYPE_UNWEIGHTED = "1"
-
   @ViewChild('graphContainer', { static: true }) graphContainer!: ElementRef<HTMLDivElement>;
   @ViewChildren('graphInput') inputs!: QueryList<any>;
 
@@ -29,12 +23,12 @@ export class CreateGraphStructureComponent {
   simulation: any;
 
   // options form control
-  graphTypeControl = new FormControl("1");
-  graphWeightTypeControl = new FormControl("0");  
+  graphTypeControl = new FormControl(true);
+  graphWeightTypeControl = new FormControl(false);  
 
   // graph strategy (to renderize correct graph for options choosed)
   graphStrategy: GraphStrategy = this.graphStrategyFactory.
-  getGraphStrategy(this.graphTypeControl.value || "", this.graphWeightTypeControl.value || "");
+  getGraphStrategy(this.graphTypeControl.value || false, this.graphWeightTypeControl.value || false);
 
   items = this.graphStrategy.getInitialItems();
 
@@ -55,10 +49,10 @@ export class CreateGraphStructureComponent {
 
 
   private updateStrategy(weightChanged: boolean = false) {
-    this.graphStrategy =  this.graphStrategyFactory.getGraphStrategy(
-      this.graphTypeControl.value || "",
-      this.graphWeightTypeControl.value || ""
-    );
+    
+    this.graphStrategy =  this.graphStrategyFactory.
+    getGraphStrategy(this.graphTypeControl.value || false, this.graphWeightTypeControl.value || false);
+
 
     if (weightChanged) {
       this.items = this.graphStrategy.getInitialItems();
@@ -86,7 +80,6 @@ export class CreateGraphStructureComponent {
 
   onInput() {
     this.graphStrategy.renderizeGraph(this.svg,this.items,this.graphContainer);
-    console.log(this.items)
   }
 
   private focusLastInput() {

@@ -1,9 +1,11 @@
 package com.pedro.algorithm_visualizer.models;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 
 public class UserDetailsImpl implements UserDetails {
@@ -39,6 +41,12 @@ public class UserDetailsImpl implements UserDetails {
         return user.getEmail();
     } 
 
+    public UUID getLoggedUserId() {
+        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        return userDetails.getUser().getId();
+    }
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
@@ -59,4 +67,7 @@ public class UserDetailsImpl implements UserDetails {
         return true;
     }
 
+    public User getUser() {
+        return user;
+    }
 }

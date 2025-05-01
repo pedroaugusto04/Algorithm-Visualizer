@@ -36,7 +36,7 @@ const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
   styleUrls: [],
   encapsulation: ViewEncapsulation.None
 })
-export class FullComponent {
+export class FullComponent implements OnInit{
 
   @ViewChild('leftsidenav')
   public sidenav: MatSidenav;
@@ -176,6 +176,12 @@ export class FullComponent {
       });
   }
 
+  
+  ngOnInit(): void { 
+    this.loadUserGraphs();
+    this.loadUserMatrices();
+  }
+
   ngOnDestroy() {
     this.layoutChangesSubscription.unsubscribe();
   }
@@ -198,6 +204,50 @@ export class FullComponent {
     this.isCollapsedWidthFixed = !this.isOver;
     this.options.sidenavOpened = isOpened;
     //this.settings.setOptions(this.options);
+  }
+
+  loadUserGraphs() {
+
+    this.userService.loadUserGraphsIds().subscribe({
+      next:(graphsIds) => {
+        
+        let graphBar;
+
+        for (const item of this.navItems) {
+          if (item.type === 'DataStructure') {
+            graphBar = item.children?.find(child => child.displayName === 'Graphs');
+          }
+        }
+
+        if (graphBar){
+          let countGraph: number = 1;
+          graphsIds.forEach(graphId => {
+            const item : NavItem = {
+              displayName: `Graph ${countGraph}`,
+              iconName: "apps",
+              route: `/see-graph-structure/${graphId}`
+            }
+            graphBar.children.push(item);
+            countGraph++;
+          })
+        }
+      },
+      error:() => {
+      }
+    });
+  }
+
+
+  loadUserMatrices() {
+
+    /*this.userService.loadUserMatrices().subscribe({
+      next:(matrices) => {
+        matrixItem.children = matrices;
+      },
+      error:() => {
+
+      }
+    });*/
   }
 
 }

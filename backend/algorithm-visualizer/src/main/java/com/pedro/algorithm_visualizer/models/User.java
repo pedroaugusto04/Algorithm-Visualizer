@@ -3,6 +3,8 @@ package com.pedro.algorithm_visualizer.models;
 import java.util.List;
 import java.util.UUID;
 
+import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class User {
@@ -30,6 +33,11 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name="role_id"))
     private List<Role> roles;
+
+    @OneToMany
+    private List<Graph> graphs;
+
+    public User(){}
 
     public User(String email, String password, List<Role> roles){
         this.email = email;
@@ -68,5 +76,13 @@ public class User {
 
     public void setRoles(List<Role> roles) {
         this.roles = roles;
+    }
+
+    public List<Graph> getGraphs() {
+        return graphs;
+    }
+
+    public void setGraphs(List<Graph> graphs) {
+        this.graphs = graphs;
     }
 }

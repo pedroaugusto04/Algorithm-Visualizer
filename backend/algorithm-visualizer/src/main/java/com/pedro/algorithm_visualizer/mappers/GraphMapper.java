@@ -1,12 +1,11 @@
 package com.pedro.algorithm_visualizer.mappers;
 
-import java.util.List;
-
 import org.springframework.stereotype.Component;
 
 import com.pedro.algorithm_visualizer.mappers.GraphMapperStrategy.GraphMapperStrategy;
 import com.pedro.algorithm_visualizer.models.DTO.GraphDTO;
 import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
+import com.pedro.algorithm_visualizer.models.User;
 
 @Component
 public class GraphMapper {
@@ -18,11 +17,11 @@ public class GraphMapper {
         this.graphMapperStrategy = strategy;
     }
 
-    public Graph toGraph(List<GraphDTO> graphDTO) {
+    public Graph toGraph(GraphDTO graphDTO, User loggedUser) {
         if (this.graphMapperStrategy == null) {
             throw new IllegalStateException("Graph mapper strategy not found");
         }
-        return this.graphMapperStrategy.toGraph(graphDTO);
+        return this.graphMapperStrategy.toGraph(graphDTO, loggedUser);
     }
 
 }

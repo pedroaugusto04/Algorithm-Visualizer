@@ -12,14 +12,16 @@ export class GraphStrategyFactory {
     constructor(private graphService: GraphService){}
 
     private strategies: Record<string, GraphStrategy> = {
-        "0,0": new GraphStrategyDirectedUnweighted(this.graphService),
-        "0,1": new GraphStrategyDirectedWeighted(this.graphService),
-        "1,0": new GraphStrategyUndirectedUnweighted(this.graphService),
-        "1,1": new GraphStrategyUndirectedWeighted(this.graphService)
+        "1,0": new GraphStrategyDirectedUnweighted(this.graphService),
+        "1,1": new GraphStrategyDirectedWeighted(this.graphService),
+        "0,0": new GraphStrategyUndirectedUnweighted(this.graphService),
+        "0,1": new GraphStrategyUndirectedWeighted(this.graphService)
     };
 
-     getGraphStrategy(x: string, y: string): GraphStrategy {
-        const key = `${x},${y}`;
+     getGraphStrategy(directed: boolean, weighted: boolean): GraphStrategy {
+
+        const key = `${Number(directed)},${Number(weighted)}`;
+        
         const strategy = this.strategies[key];
 
         if (!strategy) {

@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { environment } from 'src/environments/environment';
@@ -49,6 +49,14 @@ export class GraphService {
     const createUrl = new URL(environment.apiCreateDirectedWeightedGraph, environment.baseUrl).toString();
 
     return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
+  }
+
+  getGraphById(graphId: string): Observable<GraphStructure> {
+    const params = new HttpParams().set('graphId', graphId);
+    
+    const getGraphByIdUrl = new URL(environment.apiGetGraphById, environment.baseUrl).toString();
+  
+    return this.httpClient.get<GraphStructure>(getGraphByIdUrl, { params, headers: this.headers, withCredentials: true });
   }
 
 }

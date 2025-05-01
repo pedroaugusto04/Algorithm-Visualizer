@@ -1,7 +1,8 @@
 import { GraphItem } from "./GraphItem";
 
 export interface GraphStructure {
-    graphItem: GraphItem[];
+    id: string;
+    items: GraphItem[];
     directed: boolean;
     weighted: boolean;
 }

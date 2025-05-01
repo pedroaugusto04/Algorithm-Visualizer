@@ -15,7 +15,15 @@ public class Edge {
 
     @Override
     public String toString() {
-        return this.source.getValue() + "->" + this.target.getValue();
+        return toFormattedString(false);
+    }
+
+    public String toFormattedString(boolean includeWeight) {
+        if (includeWeight) {
+            return this.source.getValue() + " " + this.target.getValue() + " " + this.weight;
+        } else {
+            return this.source.getValue() + " " + this.target.getValue();
+        }
     }
 
     @Id
@@ -36,6 +44,8 @@ public class Edge {
 
     @Column(nullable = true)
     private Long weight;
+
+    public Edge(){}
 
     public Edge(Node source, Node target){
         this.source = source;

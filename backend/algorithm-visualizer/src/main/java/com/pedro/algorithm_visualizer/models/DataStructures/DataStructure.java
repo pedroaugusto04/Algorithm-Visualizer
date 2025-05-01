@@ -19,4 +19,12 @@ public abstract class DataStructure {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
 }

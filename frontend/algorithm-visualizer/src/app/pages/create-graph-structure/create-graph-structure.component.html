@@ -33,12 +33,12 @@
           <div class = "options">
             <div class = "graph-options">
               <mat-button-toggle-group [formControl]="graphTypeControl" aria-label="Graph Type">
-                <mat-button-toggle value="0">Directed</mat-button-toggle>
-                <mat-button-toggle value="1">Undirected</mat-button-toggle>
+                <mat-button-toggle [value]="true">Directed</mat-button-toggle>
+                <mat-button-toggle [value]="false">Undirected</mat-button-toggle>
               </mat-button-toggle-group>
               <mat-button-toggle-group [formControl]="graphWeightTypeControl" aria-label="Graph Weight Type">
-                <mat-button-toggle value="0">Unweighted</mat-button-toggle>
-                <mat-button-toggle value="1">Weighted</mat-button-toggle>
+                <mat-button-toggle [value]="true">Weighted</mat-button-toggle>
+                <mat-button-toggle [value]="false">Unweighted</mat-button-toggle>
               </mat-button-toggle-group>
             </div>
             <div class = "graph-save">

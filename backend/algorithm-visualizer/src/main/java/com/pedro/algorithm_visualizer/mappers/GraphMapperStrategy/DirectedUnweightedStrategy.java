@@ -5,20 +5,24 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.pedro.algorithm_visualizer.models.DTO.GraphDTO;
+import com.pedro.algorithm_visualizer.models.DTO.GraphItemDTO;
 import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
 import com.pedro.algorithm_visualizer.models.Edge;
 import com.pedro.algorithm_visualizer.models.Node;
+import com.pedro.algorithm_visualizer.models.User;
 
 public class DirectedUnweightedStrategy implements GraphMapperStrategy {
+    
+    public Graph toGraph(GraphDTO graphDTO, User user) {
+        
+        Graph graph = new Graph(user);
 
-    public Graph toGraph(List<GraphDTO> graphDTO) {
-        Graph graph = new Graph();
         List<Node> nodes = new ArrayList<>();
         List<Edge> edges = new ArrayList<>();
         
         HashMap<String,Node> nodeMap = new HashMap<>();
 
-        for (GraphDTO graphInfo : graphDTO) {
+        for (GraphItemDTO graphInfo : graphDTO.items()) {
             
             String text = graphInfo.text();
             String[] lines = text.split("\n");

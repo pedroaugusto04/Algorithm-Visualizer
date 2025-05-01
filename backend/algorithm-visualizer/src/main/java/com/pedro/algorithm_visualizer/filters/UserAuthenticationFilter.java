@@ -17,6 +17,7 @@ import com.pedro.algorithm_visualizer.services.JwtTokenService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -33,32 +34,34 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // Verifica se o endpoint requer autenticacao antes de processar a requisicao
         if (checkIfEndpointIsNotPublic(request)) {
-            String token = recoveryToken(request); // Recupera o token do cabecalho authorization
+            String token = recoveryToken(request); 
             if (token != null) {
-                String subject = jwtTokenService.getSubjectFromToken(token); // Obtem o assunto (neste caso, o nome de usuario) do token
-                User user = userRepository.findByEmail(subject).get(); // Busca o usuario pelo email (que eh o assunto do token)
-                UserDetailsImpl userDetails = new UserDetailsImpl(user); // Cria um UserDetails com o usuário encontrado
+                String subject = jwtTokenService.getSubjectFromToken(token); 
+                User user = userRepository.findByEmail(subject).get(); 
+                UserDetailsImpl userDetails = new UserDetailsImpl(user); 
 
-                // Cria um objeto de autenticação do Spring Security
                 Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(userDetails.getUsername(), null, userDetails.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
                 // Define o objeto de autenticação no contexto de segurança do Spring Security
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
-                throw new RuntimeException("O token está ausente.");
+                throw new RuntimeException("Token not found");
             }
         }
-        filterChain.doFilter(request, response); // Continua o processamento da requisicao
+
+        filterChain.doFilter(request, response); // continua o processamento da req
     }
 
-    // Recupera o token do cabeçalho Authorization da requisição
+    // Recupera o token do cabeçalho Authorization da req
     private String recoveryToken(HttpServletRequest request) {
-        String authorizationHeader = request.getHeader("Authorization");
-        if (authorizationHeader != null) {
-            return authorizationHeader.replace("Bearer ", "");
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
         }
         return null;
     }

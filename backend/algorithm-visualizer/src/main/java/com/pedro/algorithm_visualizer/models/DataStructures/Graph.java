@@ -1,45 +1,44 @@
 package com.pedro.algorithm_visualizer.models.DataStructures;
 
 import java.util.List;
-import java.util.UUID;
 
 import com.pedro.algorithm_visualizer.models.Edge;
 import com.pedro.algorithm_visualizer.models.Node;
+import com.pedro.algorithm_visualizer.models.User;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 
 @Entity
 public class Graph extends DataStructure{
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
 
     private boolean directed = true;
-
-    public Graph(){}
-
-    public Graph(boolean directed){
-        this.directed = directed;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
 
     @OneToMany(mappedBy = "graph", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Node> nodes;
 
     @OneToMany(mappedBy = "graph", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Edge> edges;
+
+    @ManyToOne
+    private User user;
+
+    public Graph(){}
+
+    public Graph(User user){
+        this.user = user;
+    }
+    
+    public Graph(boolean directed){
+        this.directed = directed;
+    }
+
+    public Graph(User user, boolean directed){
+        this.user = user;
+        this.directed = directed;
+    }
 
     public List<Node> getNodes() {
         return nodes;
@@ -55,5 +54,21 @@ public class Graph extends DataStructure{
 
     public void setEdges(List<Edge> edges) {
         this.edges = edges;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public boolean isDirected() {
+        return directed;
+    }
+
+    public void setDirected(boolean directed) {
+        this.directed = directed;
     }
 }

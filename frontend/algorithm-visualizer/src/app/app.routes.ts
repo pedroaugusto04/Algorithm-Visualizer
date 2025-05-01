@@ -3,6 +3,7 @@ import { BlankComponent } from './layouts/blank/blank.component';
 import { FullComponent } from './layouts/full/full.component';
 import { CreateGraphStructureComponent } from './pages/create-graph-structure/create-graph-structure.component';
 import { CreateMatrixStructureComponent } from './pages/create-matrix-structure/create-matrix-structure.component';
+import { SeeGraphStructureComponent } from './pages/see-graph-structure/see-graph-structure.component';
 
 export const routes: Routes = [
   {
@@ -18,6 +19,10 @@ export const routes: Routes = [
         path: 'home',
         loadChildren: () =>
           import('./pages/pages.routes').then((m) => m.PagesRoutes),
+      },
+      {
+        path: 'see-graph-structure/:graphId',
+        component: SeeGraphStructureComponent,
       },
       {
         path: 'create-graph-structure',

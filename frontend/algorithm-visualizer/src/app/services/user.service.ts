@@ -24,10 +24,10 @@ export class UserService {
     return this.httpClient.post<void>(userRegisterUrl,requestBody, {headers: this.headers});
   }
 
-  loadUserGraphs(): Observable<GraphStructure[]> {
-    const getUserGraphsUrl = new URL(environment.apiGetUserGraphData, environment.baseUrl).toString();
+  loadUserGraphsIds(): Observable<string[]> {
+    const getUserGraphsIdsUrl = new URL(environment.apiGetUserGraphIdsData, environment.baseUrl).toString();
 
-    return this.httpClient.get<GraphStructure[]>(getUserGraphsUrl, {headers: this.headers, withCredentials: true});
+    return this.httpClient.get<string[]>(getUserGraphsIdsUrl, {headers: this.headers, withCredentials: true});
   }
 
   loadUserMatrices(): Observable<MatrixStructure[]> {

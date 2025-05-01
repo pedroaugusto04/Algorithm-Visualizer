@@ -37,6 +37,8 @@ public class Node {
     @OneToMany(mappedBy = "target", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Edge> targetgEdges;
 
+    public Node() {}
+    
     public Node(String value) {
         this.value = value;
     }
