@@ -13,8 +13,6 @@ import com.pedro.algorithm_visualizer.models.ExecutionDataStructures.GraphPair;
 
 public class GraphDFSAlgorithmStrategy implements GraphAlgorithmStrategy{
 
-    static AtomicInteger currentTime = new AtomicInteger(1); // operacoes atomicas -> evitar condicoes de corrida 
-
     @Override
     public ExecutedNodesDTO run(GraphAdjList graphAdjList) {
         
@@ -28,16 +26,16 @@ public class GraphDFSAlgorithmStrategy implements GraphAlgorithmStrategy{
 
         HashSet<Integer> visited = new HashSet<>();
 
-        currentTime.set(1);
+        AtomicInteger currentTime = new AtomicInteger(1); // inteiro mutavel
 
-        dfs(startNode, graph,visited,executionMap);
+        dfs(startNode,graph,currentTime,visited,executionMap);
 
         ExecutedNodesDTO executedNodes = new ExecutedNodesDTO(executionMap);
             
         return executedNodes;
     }
 
-    public void dfs(NodeDTO current, HashMap<Integer,List<GraphPair>> graph,HashSet<Integer> visited,
+    public void dfs(NodeDTO current, HashMap<Integer,List<GraphPair>> graph,AtomicInteger currentTime, HashSet<Integer> visited,
     HashMap<Integer,List<NodeDTO>> executionMap){
         if (visited.contains(current.getValue())) return;
         visited.add(current.getValue());
@@ -50,7 +48,7 @@ public class GraphDFSAlgorithmStrategy implements GraphAlgorithmStrategy{
 
             NodeDTO node = pair.getNode();
 
-            dfs(node,graph,visited,executionMap);
+            dfs(node,graph,currentTime,visited,executionMap);
         }
     }
     
