@@ -1,4 +1,4 @@
 export interface AlgorithmOptions {
-    id: number;
+    id: string;
     name: string;
 }

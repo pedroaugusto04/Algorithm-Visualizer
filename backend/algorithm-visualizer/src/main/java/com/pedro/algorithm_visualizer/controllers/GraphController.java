@@ -113,7 +113,7 @@ public class GraphController {
     @GetMapping("/")
     public ResponseEntity<GraphDTO> getGraphById(@RequestParam String graphId) {
 
-        GraphDTO graph = graphService.getGraphById(UUID.fromString(graphId));
+        GraphDTO graph = graphService.getGraphDTOById(UUID.fromString(graphId));
 
         return ResponseEntity.ok(graph);
     }

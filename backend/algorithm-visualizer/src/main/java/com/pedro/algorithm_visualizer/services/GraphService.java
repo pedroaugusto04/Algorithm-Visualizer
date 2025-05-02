@@ -28,7 +28,7 @@ public class GraphService {
         this.graphRepository.save(graph);
     }
 
-    public GraphDTO getGraphById(UUID graphId) {
+    public GraphDTO getGraphDTOById(UUID graphId) {
 
         Graph graph = graphRepository.findById(graphId).orElseThrow(() -> new EntityNotFoundException());
 
@@ -58,5 +58,9 @@ public class GraphService {
         });
 
         return graphDTO;
+    }
+
+    public Graph getGraphById(UUID graphId){
+        return graphRepository.findById(graphId).orElseThrow(() -> new EntityNotFoundException());
     }
 }

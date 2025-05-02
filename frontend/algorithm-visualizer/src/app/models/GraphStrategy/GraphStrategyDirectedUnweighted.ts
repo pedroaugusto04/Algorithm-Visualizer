@@ -75,7 +75,7 @@ export class GraphStrategyDirectedUnweighted implements GraphStrategy {
     }
 
     const nodes: any[] = Array.from(nodesSet).map((d: any) => ({ id: d }));
-
+    
     const containerRect = graphContainer.nativeElement.getBoundingClientRect();
     const width = containerRect.width;
     const height = containerRect.height;
