@@ -10,7 +10,7 @@
               </mat-select>
             </mat-form-field>
             <div class = "div-run-algorithm">
-              <button class="execute-button" mat-flat-button color="warn" (click)="executeAlgorithm()">Run</button>
+              <button class="execute-button" mat-flat-button color="warn" (click)="executeAlgorithm()">{{ isAlgorithmExecuting ? 'Stop' : 'Start' }}</button>
           </div>
           </div>
     </div>

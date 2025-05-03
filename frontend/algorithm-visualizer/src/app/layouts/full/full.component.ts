@@ -15,6 +15,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { AppNavItemComponent } from './sidebar/nav-item/nav-item.component';
 import { NavItem } from './sidebar/nav-item/nav-item';
 import { UserService } from 'src/app/services/user.service';
+import { CookieService } from 'ngx-cookie-service';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -36,7 +37,7 @@ const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
   styleUrls: [],
   encapsulation: ViewEncapsulation.None
 })
-export class FullComponent implements OnInit{
+export class FullComponent implements OnInit {
 
   @ViewChild('leftsidenav')
   public sidenav: MatSidenav;
@@ -81,7 +82,7 @@ export class FullComponent implements OnInit{
     {
       displayName: 'Create Structure',
       iconName: 'apps',
-      children:[
+      children: [
         {
           displayName: 'Graph',
           iconName: 'apps',
@@ -112,7 +113,7 @@ export class FullComponent implements OnInit{
           iconName: 'point',
           external: true,
           chip: true,
-          chipClass: 'bg-primary text-white', 
+          chipClass: 'bg-primary text-white',
           chipContent: 'PRO',
           route: 'https://materialpro-angular-main.netlify.app/authentication/login',
         },
@@ -140,7 +141,7 @@ export class FullComponent implements OnInit{
       ],
     }
   ];
-  
+
 
   get isOver(): boolean {
     return this.isMobileScreen;
@@ -176,8 +177,8 @@ export class FullComponent implements OnInit{
       });
   }
 
-  
-  ngOnInit(): void { 
+
+  ngOnInit(): void {
     this.loadUserGraphs();
     this.loadUserMatrices();
   }
@@ -209,8 +210,8 @@ export class FullComponent implements OnInit{
   loadUserGraphs() {
 
     this.userService.loadUserGraphsIds().subscribe({
-      next:(graphsIds) => {
-        
+      next: (graphsIds) => {
+
         let graphBar;
 
         for (const item of this.navItems) {
@@ -219,10 +220,10 @@ export class FullComponent implements OnInit{
           }
         }
 
-        if (graphBar){
+        if (graphBar) {
           let countGraph: number = 1;
           graphsIds.forEach(graphId => {
-            const item : NavItem = {
+            const item: NavItem = {
               displayName: `Graph ${countGraph}`,
               iconName: "apps",
               route: `/see-graph-structure/${graphId}`
@@ -232,7 +233,7 @@ export class FullComponent implements OnInit{
           })
         }
       },
-      error:() => {
+      error: () => {
       }
     });
   }

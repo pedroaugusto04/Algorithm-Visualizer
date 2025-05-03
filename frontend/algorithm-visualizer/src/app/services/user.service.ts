@@ -5,6 +5,7 @@ import { environment } from 'src/environments/environment';
 import { MatrixStructure } from '../models/MatrixStructure';
 import { GraphStructure } from '../models/GraphStructure';
 import { RegisterUserDTO } from '../models/DTO/User/RegisterUserDTO';
+import { CookieService } from 'ngx-cookie-service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,7 @@ export class UserService {
 
   private headers = new HttpHeaders().set('Content-Type', 'application/json; charset=utf-8');
 
-  constructor(private httpClient: HttpClient) { }
+  constructor(private httpClient: HttpClient, private cookieService: CookieService) { }
 
   registerUser(registerUserDTO: RegisterUserDTO): Observable<void> {
 

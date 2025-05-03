@@ -25,6 +25,8 @@ export class SeeGraphStructureComponent implements OnInit {
   algorithmOptions: AlgorithmOptions[];
   selectedAlgorithmId: string;
   executionMap: any;
+  isAlgorithmExecuting: boolean = false;
+  private timeoutIds: number[] = [];
 
   // graph strategy (to renderize correct graph for options choosed)
   graphStrategy: GraphStrategy;
@@ -67,55 +69,80 @@ export class SeeGraphStructureComponent implements OnInit {
 
 
   executeAlgorithm() {
+    this.isAlgorithmExecuting = !this.isAlgorithmExecuting;
+
+    if (!this.isAlgorithmExecuting) {
+      this.stopAlgorithm();
+      return;
+    }
+
+    // start algorithm
     this.algorithmService.executeGraphAlgorithm(this.graphId || "", this.selectedAlgorithmId || "").subscribe({
       next: (data) => {
         this.executionMap = data;
 
-        this.renderizeAlgorithmExecution(this.executionMap);
+        this.runAlgorithm();
+
       },
       error: () => {
         this.snackBarService.showSnackBarError("Internal error while running algorithm");
+        this.isAlgorithmExecuting = false;
       }
     });
   }
 
 
-  renderizeAlgorithmExecution(executionMap: any): void {
+  runAlgorithm(): void {
 
-    const allNodes = d3.select(this.graphContainer.nativeElement)
-      .select('svg')
-      .selectAll('circle');
-
-    const sortedTimes = Object.keys(executionMap['executionMap'])
+    const sortedTimes = Object.keys(this.executionMap['executionMap'])
       .map(k => Number(k))
       .sort((a, b) => a - b);
 
     for (const time of sortedTimes) {
-      const nodeIds = Array.isArray(executionMap['executionMap'][time])
-        ? executionMap['executionMap'][time].map((item: any) => Number(item.value))
+      const nodeIds = Array.isArray(this.executionMap['executionMap'][time])
+        ? this.executionMap['executionMap'][time].map((item: any) => Number(item.value))
         : [];
 
-      setTimeout(() => {
-        const allNodes = d3.select(this.graphContainer.nativeElement)
+      const timeoutId = window.setTimeout(() => {
+        if (!this.isAlgorithmExecuting) return;
+
+        const allD3Nodes = d3.select(this.graphContainer.nativeElement)
           .select('svg')
           .selectAll('circle');
 
-        allNodes
+        allD3Nodes
           .filter((d: any) => nodeIds.includes(d.id))
           .transition()
           .duration(300)
           .attr('fill', 'orange');
       }, time * 800);
 
-      // reseta apos a execucao
-      const lastTime = sortedTimes[sortedTimes.length - 1];
-      setTimeout(() => {
-        allNodes
-          .transition()
-          .duration(300)
-          .attr('fill', 'steelblue');
-      }, (lastTime + 1) * 800);
+      this.timeoutIds.push(timeoutId);
     }
 
+    const maxTime = sortedTimes[sortedTimes.length - 1] ?? 0;
+    const finalTimeoutId = window.setTimeout(() => {
+      if (this.isAlgorithmExecuting) {
+        this.stopAlgorithm();
+      }
+    }, maxTime * 800 + 1000); 
+    this.timeoutIds.push(finalTimeoutId);
+  }
+
+  stopAlgorithm(): void {
+
+    this.isAlgorithmExecuting = false;
+
+    this.timeoutIds.forEach(id => clearTimeout(id));
+    this.timeoutIds = [];
+
+    const allD3Nodes = d3.select(this.graphContainer.nativeElement)
+      .select('svg')
+      .selectAll('circle');
+
+    allD3Nodes
+      .transition()
+      .duration(300)
+      .attr('fill', 'steelblue');
   }
 }

@@ -16,9 +16,9 @@ export class SnackBarService {
     });
   }
   
-  showSnackBarError(msg: string){
+  showSnackBarError(msg: string, duration?: number){
     this.snackBar.open(msg, "X", {
-      duration: 2000,
+      duration: duration ?? 2000,
       verticalPosition: "top",
       panelClass: ["error-snackbar"],
     });

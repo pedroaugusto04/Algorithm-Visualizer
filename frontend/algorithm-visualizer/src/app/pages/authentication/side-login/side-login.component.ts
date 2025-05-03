@@ -46,6 +46,7 @@ export class AppSideLoginComponent {
 
     this.authService.loginUser(loginUserDTO).subscribe({
       next: (data) => {
+        
         // salva o token nos cookies
         this.cookieService.set("token", data.token, {
           expires: 1,
