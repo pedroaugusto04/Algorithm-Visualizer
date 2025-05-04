@@ -15,7 +15,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { AppNavItemComponent } from './sidebar/nav-item/nav-item.component';
 import { NavItem } from './sidebar/nav-item/nav-item';
 import { UserService } from 'src/app/services/user.service';
-import { CookieService } from 'ngx-cookie-service';
+import { UserDTO } from 'src/app/models/DTO/User/UserDTO';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -50,6 +50,7 @@ export class FullComponent implements OnInit {
   private isContentWidthFixed = true;
   private isCollapsedWidthFixed = false;
   private htmlElement!: HTMLHtmlElement;
+  private user: UserDTO;
 
   navItems: NavItem[] = [
     {
@@ -61,18 +62,21 @@ export class FullComponent implements OnInit {
       route: '/home',
     },
     {
+      navCap: 'Data Structures',
+    },
+    {
       displayName: 'My Data Structures',
-      iconName: 'git-merge',
+      iconName: 'chart-dots',
       children: [
         {
           displayName: 'Graphs',
-          iconName: 'point',
+          iconName: 'git-merge',
           type: 'Graph',
           children: []
         },
         {
           displayName: 'Matrices',
-          iconName: 'point',
+          iconName: 'border-all',
           type: 'Matrix',
           children: []
         },
@@ -85,60 +89,15 @@ export class FullComponent implements OnInit {
       children: [
         {
           displayName: 'Graph',
-          iconName: 'apps',
+          iconName: 'git-merge',
           route: '/create-graph-structure',
         },
         {
           displayName: 'Matrix',
-          iconName: 'apps',
+          iconName: 'border-all',
           route: '/create-matrix-structure',
         }
       ]
-    },
-    {
-      navCap: 'Auth',
-    },
-    {
-      displayName: 'Login',
-      iconName: 'login',
-      route: '/authentication',
-      children: [
-        {
-          displayName: 'Login',
-          iconName: 'point',
-          route: '/authentication/login',
-        },
-        {
-          displayName: 'Side Login',
-          iconName: 'point',
-          external: true,
-          chip: true,
-          chipClass: 'bg-primary text-white',
-          chipContent: 'PRO',
-          route: 'https://materialpro-angular-main.netlify.app/authentication/login',
-        },
-      ],
-    },
-    {
-      displayName: 'Register',
-      iconName: 'user-plus',
-      route: '/authentication',
-      children: [
-        {
-          displayName: 'Register',
-          iconName: 'point',
-          route: '/authentication/register',
-        },
-        {
-          displayName: 'Side Register',
-          iconName: 'point',
-          external: true,
-          chip: true,
-          chipClass: 'bg-primary text-white',
-          chipContent: 'PRO',
-          route: 'https://materialpro-angular-main.netlify.app/authentication/side-register',
-        },
-      ],
     }
   ];
 
@@ -225,7 +184,7 @@ export class FullComponent implements OnInit {
           graphsIds.forEach(graphId => {
             const item: NavItem = {
               displayName: `Graph ${countGraph}`,
-              iconName: "apps",
+              iconName: "point",
               route: `/see-graph-structure/${graphId}`
             }
             graphBar.children.push(item);

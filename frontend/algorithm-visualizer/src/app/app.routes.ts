@@ -4,6 +4,7 @@ import { FullComponent } from './layouts/full/full.component';
 import { CreateGraphStructureComponent } from './pages/create-graph-structure/create-graph-structure.component';
 import { CreateMatrixStructureComponent } from './pages/create-matrix-structure/create-matrix-structure.component';
 import { SeeGraphStructureComponent } from './pages/see-graph-structure/see-graph-structure.component';
+import { ProfileComponent } from './pages/profile/profile.component';
 
 export const routes: Routes = [
   {
@@ -31,6 +32,10 @@ export const routes: Routes = [
       {
         path: 'create-matrix-structure',
         component: CreateMatrixStructureComponent,
+      },
+      {
+        path: 'profile',
+        component: ProfileComponent,
       },
       
       {

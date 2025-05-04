@@ -45,7 +45,7 @@ export class AppSideRegisterComponent {
       email: this.form.value.email || '',
       password: this.form.value.password || ''
     }
-
+    
     this.userService.registerUser(registerUserDTO).subscribe({
       next: () => {
         this.router.navigate(['/authentication/login'])

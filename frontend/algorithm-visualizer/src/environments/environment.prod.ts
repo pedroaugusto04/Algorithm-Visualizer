@@ -3,6 +3,7 @@ export const environment = {
     baseUrl: 'http://localhost:8080',
     apiUserLogin: '/users/login',
     apiUserRegister: '/users/register',
+    apiUserInfo: '/users/info',
     apiGetUserGraphIdsData: '/users/graphs/id',
     apiGetGraphById: '/graphs/',
     apiGetUserMatrixData: '/users/matrices',
