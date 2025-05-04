@@ -15,6 +15,7 @@ import { TablerIconsModule } from 'angular-tabler-icons';
 import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { UserService } from 'src/app/services/user.service';
 
 @Component({
   selector: 'app-nav-item',
@@ -39,7 +40,13 @@ export class AppNavItemComponent implements OnChanges {
   @HostBinding('attr.aria-expanded') ariaExpanded = this.expanded;
   @Input() depth: any;
 
-  constructor(public navService: NavService, public router: Router) {}
+  shouldExpand: boolean = false;
+
+  constructor(public navService: NavService, public router: Router, private userService: UserService) {}
+
+  ngOnInit() {
+    this.shouldExpand = this.userService.isUserLoggedIn();
+  }
 
   ngOnChanges() {
     const url = this.navService.currentUrl();
@@ -47,13 +54,19 @@ export class AppNavItemComponent implements OnChanges {
       this.expanded = url.indexOf(`/${this.item.route}`) === 0;
       this.ariaExpanded = this.expanded;
     }
+
+    if (this.shouldExpand) {
+      this.expanded = true;
+    } else {
+      this.expanded = false;
+    }
   }
 
   onItemSelected(item: NavItem) {
     if (!item.children || !item.children.length) {
       this.router.navigate([item.route]);
     }
-    if (item.children && item.children.length) {
+    if (item.children && item.children.length && this.shouldExpand) {
       this.expanded = !this.expanded;
     }
     //scroll
@@ -82,4 +95,5 @@ export class AppNavItemComponent implements OnChanges {
       }
     }
   }
+  
 }

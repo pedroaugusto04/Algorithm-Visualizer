@@ -3,7 +3,7 @@
   <app-branding></app-branding>
 
   <!-- Mobile Menu -->
-  
+
   <button mat-icon-button (click)="toggleMobileNav.emit()" class="d-flex d-lg-none justify-content-center">
     <i-tabler name="menu-2" class="icon-20 d-flex"></i-tabler>
   </button>
@@ -13,8 +13,10 @@
   <!-- --------------------------------------------------------------- -->
   <!-- profile Dropdown -->
   <!-- --------------------------------------------------------------- -->
+  @if(user){
   <button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Notifications">
-    <img [src]="user?.photo || '/assets/images/profile/user-default.svg'" class="rounded-circle object-cover d-block" width="35" />
+    <img [src]="user?.photo || '/assets/images/profile/user-default.svg'" class="rounded-circle object-cover d-block"
+      width="35" />
   </button>
   <mat-menu #profilemenu="matMenu" class="cardWithShadow topbar-dd">
     <button (click)="goToProfilePage()" mat-menu-item>
@@ -26,4 +28,18 @@
       <a (click)="onLogOut()" mat-stroked-button class="w-100">Logout</a>
     </div>
   </mat-menu>
+  } @else {
+    <button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Notifications">
+      <img [src]="'/assets/images/profile/user-default.svg'" class="rounded-circle object-cover d-block" width="35" />
+    </button>
+    <mat-menu #profilemenu="matMenu" class="cardWithShadow topbar-dd">
+      <button mat-menu-item>
+        <mat-icon class="d-flex align-items-center"><i-tabler name="user" class="icon-18 d-flex"></i-tabler></mat-icon>Anonymous User
+      </button>
+  
+      <div class="p-x-12 m-t-12">
+        <a (click)="onLogin()" mat-stroked-button class="w-100">Login</a>
+      </div>
+    </mat-menu>
+  }
 </mat-toolbar>

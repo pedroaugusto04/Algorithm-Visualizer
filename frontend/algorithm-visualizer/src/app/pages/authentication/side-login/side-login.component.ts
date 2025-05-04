@@ -64,4 +64,8 @@ export class AppSideLoginComponent {
     })
 
   }
+
+  onSignInAnonymous() {
+    this.router.navigate(['/']);
+  }
 }

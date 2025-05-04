@@ -9,4 +9,6 @@ export interface NavItem {
     chipClass?: string;
     external?: boolean;
     type?: string;
+    shouldExpand?: boolean;
+    onClick?: () => void;
 }

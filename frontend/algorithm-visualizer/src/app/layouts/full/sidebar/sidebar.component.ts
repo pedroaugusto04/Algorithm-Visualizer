@@ -9,6 +9,7 @@ import { TablerIconsModule } from 'angular-tabler-icons';
 import { CookieService } from 'ngx-cookie-service';
 import { MaterialModule } from 'src/app/material.module';
 import { UserDTO } from 'src/app/models/DTO/User/UserDTO';
+import { AuthService } from 'src/app/services/auth.service';
 import { UserService } from 'src/app/services/user.service';
 
 @Component({
@@ -24,7 +25,9 @@ export class SidebarComponent {
   @Output() toggleCollapsed = new EventEmitter<void>();
   user: UserDTO;
 
-  constructor(private cookieService: CookieService, private userService: UserService, private router: Router) {}
+  constructor(private cookieService: CookieService, private userService: UserService, private router: Router,
+    private authService: AuthService
+  ) {}
 
   ngOnInit() {
     this.getUserLoggedIn();
@@ -40,8 +43,7 @@ export class SidebarComponent {
   }
 
   onLogOut(){
-    this.cookieService.deleteAll();
-    this.router.navigate(['/authentication/login']);
+    this.authService.logoutUser();
   }
 
   goToProfilePage() {

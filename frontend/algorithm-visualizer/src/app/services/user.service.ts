@@ -20,6 +20,7 @@ export class UserService {
   public readonly user$ = this.userSubject.asObservable();
 
   constructor(private httpClient: HttpClient, private cookieService: CookieService) { }
+  
 
   getUserLoggedIn(): Observable<UserDTO> {
 
@@ -37,6 +38,10 @@ export class UserService {
     }).pipe(
       tap(user => this.userSubject.next(user))
     );
+  }
+
+  isUserLoggedIn(): boolean {
+    return this.userSubject.value !== null;
   }
 
   registerUser(registerUserDTO: RegisterUserDTO): Observable<void> {
@@ -58,6 +63,10 @@ export class UserService {
     const getUserMatricesUrl = new URL(environment.apiGetUserMatrixData, environment.baseUrl).toString();
 
     return this.httpClient.get<MatrixStructure[]>(getUserMatricesUrl, {headers: this.headers, withCredentials: true});
+  }
+
+  logoutUser(): void {
+    this.userSubject.next(null);
   }
 
 }

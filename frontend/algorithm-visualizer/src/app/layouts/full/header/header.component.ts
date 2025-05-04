@@ -15,6 +15,7 @@ import { BrandingComponent } from '../sidebar/branding.component';
 import { CookieService } from 'ngx-cookie-service';
 import { UserService } from 'src/app/services/user.service';
 import { UserDTO } from 'src/app/models/DTO/User/UserDTO';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -35,7 +36,9 @@ export class HeaderComponent implements OnInit {
   @Output() toggleMobileNav = new EventEmitter<void>();
   user: UserDTO;
 
-  constructor(private cookieService: CookieService, private userService: UserService, private router: Router){}
+  constructor(private cookieService: CookieService, private userService: UserService, private router: Router,
+    private authService: AuthService
+  ){}
 
   ngOnInit() {
     this.userService.getUserLoggedIn().subscribe({
@@ -46,8 +49,11 @@ export class HeaderComponent implements OnInit {
   }
 
   onLogOut(){
-    this.cookieService.deleteAll();
-    this.router.navigate(['/authentication/login']);
+    this.authService.logoutUser();
+  }
+
+  onLogin() {
+    this.router.navigate(['/authentication/login'])
   }
 
   goToProfilePage() {

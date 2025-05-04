@@ -10,12 +10,17 @@ import { Router } from "@angular/router";
 import { catchError, Observable, throwError } from "rxjs";
 import { SnackBarService } from "../services/utils/snack-bar.service";
 import { CookieService } from "ngx-cookie-service";
+import { UserService } from "../services/user.service";
+import { AuthService } from "../services/auth.service";
+import { UserDTO } from "../models/DTO/User/UserDTO";
 
 @Injectable({
     providedIn: "root",
 })
 export class AuthorizationInterceptor implements HttpInterceptor {
-    constructor(private router: Router, private snackBarService: SnackBarService, private cookieService: CookieService) { }
+    constructor(private snackBarService: SnackBarService, private cookieService: CookieService,
+        private authService: AuthService, private userService: UserService, private router: Router
+    ) { }
 
     intercept(
         req: HttpRequest<any>,
@@ -27,7 +32,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
         }
 
         const token = this.cookieService.get("token");
-        
+
         let modifiedReq = req.clone({
             setHeaders: token ? { Authorization: `Bearer ${token}` } : {}
         });
@@ -36,15 +41,15 @@ export class AuthorizationInterceptor implements HttpInterceptor {
             catchError((error: HttpErrorResponse) => {
 
                 if (error.status === 401 || error.status === 403) {
-                    const currentRoute = this.router.url;
 
-                    if (currentRoute.includes('/authentication/register')) {
-                        this.router.navigate(['/authentication/register']);
-                    } else {
-                        this.router.navigate(['/authentication/login']);
+                    const isUserLoggedIn: boolean = this.userService.isUserLoggedIn();
+                    
+                    if (isUserLoggedIn){
+                        this.authService.logoutUser();
+                        this.snackBarService.showSnackBarError("Your session has expired. Please log in again.",true)
                     }
 
-                    this.snackBarService.showSnackBarError("Your session has expired. Please log in again to continue.", 5000)
+
                 }
                 return throwError(() => error);
             }));

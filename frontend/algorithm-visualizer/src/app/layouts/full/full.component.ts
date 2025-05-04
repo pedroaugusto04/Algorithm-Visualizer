@@ -16,6 +16,9 @@ import { AppNavItemComponent } from './sidebar/nav-item/nav-item.component';
 import { NavItem } from './sidebar/nav-item/nav-item';
 import { UserService } from 'src/app/services/user.service';
 import { UserDTO } from 'src/app/models/DTO/User/UserDTO';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogActions, MatDialogClose, MatDialogContent, MatDialogModule, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
+import { AnonymousAlertDialogComponent } from 'src/app/components/anonymous-alert-dialog/anonymous-alert-dialog.component';
 
 const MOBILE_VIEW = 'screen and (max-width: 768px)';
 const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
@@ -31,7 +34,14 @@ const TABLET_VIEW = 'screen and (min-width: 769px) and (max-width: 1024px)';
     SidebarComponent,
     NgScrollbarModule,
     TablerIconsModule,
-    HeaderComponent
+    HeaderComponent,
+    MatButtonModule,
+    MatDialogActions,
+    MatDialogClose,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogModule,
+    AnonymousAlertDialogComponent
   ],
   templateUrl: './full.component.html',
   styleUrls: [],
@@ -52,54 +62,7 @@ export class FullComponent implements OnInit {
   private htmlElement!: HTMLHtmlElement;
   private user: UserDTO;
 
-  navItems: NavItem[] = [
-    {
-      navCap: 'Home',
-    },
-    {
-      displayName: 'Home',
-      iconName: 'home',
-      route: '/home',
-    },
-    {
-      navCap: 'Data Structures',
-    },
-    {
-      displayName: 'My Data Structures',
-      iconName: 'chart-dots',
-      children: [
-        {
-          displayName: 'Graphs',
-          iconName: 'git-merge',
-          type: 'Graph',
-          children: []
-        },
-        {
-          displayName: 'Matrices',
-          iconName: 'border-all',
-          type: 'Matrix',
-          children: []
-        },
-      ],
-      type: "DataStructure"
-    },
-    {
-      displayName: 'Create Structure',
-      iconName: 'apps',
-      children: [
-        {
-          displayName: 'Graph',
-          iconName: 'git-merge',
-          route: '/create-graph-structure',
-        },
-        {
-          displayName: 'Matrix',
-          iconName: 'border-all',
-          route: '/create-matrix-structure',
-        }
-      ]
-    }
-  ];
+  navItems: NavItem[] = [];
 
 
   get isOver(): boolean {
@@ -111,7 +74,8 @@ export class FullComponent implements OnInit {
     private settings: CoreService,
     private router: Router,
     private breakpointObserver: BreakpointObserver,
-    private userService: UserService
+    private userService: UserService,
+    private dialog: MatDialog
   ) {
     this.htmlElement = document.querySelector('html')!;
     this.layoutChangesSubscription = this.breakpointObserver
@@ -127,7 +91,6 @@ export class FullComponent implements OnInit {
 
     // Initialize project theme with options
 
-
     // This is for scroll to top
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
@@ -138,8 +101,123 @@ export class FullComponent implements OnInit {
 
 
   ngOnInit(): void {
-    this.loadUserGraphs();
-    this.loadUserMatrices();
+    this.userService.getUserLoggedIn().subscribe({
+      next: (user) => {
+        this.user = user;
+        this.loadUserGraphs();
+        this.loadUserMatrices();
+
+        this.navItems = [
+          {
+            navCap: 'Home',
+          },
+          {
+            displayName: 'Home',
+            iconName: 'home',
+            route: '/home',
+          },
+          {
+            navCap: 'Data Structures',
+          },
+
+          {
+            displayName: 'My Data Structures',
+            iconName: 'chart-dots',
+            children: [
+              {
+                displayName: 'Graphs',
+                iconName: 'git-merge',
+                type: 'Graph',
+                children: []
+              },
+              {
+                displayName: 'Matrices',
+                iconName: 'border-all',
+                type: 'Matrix',
+                children: []
+              },
+            ],
+            type: 'DataStructure'
+          },
+          {
+            displayName: 'Create Structure',
+            iconName: 'apps',
+            children: [
+              {
+                displayName: 'Graph',
+                iconName: 'git-merge',
+                route: '/create-graph-structure',
+              },
+              {
+                displayName: 'Matrix',
+                iconName: 'border-all',
+                route: '/create-matrix-structure',
+              }
+            ]
+          },
+          {
+            navCap: 'Auth',
+          },
+          {
+            displayName: 'Login',
+            iconName: 'login',
+            route: '/authentication/login',
+          },
+          {
+            displayName: 'Register',
+            iconName: '',
+            route: '/authentication/register',
+          },
+        ]
+      },
+      error: () => {
+        this.navItems = [
+          {
+            navCap: 'Home',
+          },
+          {
+            displayName: 'Home',
+            iconName: 'home',
+            route: '/home',
+          },
+          {
+            navCap: 'Data Structures',
+          },
+          {
+            displayName: 'Create Structure',
+            iconName: 'apps',
+            onClick: () => {
+              this.alertAnonymousUser();
+            },
+            children: [
+              {
+                displayName: 'Graph',
+                iconName: 'git-merge',
+                route: '/create-graph-structure',
+              },
+              {
+                displayName: 'Matrix',
+                iconName: 'border-all',
+                route: '/create-matrix-structure',
+              }
+            ]
+          },
+          {
+            navCap: 'Auth',
+          },
+          {
+            displayName: 'Login',
+            iconName: 'login',
+            route: '/authentication/login',
+          },
+          {
+            displayName: 'Register',
+            iconName: 'user-plus',
+            route: '/authentication/register',
+          },
+        ]
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -208,6 +286,23 @@ export class FullComponent implements OnInit {
 
       }
     });*/
+  }
+
+  alertAnonymousUser() {
+    
+    this.router.navigate(['/create-graph-structure']); // apenas para visualizacao por parte do usuario
+
+    this.dialog.open(AnonymousAlertDialogComponent, {
+      width: '700px',
+      height: '150px',
+      disableClose: true  
+    });
+  }
+
+  onNavItemClick(item: NavItem): void {
+    if (item.onClick) {
+      item.onClick(); 
+    }
   }
 
 }
