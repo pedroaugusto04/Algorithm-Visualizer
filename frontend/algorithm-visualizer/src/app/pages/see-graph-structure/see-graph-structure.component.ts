@@ -57,7 +57,6 @@ export class SeeGraphStructureComponent implements OnInit {
 
       this.graphService.getGraphById(this.graphId || "").subscribe({
         next: (graph) => {
-
           this.graphStrategy = this.graphStrategyFactory.getGraphStrategy(graph.directed, graph.weighted);
 
           this.graphStrategy.renderizeGraph(this.svg, graph.items, this.graphContainer);

@@ -154,20 +154,7 @@ export class FullComponent implements OnInit {
                 route: '/create-matrix-structure',
               }
             ]
-          },
-          {
-            navCap: 'Auth',
-          },
-          {
-            displayName: 'Login',
-            iconName: 'login',
-            route: '/authentication/login',
-          },
-          {
-            displayName: 'Register',
-            iconName: '',
-            route: '/authentication/register',
-          },
+          }
         ]
       },
       error: () => {
