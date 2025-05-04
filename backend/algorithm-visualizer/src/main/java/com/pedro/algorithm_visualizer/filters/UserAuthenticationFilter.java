@@ -17,7 +17,6 @@ import com.pedro.algorithm_visualizer.services.JwtTokenService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -56,14 +55,14 @@ public class UserAuthenticationFilter extends OncePerRequestFilter {
 
     // Recupera o token do cabeçalho Authorization da req
     private String recoveryToken(HttpServletRequest request) {
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("token".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        return null;
+
+        String token = request.getHeader("Authorization");
+
+        if (token == null) return token;
+        
+        token = token.replace("Bearer","").trim();
+
+        return token;
     }
 
     // Verifica se o endpoint requer autenticacao antes de processar a requisicao

@@ -5,7 +5,6 @@ import {
 } from '@angular/core';
 import {
   HTTP_INTERCEPTORS,
-  HttpClient,
   provideHttpClient,
   withInterceptorsFromDi,
 } from '@angular/common/http';
@@ -15,10 +14,8 @@ import {
   withComponentInputBinding,
   withInMemoryScrolling,
 } from '@angular/router';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
-import { TranslateLoader, TranslateModule } from '@ngx-translate/core';
-import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+import {  provideClientHydration } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 // icons
 import { TablerIconsModule } from 'angular-tabler-icons';
@@ -50,7 +47,7 @@ export const appConfig: ApplicationConfig = {
       multi: true,
     },
     provideClientHydration(),
-    provideAnimationsAsync(),
+    provideAnimations(),
     importProvidersFrom(
       FormsModule,
       ReactiveFormsModule,

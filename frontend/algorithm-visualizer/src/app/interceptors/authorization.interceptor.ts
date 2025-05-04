@@ -26,7 +26,13 @@ export class AuthorizationInterceptor implements HttpInterceptor {
             return next.handle(req);
         }
 
-        return next.handle(req).pipe(
+        const token = this.cookieService.get("token");
+        
+        let modifiedReq = req.clone({
+            setHeaders: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+
+        return next.handle(modifiedReq).pipe(
             catchError((error: HttpErrorResponse) => {
 
                 if (error.status === 401 || error.status === 403) {
