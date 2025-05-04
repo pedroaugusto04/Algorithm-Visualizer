@@ -28,6 +28,7 @@ export class SeeGraphStructureComponent implements OnInit {
   executionMap: any;
   isAlgorithmExecuting: boolean = false;
   isStopActive: boolean = false;
+  currentExecutionTime: number = 0;
   private timeoutIds: number[] = [];
 
   // graph strategy (to renderize correct graph for options choosed)
@@ -113,7 +114,11 @@ export class SeeGraphStructureComponent implements OnInit {
       .map(k => Number(k))
       .sort((a, b) => a - b);
 
-    for (const time of sortedTimes) {
+    // em caso de stop, comeca a partir de onde pausou
+    const startTimeIndex = sortedTimes.findIndex(time => time >= this.currentExecutionTime);
+    const remainingTimes = sortedTimes.slice(startTimeIndex);
+
+    for (const time of remainingTimes) {
       const nodeIds = Array.isArray(executionMap[time])
         ? executionMap[time].map((item: any) => Number(item.value))
         : [];
@@ -149,7 +154,9 @@ export class SeeGraphStructureComponent implements OnInit {
           }
         }
 
-      }, time * timeout);
+        this.currentExecutionTime = time;
+
+      }, (time - this.currentExecutionTime) * timeout);
 
       this.timeoutIds.push(timeoutId);
     }
@@ -159,7 +166,8 @@ export class SeeGraphStructureComponent implements OnInit {
     const finalTimeoutId = window.setTimeout(() => {
       this.isAlgorithmExecuting = false;
       this.isStopActive = false;
-    }, maxTime * timeout + 1000);
+      this.currentExecutionTime = 0;
+    }, (maxTime-this.currentExecutionTime) * timeout + 1000);
 
     this.timeoutIds.push(finalTimeoutId);
   }
@@ -175,6 +183,8 @@ export class SeeGraphStructureComponent implements OnInit {
 
   resetAlgorithm(): void {
     this.isAlgorithmExecuting = false;
+    this.isStopActive = true;
+    this.currentExecutionTime = 0;
 
     this.timeoutIds.forEach(id => clearTimeout(id));
     this.timeoutIds = [];
