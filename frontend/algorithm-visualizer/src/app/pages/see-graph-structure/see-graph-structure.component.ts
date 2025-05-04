@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -13,7 +14,7 @@ import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
 
 @Component({
   selector: 'app-see-graph-structure',
-  imports: [MatSelectModule, MatButtonModule],
+  imports: [MatSelectModule, MatButtonModule,CommonModule],
   templateUrl: './see-graph-structure.component.html',
   styleUrl: './see-graph-structure.component.scss'
 })
@@ -26,6 +27,7 @@ export class SeeGraphStructureComponent implements OnInit {
   selectedAlgorithmId: string;
   executionMap: any;
   isAlgorithmExecuting: boolean = false;
+  isStopActive: boolean = false;
   private timeoutIds: number[] = [];
 
   // graph strategy (to renderize correct graph for options choosed)
@@ -94,13 +96,26 @@ export class SeeGraphStructureComponent implements OnInit {
 
   runAlgorithm(): void {
 
-    const sortedTimes = Object.keys(this.executionMap['executionMap'])
+    if (this.isStopActive) {
+      this.isStopActive = false;
+    } else {
+      this.resetAlgorithm();
+    }
+
+    this.isAlgorithmExecuting = true;
+
+    const executionMap = this.executionMap['executionMap'];
+    const mapDistances = this.executionMap['mapDistances'];
+
+    const timeout:number = 1000;
+
+    const sortedTimes = Object.keys(executionMap)
       .map(k => Number(k))
       .sort((a, b) => a - b);
 
     for (const time of sortedTimes) {
-      const nodeIds = Array.isArray(this.executionMap['executionMap'][time])
-        ? this.executionMap['executionMap'][time].map((item: any) => Number(item.value))
+      const nodeIds = Array.isArray(executionMap[time])
+        ? executionMap[time].map((item: any) => Number(item.value))
         : [];
 
       const timeoutId = window.setTimeout(() => {
@@ -115,22 +130,50 @@ export class SeeGraphStructureComponent implements OnInit {
           .transition()
           .duration(300)
           .attr('fill', 'orange');
-      }, time * 800);
+
+        // renderiza o vetor de distancia ( se existir )
+        if (mapDistances && mapDistances[time]) {
+          const container = d3.select('#distance-display');
+
+          container.selectAll('*').remove();
+
+          for (const distArray of mapDistances[time]) {
+            const formatted = distArray
+              .map((d: any) => (d >= Number.MAX_SAFE_INTEGER ? '∞' : d))
+              .join(' | ');
+
+            container.append('div')
+              .style('margin', '5px 0')
+              .style('font-family', 'monospace')
+              .text(`Distance Array: [ ${formatted} ]`);
+          }
+        }
+
+      }, time * timeout);
 
       this.timeoutIds.push(timeoutId);
     }
 
+    // executa apos a finalizacao do algoritmo 
     const maxTime = sortedTimes[sortedTimes.length - 1] ?? 0;
     const finalTimeoutId = window.setTimeout(() => {
-      if (this.isAlgorithmExecuting) {
-        this.stopAlgorithm();
-      }
-    }, maxTime * 800 + 1000); 
+      this.isAlgorithmExecuting = false;
+      this.isStopActive = false;
+    }, maxTime * timeout + 1000);
+
     this.timeoutIds.push(finalTimeoutId);
   }
 
   stopAlgorithm(): void {
+    this.isAlgorithmExecuting = false;
+    this.isStopActive = true;
+  
+    this.timeoutIds.forEach(id => clearTimeout(id));
+    this.timeoutIds = [];
+  
+  }
 
+  resetAlgorithm(): void {
     this.isAlgorithmExecuting = false;
 
     this.timeoutIds.forEach(id => clearTimeout(id));
@@ -144,5 +187,8 @@ export class SeeGraphStructureComponent implements OnInit {
       .transition()
       .duration(300)
       .attr('fill', 'steelblue');
+
+    const container = d3.select('#distance-display');
+    container.selectAll('*').remove();
   }
 }

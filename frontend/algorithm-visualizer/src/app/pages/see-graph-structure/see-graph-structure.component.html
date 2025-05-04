@@ -10,8 +10,10 @@
               </mat-select>
             </mat-form-field>
             <div class = "div-run-algorithm">
-              <button class="execute-button" mat-flat-button color="warn" (click)="executeAlgorithm()">{{ isAlgorithmExecuting ? 'Stop' : 'Start' }}</button>
+              <button class="execute-button" mat-flat-button color="warn" [ngClass]="{'reset-active': isAlgorithmExecuting}" (click)="executeAlgorithm()">{{ isAlgorithmExecuting ? 'Stop' : 'Start' }}</button>
+              <button class="reset-button" mat-flat-button color="warn" (click)="resetAlgorithm()">Reset</button>
           </div>
+          <div id="distance-display" style="margin-top: 20px;"></div>
           </div>
     </div>
     <div class = "graph-draw" #graphSeeContainer>
