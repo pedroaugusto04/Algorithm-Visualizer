@@ -281,8 +281,7 @@ export class FullComponent implements OnInit {
 
     this.dialog.open(AnonymousAlertDialogComponent, {
       width: '700px',
-      height: '150px',
-      disableClose: true  
+      height: '150px'
     });
   }
 

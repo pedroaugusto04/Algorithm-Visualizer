@@ -40,13 +40,7 @@ export class AppNavItemComponent implements OnChanges {
   @HostBinding('attr.aria-expanded') ariaExpanded = this.expanded;
   @Input() depth: any;
 
-  shouldExpand: boolean = false;
-
   constructor(public navService: NavService, public router: Router, private userService: UserService) {}
-
-  ngOnInit() {
-    this.shouldExpand = this.userService.isUserLoggedIn();
-  }
 
   ngOnChanges() {
     const url = this.navService.currentUrl();
@@ -54,19 +48,13 @@ export class AppNavItemComponent implements OnChanges {
       this.expanded = url.indexOf(`/${this.item.route}`) === 0;
       this.ariaExpanded = this.expanded;
     }
-
-    if (this.shouldExpand) {
-      this.expanded = true;
-    } else {
-      this.expanded = false;
-    }
   }
 
   onItemSelected(item: NavItem) {
     if (!item.children || !item.children.length) {
       this.router.navigate([item.route]);
     }
-    if (item.children && item.children.length && this.shouldExpand) {
+    if (item.children && item.children.length) {
       this.expanded = !this.expanded;
     }
     //scroll

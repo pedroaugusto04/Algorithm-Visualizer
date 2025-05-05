@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { GraphStructure } from '../models/GraphStructure';
 import { GraphItem } from '../models/GraphItem';
+import { GraphIdDTO } from '../models/DTO/User/GraphIdDTO';
 
 @Injectable({
   providedIn: 'root'
@@ -15,40 +16,40 @@ export class GraphService {
 
   constructor(private httpClient: HttpClient) { }
 
-  createUndirectedUnweightedGraph(graph: GraphStructure): Observable<void> {
+  createUndirectedUnweightedGraph(graph: GraphStructure): Observable<GraphIdDTO> {
 
     const requestBody: string = JSON.stringify(graph);
     
     const createUrl = new URL(environment.apiCreateUndirectedUnweightedGraph, environment.baseUrl).toString();
 
-    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
+    return this.httpClient.post<GraphIdDTO>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
-  createUndirectedWeightedGraph(graph: GraphStructure): Observable<void> {
+  createUndirectedWeightedGraph(graph: GraphStructure): Observable<GraphIdDTO> {
 
     const requestBody: string = JSON.stringify(graph);
     
     const createUrl = new URL(environment.apiCreateUndirectedWeightedGraph, environment.baseUrl).toString();
     
-    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
+    return this.httpClient.post<GraphIdDTO>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
-  createDirectedUnweightedGraph(graph: GraphStructure): Observable<void> {
+  createDirectedUnweightedGraph(graph: GraphStructure): Observable<GraphIdDTO> {
 
     const requestBody: string = JSON.stringify(graph);
     
     const createUrl = new URL(environment.apiCreateDirectedUnweightedGraph, environment.baseUrl).toString();
 
-    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
+    return this.httpClient.post<GraphIdDTO>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
-  createDirectedWeightedGraph(graph: GraphStructure): Observable<void> {
+  createDirectedWeightedGraph(graph: GraphStructure): Observable<GraphIdDTO> {
 
     const requestBody: string = JSON.stringify(graph);
     
     const createUrl = new URL(environment.apiCreateDirectedWeightedGraph, environment.baseUrl).toString();
 
-    return this.httpClient.post<void>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
+    return this.httpClient.post<GraphIdDTO>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
   getGraphById(graphId: string): Observable<GraphStructure> {

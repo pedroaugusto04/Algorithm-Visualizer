@@ -14,13 +14,12 @@ export class AnonymousAlertDialogComponent {
   
   constructor(private router: Router, private dialogRef: MatDialogRef<AnonymousAlertDialogComponent>) {}
 
-  goToHome() {
-    this.router.navigate(['/home'])
+  goToLogin() {
+    this.router.navigate(['/authentication/login']);
     this.dialogRef.close();
   }
 
-  goToLogin() {
-    this.router.navigate(['/authentication/login']);
+  closeDialog() {
     this.dialogRef.close();
   }
 }

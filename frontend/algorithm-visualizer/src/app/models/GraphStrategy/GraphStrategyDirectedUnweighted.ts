@@ -5,12 +5,13 @@ import { GraphStrategy } from "./GraphStrategy";
 import * as d3 from 'd3';
 import { GraphService } from "src/app/services/graph.service";
 import { GraphStructure } from "../GraphStructure";
+import { GraphIdDTO } from "../DTO/User/GraphIdDTO";
 
 export class GraphStrategyDirectedUnweighted implements GraphStrategy {
 
   constructor(private graphService: GraphService) { }
   
-  createGraph(graph: GraphStructure): Observable<void> {
+  createGraph(graph: GraphStructure): Observable<GraphIdDTO> {
     return this.graphService.createDirectedUnweightedGraph(graph);
   }
 

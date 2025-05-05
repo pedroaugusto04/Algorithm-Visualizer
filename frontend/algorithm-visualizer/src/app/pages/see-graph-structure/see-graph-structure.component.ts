@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import * as d3 from 'd3';
 import { AlgorithmOptions } from 'src/app/models/AlgorithmOptions';
@@ -199,5 +199,9 @@ export class SeeGraphStructureComponent implements OnInit {
 
     const container = d3.select('#distance-display');
     container.selectAll('*').remove();
+  }
+
+  onSelectedAlgorithmChange(event: MatSelectChange) {
+    this.resetAlgorithm();
   }
 }

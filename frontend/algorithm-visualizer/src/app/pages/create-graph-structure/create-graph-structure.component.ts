@@ -7,11 +7,12 @@ import { GraphStrategy } from 'src/app/models/GraphStrategy/GraphStrategy';
 import { GraphStrategyFactory } from 'src/app/models/GraphStrategy/GraphStrategyFactory';
 import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
 import { GraphStructure } from 'src/app/models/GraphStructure';
+import { Router } from '@angular/router';
 
 
 @Component({
   selector: 'app-create-graph-structure',
-  imports: [FormsModule, MatButtonModule, MatInputModule,MatButtonToggleModule,FormsModule,ReactiveFormsModule,FormsModule],
+  imports: [FormsModule, MatButtonModule, MatInputModule, MatButtonToggleModule, FormsModule, ReactiveFormsModule, FormsModule],
   templateUrl: './create-graph-structure.component.html',
   styleUrl: './create-graph-structure.component.scss'
 })
@@ -25,15 +26,17 @@ export class CreateGraphStructureComponent {
 
   // options form control
   graphTypeControl = new FormControl(true);
-  graphWeightTypeControl = new FormControl(false);  
+  graphWeightTypeControl = new FormControl(false);
 
   // graph strategy (to renderize correct graph for options choosed)
   graphStrategy: GraphStrategy = this.graphStrategyFactory.
-  getGraphStrategy(this.graphTypeControl.value || false, this.graphWeightTypeControl.value || false);
+    getGraphStrategy(this.graphTypeControl.value || false, this.graphWeightTypeControl.value || false);
 
   items = this.graphStrategy.getInitialItems();
 
-  constructor(private graphStrategyFactory: GraphStrategyFactory, private snackBarService: SnackBarService){}
+  constructor(private graphStrategyFactory: GraphStrategyFactory, private snackBarService: SnackBarService,
+    private router: Router
+  ) { }
 
 
   ngAfterViewInit() {
@@ -42,7 +45,7 @@ export class CreateGraphStructureComponent {
     this.graphTypeControl.valueChanges.subscribe(() => {
       this.updateStrategy();
     });
-  
+
     this.graphWeightTypeControl.valueChanges.subscribe(() => {
       this.updateStrategy(true);
     });
@@ -50,16 +53,16 @@ export class CreateGraphStructureComponent {
 
 
   private updateStrategy(weightChanged: boolean = false) {
-    
-    this.graphStrategy =  this.graphStrategyFactory.
-    getGraphStrategy(this.graphTypeControl.value || false, this.graphWeightTypeControl.value || false);
+
+    this.graphStrategy = this.graphStrategyFactory.
+      getGraphStrategy(this.graphTypeControl.value || false, this.graphWeightTypeControl.value || false);
 
 
     if (weightChanged) {
       this.items = this.graphStrategy.getInitialItems();
     }
 
-    this.graphStrategy.renderizeGraph(this.svg,this.items,this.graphContainer);
+    this.graphStrategy.renderizeGraph(this.svg, this.items, this.graphContainer);
 
   }
 
@@ -76,11 +79,11 @@ export class CreateGraphStructureComponent {
   }
 
   onPaste(event: ClipboardEvent, index: number) {
-    this.graphStrategy.onPaste(event,index,this.inputs,this.items, this.svg, this.graphContainer);
+    this.graphStrategy.onPaste(event, index, this.inputs, this.items, this.svg, this.graphContainer);
   }
 
   onInput() {
-    this.graphStrategy.renderizeGraph(this.svg,this.items,this.graphContainer);
+    this.graphStrategy.renderizeGraph(this.svg, this.items, this.graphContainer);
   }
 
   private focusLastInput() {
@@ -91,11 +94,11 @@ export class CreateGraphStructureComponent {
   }
 
   onClear() {
-    this.items = [{text: ''}];
+    this.items = [{ text: '' }];
 
-    this.graphStrategy.renderizeGraph(this.svg,this.items,this.graphContainer);
+    this.graphStrategy.renderizeGraph(this.svg, this.items, this.graphContainer);
   }
-  
+
   getGraphPlaceholder(): string {
     return this.graphStrategy.getPlaceholder();
   }
@@ -109,10 +112,18 @@ export class CreateGraphStructureComponent {
     }
 
     this.graphStrategy.createGraph(graph).subscribe({
-      next:() => {
-        this.snackBarService.showSnackBarSuccess("Graph created successfully");
+      next: (graphIdDTO) => {
+
+        const graphId = graphIdDTO.id;
+
+        this.snackBarService.showSnackBarSuccess("Graph created successfully", 1500);
+
+        setTimeout(() => {
+          window.location.href = `/see-graph-structure/${graphId}`;
+        }, 1500);
+
       },
-      error:() => {
+      error: () => {
         this.snackBarService.showSnackBarError("Internal error while creating graph");
       }
     });
