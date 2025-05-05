@@ -1,5 +1,6 @@
 package com.pedro.algorithm_visualizer.services;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -26,9 +27,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     public User getLoggedUser() {
-        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication()
-                .getPrincipal();
-        return userDetails.getUser(); 
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = null;
+
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+            userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        } else return null;
+
+        return userDetails.getUser();
     }
 
 }

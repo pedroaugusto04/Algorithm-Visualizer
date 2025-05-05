@@ -16,6 +16,7 @@ import com.pedro.algorithm_visualizer.mappers.GraphMapperStrategy.DirectedWeight
 import com.pedro.algorithm_visualizer.mappers.GraphMapperStrategy.UndirectedUnweightedStrategy;
 import com.pedro.algorithm_visualizer.mappers.GraphMapperStrategy.UndirectedWeightedStrategy;
 import com.pedro.algorithm_visualizer.models.DTO.GraphDTO;
+import com.pedro.algorithm_visualizer.models.DTO.GraphIdDTO;
 import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
 import com.pedro.algorithm_visualizer.models.DataStructures.StructureType;
 import com.pedro.algorithm_visualizer.models.User;
@@ -44,8 +45,8 @@ public class GraphController {
     }
 
     @PostMapping("/createGraph/undirected/unweighted")
-    public ResponseEntity<Void> createGraphUndirectedUnweighted(@RequestBody GraphDTO graphDTO) {
-
+    public ResponseEntity<GraphIdDTO> createGraphUndirectedUnweighted(@RequestBody GraphDTO graphDTO) {
+        
         User loggedUser = this.userDetailsService.getLoggedUser();
 
         StructureType type = structureTypeRepository.findByName(StructureTypeEnum.UNDIRECTED_UNWEIGHTED_GRAPH)
@@ -54,13 +55,16 @@ public class GraphController {
         this.graphMapper.setStrategy(new UndirectedUnweightedStrategy());
 
         Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
-        this.graphService.saveGraph(graph);
 
-        return ResponseEntity.ok().build();
+        UUID graphId = this.graphService.saveGraph(graph);
+
+        GraphIdDTO graphIdDTO= new GraphIdDTO(graphId);
+
+        return ResponseEntity.ok(graphIdDTO);
     }
 
     @PostMapping("/createGraph/undirected/weighted")
-    public ResponseEntity<Void> createGraphUndirectedWeighted(@RequestBody GraphDTO graphDTO) {
+    public ResponseEntity<GraphIdDTO> createGraphUndirectedWeighted(@RequestBody GraphDTO graphDTO) {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
@@ -71,13 +75,15 @@ public class GraphController {
 
         Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
 
-        this.graphService.saveGraph(graph);
+        UUID graphId = this.graphService.saveGraph(graph);
 
-        return ResponseEntity.ok().build();
+        GraphIdDTO graphIdDTO= new GraphIdDTO(graphId);
+
+        return ResponseEntity.ok(graphIdDTO);
     }
 
     @PostMapping("/createGraph/directed/unweighted")
-    public ResponseEntity<Void> createGraphDirectedUnweighted(@RequestBody GraphDTO graphDTO) {
+    public ResponseEntity<GraphIdDTO> createGraphDirectedUnweighted(@RequestBody GraphDTO graphDTO) {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
@@ -88,13 +94,15 @@ public class GraphController {
 
         Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
 
-        this.graphService.saveGraph(graph);
+        UUID graphId = this.graphService.saveGraph(graph);
 
-        return ResponseEntity.ok().build();
+        GraphIdDTO graphIdDTO= new GraphIdDTO(graphId);
+
+        return ResponseEntity.ok(graphIdDTO);
     }
 
     @PostMapping("/createGraph/directed/weighted")
-    public ResponseEntity<Void> createGraphDirectedWeighted(@RequestBody GraphDTO graphDTO) {
+    public ResponseEntity<GraphIdDTO> createGraphDirectedWeighted(@RequestBody GraphDTO graphDTO) {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
@@ -105,9 +113,11 @@ public class GraphController {
 
         Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
 
-        this.graphService.saveGraph(graph);
+        UUID graphId = this.graphService.saveGraph(graph);
 
-        return ResponseEntity.ok().build();
+        GraphIdDTO graphIdDTO= new GraphIdDTO(graphId);
+
+        return ResponseEntity.ok(graphIdDTO);
     }
 
     @GetMapping("/")

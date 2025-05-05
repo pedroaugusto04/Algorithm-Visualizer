@@ -24,8 +24,11 @@ public class GraphService {
         this.graphRepository = graphRepository;
     }
 
-    public void saveGraph(Graph graph) {
-        this.graphRepository.save(graph);
+    public UUID saveGraph(Graph graph) {
+
+        Graph savedGraph = this.graphRepository.save(graph);
+        
+        return savedGraph.getId();
     }
 
     public GraphDTO getGraphDTOById(UUID graphId) {

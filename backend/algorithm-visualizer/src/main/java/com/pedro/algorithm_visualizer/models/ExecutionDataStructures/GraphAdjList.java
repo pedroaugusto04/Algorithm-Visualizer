@@ -9,12 +9,15 @@ public class GraphAdjList {
 
     private NodeDTO startNode;
 
+    private NodeDTO higherNode;
+
     private HashMap<Integer,List<GraphPair>> graph;
 
     public GraphAdjList() {}
 
-    public GraphAdjList(HashMap<Integer,List<GraphPair>> graph, NodeDTO startNode) {
+    public GraphAdjList(HashMap<Integer,List<GraphPair>> graph, NodeDTO startNode, NodeDTO higherNode) {
         this.startNode = startNode;
+        this.higherNode = higherNode;
         this.graph = graph;
     }
 
@@ -32,5 +35,13 @@ public class GraphAdjList {
 
     public void setStartNode(NodeDTO startNode) {
         this.startNode = startNode;
+    }
+
+    public NodeDTO getHigherNode() {
+        return higherNode;
+    }
+
+    public void setHigherNode(NodeDTO higherNode) {
+        this.higherNode = higherNode;
     }
 }

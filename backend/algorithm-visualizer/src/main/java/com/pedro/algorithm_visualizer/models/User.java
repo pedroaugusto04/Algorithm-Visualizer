@@ -22,6 +22,10 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    private String name;
+
+    private String photo;
     
     @Column(unique = true)
     private String email;
@@ -39,7 +43,8 @@ public class User {
 
     public User(){}
 
-    public User(String email, String password, List<Role> roles){
+    public User(String name, String email, String password, List<Role> roles){
+        this.name = name;
         this.email = email;
         this.password = password;
         this.roles = roles;
@@ -84,5 +89,21 @@ public class User {
 
     public void setGraphs(List<Graph> graphs) {
         this.graphs = graphs;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPhoto() {
+        return photo;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
     }
 }

@@ -12,6 +12,7 @@ import com.pedro.algorithm_visualizer.configurations.SecurityConfiguration;
 import com.pedro.algorithm_visualizer.models.DTO.JwtTokenDTO;
 import com.pedro.algorithm_visualizer.models.DTO.LoginUserDTO;
 import com.pedro.algorithm_visualizer.models.DTO.RegisterUserDTO;
+import com.pedro.algorithm_visualizer.models.DTO.UserDTO;
 import com.pedro.algorithm_visualizer.models.Role;
 import com.pedro.algorithm_visualizer.models.User;
 import com.pedro.algorithm_visualizer.models.UserDetailsImpl;
@@ -53,12 +54,21 @@ public class UserService {
         return new JwtTokenDTO(jwtTokenService.generateToken(userDetails));
     }
 
+    public UserDTO getUserInfo() {
+        User user = this.userDetailsService.getLoggedUser();
+        
+        UserDTO userDTO = new UserDTO(user.getName(), user.getPhoto());
+
+        return userDTO;
+    }
+
     public void createUser(RegisterUserDTO registerUserDTO) {
 
         Role userRole = new Role();
         userRole.setName(RoleName.ROLE_USER);
 
         User newUser = new User(
+                registerUserDTO.name(),
                 registerUserDTO.email(),
                 securityConfiguration.passwordEncoder().encode(registerUserDTO.password()),
                 List.of(userRole));

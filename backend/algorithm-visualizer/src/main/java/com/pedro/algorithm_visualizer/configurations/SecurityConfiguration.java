@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import com.pedro.algorithm_visualizer.filters.UserAuthenticationFilter;
 
 @Configuration
@@ -31,18 +32,20 @@ public class SecurityConfiguration {
 
     public static final String[] UNAUTHORIZED_ENDPOINTS = {
             "/users/login",
-            "/users/register"
+            "/users/register",
+            "/createGraph/undirected/unweighted",
+            "/graphs/**",
+            "/algorithms/getStructureSupportedAlgorithms/",
+            "/algorithms/executeGraphAlgorithm"
     };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and().authorizeHttpRequests()
+                .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(requests -> requests
                 .requestMatchers(UNAUTHORIZED_ENDPOINTS).permitAll()
-                .anyRequest().authenticated()
-                .and().addFilterBefore(userAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .anyRequest().authenticated()).addFilterBefore(userAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pedro.algorithm_visualizer.models.DTO.JwtTokenDTO;
 import com.pedro.algorithm_visualizer.models.DTO.LoginUserDTO;
 import com.pedro.algorithm_visualizer.models.DTO.RegisterUserDTO;
+import com.pedro.algorithm_visualizer.models.DTO.UserDTO;
 import com.pedro.algorithm_visualizer.services.UserService;
 
 @RestController
@@ -24,6 +25,14 @@ public class UserController {
 
     UserController(UserService userService){
         this.userService = userService;
+    }
+
+    @GetMapping("/info")   
+    public ResponseEntity<UserDTO> getUserInfo() {
+
+        UserDTO userDTO = this.userService.getUserInfo();
+
+        return ResponseEntity.ok(userDTO);
     }
     
     @PostMapping("/login")
