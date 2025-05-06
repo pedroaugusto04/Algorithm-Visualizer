@@ -1,0 +1,9 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-algorithm-visualizer-algorithm-visualizator.g.aivencloud.com:21087/defaultdb
+      - SPRING_DATASOURCE_USERNAME=${AIVEN_USER} 
+      - SPRING_DATASOURCE_PASSWORD=${AIVEN_PASSWORD}

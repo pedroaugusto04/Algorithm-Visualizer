@@ -9,4 +9,4 @@ ENV SPRING_PROFILES_ACTIVE=dev
 
 EXPOSE 8080
 
-ENTRYPOINT ["./mvnw", "spring-boot:run", "-Dspring-boot.run.profiles=${SPRING_PROFILES_ACTIVE}"]
+ENTRYPOINT ["./mvnw","spring-boot:run"]

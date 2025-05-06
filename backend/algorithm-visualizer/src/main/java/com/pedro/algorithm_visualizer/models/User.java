@@ -1,6 +1,7 @@
 package com.pedro.algorithm_visualizer.models;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
@@ -36,14 +37,14 @@ public class User {
     @JoinTable(name="users_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name="role_id"))
-    private List<Role> roles;
+    private Set<Role> roles;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Graph> graphs;
 
     public User(){}
 
-    public User(String name, String email, String password, List<Role> roles){
+    public User(String name, String email, String password, Set<Role> roles){
         this.name = name;
         this.email = email;
         this.password = password;
@@ -75,11 +76,11 @@ public class User {
         this.password = password;
     }
 
-    public List<Role> getRoles() {
+    public Set<Role> getRoles() {
         return roles;
     }
 
-    public void setRoles(List<Role> roles) {
+    public void setRoles(Set<Role> roles) {
         this.roles = roles;
     }
 

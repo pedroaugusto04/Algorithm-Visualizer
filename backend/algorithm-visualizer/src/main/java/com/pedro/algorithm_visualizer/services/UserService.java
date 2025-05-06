@@ -1,6 +1,7 @@
 package com.pedro.algorithm_visualizer.services;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -71,7 +72,7 @@ public class UserService {
                 registerUserDTO.name(),
                 registerUserDTO.email(),
                 securityConfiguration.passwordEncoder().encode(registerUserDTO.password()),
-                List.of(userRole));
+                Set.of(userRole));
 
         userRepository.save(newUser);
     }
