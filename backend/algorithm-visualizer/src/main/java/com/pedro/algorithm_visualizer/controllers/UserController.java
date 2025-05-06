@@ -38,6 +38,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<JwtTokenDTO> authenticateUser(@RequestBody LoginUserDTO loginUserDTO) {
         JwtTokenDTO token = userService.authenticateUser(loginUserDTO);
+
         return new ResponseEntity<>(token, HttpStatus.OK);
     }
 
