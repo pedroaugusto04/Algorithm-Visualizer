@@ -7,5 +7,5 @@ import { Component } from '@angular/core';
   styleUrl: './create-matrix-structure.component.scss'
 })
 export class CreateMatrixStructureComponent {
-
+  
 }

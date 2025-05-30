@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import * as d3 from 'd3';
@@ -10,7 +9,7 @@ import { GraphStrategy } from 'src/app/models/GraphStrategy/GraphStrategy';
 import { GraphStrategyFactory } from 'src/app/models/GraphStrategy/GraphStrategyFactory';
 import { AlgorithmService } from 'src/app/services/algorithm.service';
 import { GraphService } from 'src/app/services/graph.service';
-import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
+import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 @Component({
   selector: 'app-see-graph-structure',
@@ -36,7 +35,7 @@ export class SeeGraphStructureComponent implements OnInit {
 
   constructor(private route: ActivatedRoute, private graphService: GraphService,
     private graphStrategyFactory: GraphStrategyFactory, private algorithmService: AlgorithmService,
-    private snackBarService: SnackBarService
+    private swalService: SwalService
   ) { }
 
   ngOnInit(): void {
@@ -51,7 +50,7 @@ export class SeeGraphStructureComponent implements OnInit {
           this.selectedAlgorithmId = this.algorithmOptions[0].id;
         },
         error: () => {
-          this.snackBarService.showSnackBarError("Internal error while recovering supported algorithms");
+          this.swalService.errorNoButton("Internal error while recovering supported algorithms","");
         }
       });
 
@@ -63,7 +62,7 @@ export class SeeGraphStructureComponent implements OnInit {
 
         },
         error: () => {
-          this.snackBarService.showSnackBarError("Internal error while recovering graph");
+          this.swalService.errorNoButton("Internal error while recovering graph","");
         }
       })
     });
@@ -87,7 +86,7 @@ export class SeeGraphStructureComponent implements OnInit {
 
       },
       error: () => {
-        this.snackBarService.showSnackBarError("Internal error while running algorithm");
+        this.swalService.errorNoButton("Internal error while running algorithm","");
         this.isAlgorithmExecuting = false;
       }
     });

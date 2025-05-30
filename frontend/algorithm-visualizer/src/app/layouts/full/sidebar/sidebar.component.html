@@ -10,7 +10,7 @@
     <!-- ============================================================== -->
     <div class="profile-text">
       <a [matMenuTriggerFor]="sdprofile" class="d-flex align-items-center text-white w-100 f-s-16">
-        {{ user?.name ?? 'Anonymous User' }}
+        {{ user.name || 'Anonymous User' }}
         <i-tabler name="chevron-down" class="icon-18 m-l-auto"></i-tabler>
       </a>
     </div>

@@ -8,17 +8,16 @@ import {
 import { Injectable } from "@angular/core";
 import { Router } from "@angular/router";
 import { catchError, Observable, throwError } from "rxjs";
-import { SnackBarService } from "../services/utils/snack-bar.service";
 import { CookieService } from "ngx-cookie-service";
 import { UserService } from "../services/user.service";
 import { AuthService } from "../services/auth.service";
-import { UserDTO } from "../models/DTO/User/UserDTO";
+import { SwalService } from "../services/utils/swal/swal.service";
 
 @Injectable({
     providedIn: "root",
 })
 export class AuthorizationInterceptor implements HttpInterceptor {
-    constructor(private snackBarService: SnackBarService, private cookieService: CookieService,
+    constructor(private swalService: SwalService, private cookieService: CookieService,
         private authService: AuthService, private userService: UserService, private router: Router
     ) { }
 
@@ -46,7 +45,7 @@ export class AuthorizationInterceptor implements HttpInterceptor {
                     
                     if (isUserLoggedIn){
                         this.authService.logoutUser();
-                        this.snackBarService.showSnackBarError("Your session has expired. Please log in again.",true)
+                        this.swalService.errorNoButton("Your session has expired. Please log in again","");
                     }
 
 

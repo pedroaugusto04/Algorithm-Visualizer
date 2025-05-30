@@ -5,11 +5,10 @@ import { RouterModule } from '@angular/router';
 import { MaterialModule } from 'src/app/material.module';
 import { FormsModule } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { LoginUserDTO } from 'src/app/models/DTO/User/LoginUserDTO';
 import { AuthService } from 'src/app/services/auth.service';
 import { CookieService } from "ngx-cookie-service";
-import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
+import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 @Component({
   selector: 'app-side-login',
@@ -20,7 +19,7 @@ import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
 export class AppSideLoginComponent {
 
   constructor(private router: Router, private authService: AuthService,
-    private cookieService: CookieService, private snackBarService: SnackBarService
+    private cookieService: CookieService, private swalService: SwalService
   ) { }
 
   form = new FormGroup({
@@ -35,7 +34,7 @@ export class AppSideLoginComponent {
   onSignIn() {
 
     if (!this.form.valid) {
-      this.snackBarService.showSnackBarError("Incorrect username or password");
+      this.swalService.errorNoButton("Invalid input","Please, enter valid information");
       return;
     }
 
@@ -56,10 +55,10 @@ export class AppSideLoginComponent {
 
         this.router.navigate(['/'])
 
-        this.snackBarService.showSnackBarSuccess("Login successful");
+        this.swalService.successNoButton("Login successful","");
       },
       error: () => {
-        this.snackBarService.showSnackBarError("Internal error during login");
+        this.swalService.errorNoButton("Invalid credentials","Please, try again");
       }
     })
 

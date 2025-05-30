@@ -5,9 +5,9 @@ import { MatInputModule } from '@angular/material/input';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { GraphStrategy } from 'src/app/models/GraphStrategy/GraphStrategy';
 import { GraphStrategyFactory } from 'src/app/models/GraphStrategy/GraphStrategyFactory';
-import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
 import { GraphStructure } from 'src/app/models/GraphStructure';
 import { Router } from '@angular/router';
+import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 
 @Component({
@@ -34,7 +34,7 @@ export class CreateGraphStructureComponent {
 
   items = this.graphStrategy.getInitialItems();
 
-  constructor(private graphStrategyFactory: GraphStrategyFactory, private snackBarService: SnackBarService,
+  constructor(private graphStrategyFactory: GraphStrategyFactory, private swalService: SwalService,
     private router: Router
   ) { }
 
@@ -116,7 +116,7 @@ export class CreateGraphStructureComponent {
 
         const graphId = graphIdDTO.id;
 
-        this.snackBarService.showSnackBarSuccess("Graph created successfully", 1500);
+        this.swalService.successNoButton("Graph created successfully","");
 
         setTimeout(() => {
           window.location.href = `/see-graph-structure/${graphId}`;
@@ -124,7 +124,7 @@ export class CreateGraphStructureComponent {
 
       },
       error: () => {
-        this.snackBarService.showSnackBarError("Internal error while creating graph");
+        this.swalService.errorNoButton("Internal error while creating graph","");
       }
     });
   }

@@ -5,10 +5,9 @@ import { Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { MaterialModule } from 'src/app/material.module';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { UserService } from 'src/app/services/user.service';
 import { RegisterUserDTO } from 'src/app/models/DTO/User/RegisterUserDTO';
-import { SnackBarService } from 'src/app/services/utils/snack-bar.service';
+import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 @Component({
   selector: 'app-side-register',
@@ -20,7 +19,7 @@ export class AppSideRegisterComponent {
   options = this.settings.getOptions();
 
   constructor(private settings: CoreService, private router: Router,
-    private userService: UserService, private snackBarService: SnackBarService
+    private userService: UserService, private swalService: SwalService
   ) { }
 
   form = new FormGroup({
@@ -36,7 +35,7 @@ export class AppSideRegisterComponent {
   onSignUp() {
     
     if (!this.form.valid) {
-      this.snackBarService.showSnackBarError("Incorrect username or password");
+      this.swalService.errorNoButton("Invalid input","Incorrect username or password");
       return;
     }
 
@@ -50,10 +49,10 @@ export class AppSideRegisterComponent {
       next: () => {
         this.router.navigate(['/authentication/login'])
 
-        this.snackBarService.showSnackBarSuccess("User registered successfully");
+        this.swalService.successNoButton("User registered successfully","");
       },
       error: () => {
-        this.snackBarService.showSnackBarError("Internal error while registering user");
+        this.swalService.errorNoButton("Internal error while registering user","");
       }
     })
   }
