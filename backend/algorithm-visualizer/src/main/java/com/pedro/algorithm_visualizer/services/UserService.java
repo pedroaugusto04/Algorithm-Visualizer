@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.pedro.algorithm_visualizer.configurations.SecurityConfiguration;
 import com.pedro.algorithm_visualizer.models.DTO.JwtTokenDTO;
 import com.pedro.algorithm_visualizer.models.DTO.LoginUserDTO;
+import com.pedro.algorithm_visualizer.models.DTO.ProfileDTO;
 import com.pedro.algorithm_visualizer.models.DTO.RegisterUserDTO;
 import com.pedro.algorithm_visualizer.models.DTO.UserDTO;
 import com.pedro.algorithm_visualizer.models.Role;
@@ -20,6 +21,9 @@ import com.pedro.algorithm_visualizer.models.UserDetailsImpl;
 import com.pedro.algorithm_visualizer.models.enums.RoleName;
 import com.pedro.algorithm_visualizer.repositories.GraphRepository;
 import com.pedro.algorithm_visualizer.repositories.UserRepository;
+
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 
 @Service
 public class UserService {
@@ -61,6 +65,17 @@ public class UserService {
         UserDTO userDTO = new UserDTO(user.getName(), user.getPhoto());
 
         return userDTO;
+    }
+
+    @Transactional
+    public ProfileDTO getProfileInfo() {
+        User loggedUser = this.userDetailsService.getLoggedUser();
+
+        User user = this.userRepository.findById(loggedUser.getId()).orElseThrow(() -> new EntityNotFoundException());
+
+        ProfileDTO profileDTO = new ProfileDTO(user.getName(),user.getEmail(),user.getPhoto(),user.getCreatedAt(),user.getGraphs().size(),0);
+
+        return profileDTO;
     }
 
     public void createUser(RegisterUserDTO registerUserDTO) {

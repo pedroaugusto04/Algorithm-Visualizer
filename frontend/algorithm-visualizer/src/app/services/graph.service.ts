@@ -47,9 +47,45 @@ export class GraphService {
 
     const requestBody: string = JSON.stringify(graph);
     
-    const createUrl = new URL(environment.apiCreateDirectedWeightedGraph, environment.baseUrl).toString();
+    const updateUrl = new URL(environment.apiUpdateDirectedWeightedGraph, environment.baseUrl).toString();
 
-    return this.httpClient.post<GraphIdDTO>(createUrl,requestBody, {headers: this.headers, withCredentials: true});
+    return this.httpClient.post<GraphIdDTO>(updateUrl,requestBody, {headers: this.headers, withCredentials: true});
+  }
+
+  updateUndirectedUnweightedGraph(graph: GraphStructure): Observable<GraphIdDTO> {
+
+    const requestBody: string = JSON.stringify(graph);
+    
+    const updateUrl = new URL(environment.apiUpdateUndirectedUnweightedGraph, environment.baseUrl).toString();
+
+    return this.httpClient.put<GraphIdDTO>(updateUrl,requestBody, {headers: this.headers, withCredentials: true});
+  }
+
+  updateUndirectedWeightedGraph(graph: GraphStructure): Observable<GraphIdDTO> {
+
+    const requestBody: string = JSON.stringify(graph);
+    
+    const updateUrl = new URL(environment.apiUpdateUndirectedWeightedGraph, environment.baseUrl).toString();
+    
+    return this.httpClient.put<GraphIdDTO>(updateUrl,requestBody, {headers: this.headers, withCredentials: true});
+  }
+
+  updateDirectedUnweightedGraph(graph: GraphStructure): Observable<GraphIdDTO> {
+
+    const requestBody: string = JSON.stringify(graph);
+    
+    const updateUrl = new URL(environment.apiUpdateDirectedUnweightedGraph, environment.baseUrl).toString();
+
+    return this.httpClient.put<GraphIdDTO>(updateUrl,requestBody, {headers: this.headers, withCredentials: true});
+  }
+
+  updateDirectedWeightedGraph(graph: GraphStructure): Observable<GraphIdDTO> {
+
+    const requestBody: string = JSON.stringify(graph);
+    
+    const updateUrl = new URL(environment.apiUpdateDirectedWeightedGraph, environment.baseUrl).toString();
+
+    return this.httpClient.put<GraphIdDTO>(updateUrl,requestBody, {headers: this.headers, withCredentials: true});
   }
 
   getGraphById(graphId: string): Observable<GraphStructure> {

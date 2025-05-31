@@ -24,20 +24,20 @@ export class StarterComponent {
     directed: false,
     weighted: true,
     items: [
-      { text: '0 1 4' },
-      { text: '0 7 8' },
-      { text: '1 7 11' },
-      { text: '1 2 8' },
-      { text: '2 3 7' },
-      { text: '2 5 4' },
-      { text: '3 5 14' },
-      { text: '7 8 7' },
-      { text: '2 8 2' },
-      { text: '3 4 9' },
-      { text: '4 5 10' },
-      { text: '6 7 1' },
-      { text: '6 8 6' },
-      { text: '5 6 2' },
+      { id: 0, text: '0 1 4' },
+      { id: 1,text: '0 7 8' },
+      { id: 2,text: '1 7 11' },
+      { id: 3,text: '1 2 8' },
+      { id: 4,text: '2 3 7' },
+      { id: 5,text: '2 5 4' },
+      { id: 6,text: '3 5 14' },
+      { id: 7,text: '7 8 7' },
+      { id: 8,text: '2 8 2' },
+      { id: 9,text: '3 4 9' },
+      { id: 10,text: '4 5 10' },
+      { id: 11,text: '6 7 1' },
+      { id: 12,text: '6 8 6' },
+      { id: 13,text: '5 6 2' },
     ],
   };
   // execuionMap mocado para bfs
@@ -54,7 +54,7 @@ export class StarterComponent {
   constructor(private graphService: GraphService) { }
 
   ngOnInit() {
-    this.graphStrategy = new GraphStrategyUndirectedWeighted(this.graphService);
+    this.graphStrategy = new GraphStrategyUndirectedWeighted(this.graphService, null);
 
     this.graphStrategy.renderizeGraph(this.svg, this.graph.items, this.graphContainer);
 

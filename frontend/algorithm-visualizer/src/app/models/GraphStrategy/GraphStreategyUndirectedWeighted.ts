@@ -6,13 +6,18 @@ import { GraphService } from "src/app/services/graph.service";
 import * as d3 from 'd3';
 import { GraphStructure } from "../GraphStructure";
 import { GraphIdDTO } from "../DTO/User/GraphIdDTO";
+import { CreateGraphStructureComponent } from "src/app/pages/create-graph-structure/create-graph-structure.component";
 
 export class GraphStrategyUndirectedWeighted implements GraphStrategy {
-    
-    constructor(private graphService: GraphService) { }
-    
+
+    constructor(private graphService: GraphService, private graphItems: GraphItem[] | null) { }
+
     createGraph(graph: GraphStructure): Observable<GraphIdDTO> {
         return this.graphService.createUndirectedWeightedGraph(graph);
+    }
+
+    updateGraph(graph: GraphStructure): Observable<GraphIdDTO> {
+        return this.graphService.updateUndirectedWeightedGraph(graph);
     }
 
     onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void {
@@ -28,7 +33,7 @@ export class GraphStrategyUndirectedWeighted implements GraphStrategy {
                 for (let i = 0; i < parts.length; i += 3) {
                     const pair = [parts[i], parts[i + 1], parts[i + 2]].filter(Boolean).join(' ');
                     if (pair) {
-                        newItems.push({ text: pair });
+                        newItems.push({ id: CreateGraphStructureComponent.incrementAndGetItemId(), text: pair });
                     }
                 }
 
@@ -48,14 +53,35 @@ export class GraphStrategyUndirectedWeighted implements GraphStrategy {
     }
 
     getInitialItems(): GraphItem[] {
-        return GRAPH_WEIGHTED_ITEMS;
+        return this.graphItems != null ? this.graphItems : GRAPH_WEIGHTED_ITEMS.map(item => ({ ...item }));
     }
 
     getPlaceholder(): string {
         return "v1 v2 w"
     }
 
-    renderizeGraph(svg: any, items: any[], graphContainer: any): void {
+    validateGraphInput(graphItems: GraphItem[]): boolean {
+        for (const item of graphItems) {
+            const subItem: string[] = item.text.split(" ");
+            
+            // campos vazios sao desconsiderados
+            if (subItem.length == 0) continue;
+    
+            if (subItem.length !== 3 || 
+                !this.isDigit(subItem[0]) || 
+                !this.isDigit(subItem[1]) || 
+                !this.isDigit(subItem[2])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    isDigit(input: string) {
+        return input >= '0' && input <= '9';
+    }
+
+    renderizeGraph(svg: any, items: GraphItem[], graphContainer: any): void {
 
         d3.select(graphContainer.nativeElement).select('svg').remove();
 

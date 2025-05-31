@@ -1,4 +1,5 @@
 export interface NavItem {
+    id: number;
     displayName?: string;
     iconName?: string;
     navCap?: string;

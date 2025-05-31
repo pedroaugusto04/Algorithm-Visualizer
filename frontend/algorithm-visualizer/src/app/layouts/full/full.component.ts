@@ -56,6 +56,7 @@ export class FullComponent implements OnInit {
   private isCollapsedWidthFixed = false;
   private htmlElement!: HTMLHtmlElement;
   private user: UserDTO;
+  private navItemId: number = 0;
 
   navItems: NavItem[] = [];
 
@@ -104,28 +105,34 @@ export class FullComponent implements OnInit {
 
         this.navItems = [
           {
+            id: this.IncrementAndGetNavItemId(),
             navCap: 'Home',
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             displayName: 'Home',
             iconName: 'home',
             route: '/home',
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             navCap: 'Data Structures',
           },
 
           {
+            id: this.IncrementAndGetNavItemId(),
             displayName: 'My Data Structures',
             iconName: 'chart-dots',
             children: [
               {
+                id: this.IncrementAndGetNavItemId(),
                 displayName: 'Graphs',
                 iconName: 'git-merge',
                 type: 'Graph',
                 children: []
               },
               {
+                id: this.IncrementAndGetNavItemId(),
                 displayName: 'Matrices',
                 iconName: 'border-all',
                 type: 'Matrix',
@@ -135,15 +142,18 @@ export class FullComponent implements OnInit {
             type: 'DataStructure'
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             displayName: 'Create Structure',
             iconName: 'apps',
             children: [
               {
+                id: this.IncrementAndGetNavItemId(),
                 displayName: 'Graph',
                 iconName: 'git-merge',
                 route: '/create-graph-structure',
               },
               {
+                id: this.IncrementAndGetNavItemId(),
                 displayName: 'Matrix',
                 iconName: 'border-all',
                 route: '/create-matrix-structure',
@@ -155,17 +165,21 @@ export class FullComponent implements OnInit {
       error: () => {
         this.navItems = [
           {
+            id: this.IncrementAndGetNavItemId(),
             navCap: 'Home',
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             displayName: 'Home',
             iconName: 'home',
             route: '/home',
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             navCap: 'Data Structures',
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             displayName: 'Create Structure',
             iconName: 'apps',
             onClick: () => {
@@ -173,11 +187,13 @@ export class FullComponent implements OnInit {
             },
             children: [
               {
+                id: this.IncrementAndGetNavItemId(),
                 displayName: 'Graph',
                 iconName: 'git-merge',
                 route: '/create-graph-structure',
               },
               {
+                id: this.IncrementAndGetNavItemId(),
                 displayName: 'Matrix',
                 iconName: 'border-all',
                 route: '/create-matrix-structure',
@@ -185,14 +201,17 @@ export class FullComponent implements OnInit {
             ]
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             navCap: 'Auth',
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             displayName: 'Login',
             iconName: 'login',
             route: '/authentication/login',
           },
           {
+            id: this.IncrementAndGetNavItemId(),
             displayName: 'Register',
             iconName: 'user-plus',
             route: '/authentication/register',
@@ -243,6 +262,7 @@ export class FullComponent implements OnInit {
           let countGraph: number = 1;
           graphsIds.forEach(graphId => {
             const item: NavItem = {
+              id: this.IncrementAndGetNavItemId(),
               displayName: `Graph ${countGraph}`,
               iconName: "point",
               route: `/see-graph-structure/${graphId}`
@@ -284,6 +304,11 @@ export class FullComponent implements OnInit {
     if (item.onClick) {
       item.onClick(); 
     }
+  }
+
+  IncrementAndGetNavItemId() {
+    this.navItemId++;
+    return this.navItemId;
   }
 
 }

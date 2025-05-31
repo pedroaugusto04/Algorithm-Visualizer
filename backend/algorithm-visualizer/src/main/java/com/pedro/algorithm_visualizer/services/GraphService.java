@@ -63,6 +63,14 @@ public class GraphService {
         return graphDTO;
     }
 
+    public void clearEdgesAndNodesGraph(Graph graph) {
+
+        graph.getEdges().clear();
+
+        graph.getNodes().clear();
+        
+    }
+
     public Graph getGraphById(UUID graphId){
         return graphRepository.findById(graphId).orElseThrow(() -> new EntityNotFoundException());
     }

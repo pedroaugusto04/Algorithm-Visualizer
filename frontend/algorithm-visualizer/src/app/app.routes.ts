@@ -30,6 +30,10 @@ export const routes: Routes = [
         component: CreateGraphStructureComponent,
       },
       {
+        path: 'create-graph-structure/:graphId',
+        component: CreateGraphStructureComponent,
+      },
+      {
         path: 'create-matrix-structure',
         component: CreateMatrixStructureComponent,
       },

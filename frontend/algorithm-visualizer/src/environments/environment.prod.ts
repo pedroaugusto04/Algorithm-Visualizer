@@ -4,6 +4,7 @@ export const environment = {
     apiUserLogin: '/users/login',
     apiUserRegister: '/users/register',
     apiUserInfo: '/users/info',
+    apiProfileInfo: '/users/info/profile',
     apiGetUserGraphIdsData: '/users/graphs/id',
     apiGetGraphById: '/graphs/',
     apiGetUserMatrixData: '/users/matrices',
@@ -13,4 +14,8 @@ export const environment = {
     apiCreateDirectedWeightedGraph: '/graphs/createGraph/directed/weighted',
     apiCreateUndirectedUnweightedGraph: '/graphs/createGraph/undirected/unweighted',
     apiCreateUndirectedWeightedGraph: '/graphs/createGraph/undirected/weighted',
+    apiUpdateDirectedUnweightedGraph: '/graphs/updateGraph/directed/unweighted',
+    apiUpdateDirectedWeightedGraph: '/graphs/updateGraph/directed/weighted',
+    apiUpdateUndirectedUnweightedGraph: '/graphs/updateGraph/undirected/unweighted',
+    apiUpdateUndirectedWeightedGraph: '/graphs/updateGraph/undirected/weighted',
 };

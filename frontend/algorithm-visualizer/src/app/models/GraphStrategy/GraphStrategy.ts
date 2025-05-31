@@ -13,4 +13,8 @@ export interface GraphStrategy {
     onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void;
 
     createGraph(graph: GraphStructure): Observable<GraphIdDTO>;
+
+    updateGraph(graph: GraphStructure): Observable<GraphIdDTO>;
+
+    validateGraphInput(graphItems: GraphItem[]): boolean;
 }

@@ -6,13 +6,18 @@ import * as d3 from 'd3';
 import { GraphService } from "src/app/services/graph.service";
 import { GraphStructure } from "../GraphStructure";
 import { GraphIdDTO } from "../DTO/User/GraphIdDTO";
+import { CreateGraphStructureComponent } from "src/app/pages/create-graph-structure/create-graph-structure.component";
 
 export class GraphStrategyUndirectedUnweighted implements GraphStrategy {
 
-    constructor(private graphService: GraphService) { }
+    constructor(private graphService: GraphService, private graphItems: GraphItem[] | null) { }
 
     createGraph(graph: GraphStructure): Observable<GraphIdDTO> {
         return this.graphService.createUndirectedUnweightedGraph(graph);
+    }
+
+    updateGraph(graph: GraphStructure): Observable<GraphIdDTO> {
+        return this.graphService.updateUndirectedUnweightedGraph(graph);
     }
 
     onPaste(event: ClipboardEvent, index: number, inputs: any, items: GraphItem[], svg: any, graphContainer: any): void {
@@ -28,7 +33,7 @@ export class GraphStrategyUndirectedUnweighted implements GraphStrategy {
                 for (let i = 0; i < parts.length; i += 2) {
                     const pair = [parts[i], parts[i + 1]].filter(Boolean).join(' ');
                     if (pair) {
-                        newItems.push({ text: pair });
+                        newItems.push({ id: CreateGraphStructureComponent.incrementAndGetItemId(), text: pair });
                     }
                 }
 
@@ -48,12 +53,32 @@ export class GraphStrategyUndirectedUnweighted implements GraphStrategy {
     }
 
     getInitialItems(): GraphItem[] {
-        return GRAPH_UNWEIGHTED_ITEMS;
+        return this.graphItems != null ? this.graphItems : GRAPH_UNWEIGHTED_ITEMS.map(item => ({ ...item }));
     }
 
     getPlaceholder(): string {
         return "v1 v2"
     }
+
+    validateGraphInput(graphItems: GraphItem[]): boolean {
+        for (const item of graphItems) {
+            const subItem: string[] = item.text.split(" ");
+
+            // campos vazios sao desconsiderados
+            if (subItem.length == 0) continue;
+    
+            if (subItem.length !== 2 || 
+                !this.isDigit(subItem[0]) || 
+                !this.isDigit(subItem[1])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+      isDigit(input: string) {
+        return input >= '0' && input <= '9';
+      }
 
     renderizeGraph(svg: any, items: any[], graphContainer: any): void {
 

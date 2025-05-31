@@ -1,52 +1,49 @@
-<div class = "content">
-    <div class="form-graph">
-        <div class="row">
-          <div class="col-sm-12 d-flex align-items-center">
-            <mat-label class="f-s-14 f-w-600 d-block m-b-16">Graph Inputs</mat-label>
-            <button class="clear-button" mat-flat-button color="warn" (click)="onClear()">Clear</button>
-          </div>
-            <div class="col-sm-12">
-                <table class="w-100">
-                    <tbody>
-                      @for (item of items; track item; let i = $index) {
-                        <tr>
-                          <td class="p-r-8">{{ i + 1 }}</td>
-                          <td class="w-100">
-                            <mat-form-field appearance="outline" class="w-100">
-                              <input
-                                matInput
-                                #graphInput
-                                type="text"
-                                [placeholder]="getGraphPlaceholder()"
-                                [(ngModel)]="item.text"
-                                (keydown.enter)="onEnter(i)"
-                                (paste)="onPaste($event, i)"
-                                (input)="onInput()"
-                              />
-                            </mat-form-field>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                </table>
-          </div>
-          <div class = "options">
-            <div class = "graph-options">
-              <mat-button-toggle-group [formControl]="graphTypeControl" aria-label="Graph Type">
-                <mat-button-toggle [value]="true">Directed</mat-button-toggle>
-                <mat-button-toggle [value]="false">Undirected</mat-button-toggle>
-              </mat-button-toggle-group>
-              <mat-button-toggle-group [formControl]="graphWeightTypeControl" aria-label="Graph Weight Type">
-                <mat-button-toggle [value]="true">Weighted</mat-button-toggle>
-                <mat-button-toggle [value]="false">Unweighted</mat-button-toggle>
-              </mat-button-toggle-group>
-            </div>
-            <div class = "graph-save">
-                <button class="create-button" mat-flat-button color="warn" (click)="onCreate()">Create Graph</button>
-            </div>
-          </div>
-        </div>
-    </div>
-      <div class = "graph-draw" #graphContainer style="margin-top: 20px;">
+<div class="content">
+  <div class="form-graph">
+    <div class="row">
+      <div class="col-sm-12 d-flex align-items-center">
+        <mat-label class="f-s-14 f-w-600 d-block m-b-16">Graph Inputs</mat-label>
+        <button class="clear-button" mat-flat-button color="warn" (click)="onClear()">Clear</button>
       </div>
+      <div class="col-sm-12">
+        <table class="w-100">
+          <tbody>
+            @for (item of items; track item; let i = $index) {
+            <tr>
+              <td class="p-r-8">{{ i + 1 }}</td>
+              <td class="w-100">
+                <mat-form-field appearance="outline" class="w-100">
+                  <input matInput #graphInput type="text" [placeholder]="getGraphPlaceholder()" [(ngModel)]="item.text"
+                    (keydown.enter)="onEnter(i)" (paste)="onPaste($event, i)" (input)="onInput()" />
+                </mat-form-field>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- nao aparece caso esteja editando -->
+      <div class="options">
+        @if (graphId == null) {
+        <div class="graph-options">
+          <mat-button-toggle-group [formControl]="graphTypeControl" aria-label="Graph Type">
+            <mat-button-toggle [value]="true">Directed</mat-button-toggle>
+            <mat-button-toggle [value]="false">Undirected</mat-button-toggle>
+          </mat-button-toggle-group>
+          <mat-button-toggle-group [formControl]="graphWeightTypeControl" aria-label="Graph Weight Type">
+            <mat-button-toggle [value]="true">Weighted</mat-button-toggle>
+            <mat-button-toggle [value]="false">Unweighted</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+        }
+        <div class="graph-save">
+          <button class="create-button" mat-flat-button color="warn" (click)="onClick()">{{ graphId != null ? 'Edit
+            Graph' : 'Create Graph' }}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="graph-draw" #graphContainer style="margin-top: 20px;">
+  </div>
 </div>

@@ -1,8 +1,11 @@
 package com.pedro.algorithm_visualizer.models;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import org.hibernate.annotations.CreationTimestamp;
 
 import com.pedro.algorithm_visualizer.models.DataStructures.Graph;
 
@@ -27,30 +30,32 @@ public class User {
     private String name;
 
     private String photo;
-    
+
     @Column(unique = true)
     private String email;
 
     private String password;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
-    @JoinTable(name="users_roles",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name="role_id"))
+    @JoinTable(name = "users_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Graph> graphs;
 
-    public User(){}
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-    public User(String name, String email, String password, Set<Role> roles){
+    public User() {
+    }
+
+    public User(String name, String email, String password, Set<Role> roles) {
         this.name = name;
         this.email = email;
         this.password = password;
         this.roles = roles;
     }
-    
 
     public UUID getId() {
         return id;
@@ -106,5 +111,13 @@ public class User {
 
     public void setPhoto(String photo) {
         this.photo = photo;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

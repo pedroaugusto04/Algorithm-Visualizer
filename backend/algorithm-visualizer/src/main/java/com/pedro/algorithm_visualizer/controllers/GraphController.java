@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -37,85 +38,219 @@ public class GraphController {
     private StructureTypeRepository structureTypeRepository;
 
     GraphController(GraphService graphService, GraphMapper graphMapper, UserDetailsServiceImpl userDetailsService,
-    StructureTypeRepository structureTypeRepository) {
+            StructureTypeRepository structureTypeRepository) {
         this.graphService = graphService;
         this.graphMapper = graphMapper;
         this.userDetailsService = userDetailsService;
         this.structureTypeRepository = structureTypeRepository;
     }
 
-    @PostMapping("/createGraph/undirected/unweighted")
+    @PostMapping("/undirected/unweighted")
     public ResponseEntity<GraphIdDTO> createGraphUndirectedUnweighted(@RequestBody GraphDTO graphDTO) {
-        
+
         User loggedUser = this.userDetailsService.getLoggedUser();
 
         StructureType type = structureTypeRepository.findByName(StructureTypeEnum.UNDIRECTED_UNWEIGHTED_GRAPH)
-    .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+                .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
 
         this.graphMapper.setStrategy(new UndirectedUnweightedStrategy());
 
-        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser, type);
 
         UUID graphId = this.graphService.saveGraph(graph);
 
-        GraphIdDTO graphIdDTO= new GraphIdDTO(graphId);
+        GraphIdDTO graphIdDTO = new GraphIdDTO(graphId);
 
         return ResponseEntity.ok(graphIdDTO);
     }
 
-    @PostMapping("/createGraph/undirected/weighted")
+    @PostMapping("/undirected/weighted")
     public ResponseEntity<GraphIdDTO> createGraphUndirectedWeighted(@RequestBody GraphDTO graphDTO) {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
         StructureType type = structureTypeRepository.findByName(StructureTypeEnum.UNDIRECTED_WEIGHTED_GRAPH)
-    .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+                .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
 
         this.graphMapper.setStrategy(new UndirectedWeightedStrategy());
 
-        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser, type);
 
         UUID graphId = this.graphService.saveGraph(graph);
 
-        GraphIdDTO graphIdDTO= new GraphIdDTO(graphId);
+        GraphIdDTO graphIdDTO = new GraphIdDTO(graphId);
 
         return ResponseEntity.ok(graphIdDTO);
     }
 
-    @PostMapping("/createGraph/directed/unweighted")
+    @PostMapping("/directed/unweighted")
     public ResponseEntity<GraphIdDTO> createGraphDirectedUnweighted(@RequestBody GraphDTO graphDTO) {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
         StructureType type = structureTypeRepository.findByName(StructureTypeEnum.DIRECTED_UNWEIGHTED_GRAPH)
-    .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+                .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
 
         this.graphMapper.setStrategy(new DirectedUnweightedStrategy());
 
-        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser, type);
 
         UUID graphId = this.graphService.saveGraph(graph);
 
-        GraphIdDTO graphIdDTO= new GraphIdDTO(graphId);
+        GraphIdDTO graphIdDTO = new GraphIdDTO(graphId);
 
         return ResponseEntity.ok(graphIdDTO);
     }
 
-    @PostMapping("/createGraph/directed/weighted")
+    @PostMapping("/directed/weighted")
     public ResponseEntity<GraphIdDTO> createGraphDirectedWeighted(@RequestBody GraphDTO graphDTO) {
 
         User loggedUser = this.userDetailsService.getLoggedUser();
 
         StructureType type = structureTypeRepository.findByName(StructureTypeEnum.DIRECTED_WEIGHTED_GRAPH)
-    .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+                .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
 
         this.graphMapper.setStrategy(new DirectedWeightedStrategy());
 
-        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser,type);
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser, type);
 
         UUID graphId = this.graphService.saveGraph(graph);
 
-        GraphIdDTO graphIdDTO= new GraphIdDTO(graphId);
+        GraphIdDTO graphIdDTO = new GraphIdDTO(graphId);
+
+        return ResponseEntity.ok(graphIdDTO);
+    }
+
+    @PutMapping("/undirected/unweighted")
+    public ResponseEntity<GraphIdDTO> updateGraphUndirectedUnweighted(@RequestBody GraphDTO graphDTO) {
+
+        User loggedUser = this.userDetailsService.getLoggedUser();
+
+        StructureType type = structureTypeRepository.findByName(StructureTypeEnum.UNDIRECTED_UNWEIGHTED_GRAPH)
+                .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+
+        this.graphMapper.setStrategy(new UndirectedUnweightedStrategy());
+
+        Graph currentGraph = this.graphService.getGraphById(graphDTO.id());
+
+        this.graphService.clearEdgesAndNodesGraph(currentGraph);
+
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser, type); // apenas para transferir os nos e arestas
+
+        graph.getNodes().forEach(node -> {
+            node.setGraph(currentGraph);
+            currentGraph.getNodes().add(node);
+        });
+
+        graph.getEdges().forEach(edge -> {
+            edge.setGraph(currentGraph);
+            currentGraph.getEdges().add(edge);
+        });
+
+
+        UUID graphId = this.graphService.saveGraph(currentGraph);
+
+        GraphIdDTO graphIdDTO = new GraphIdDTO(graphId);
+
+        return ResponseEntity.ok(graphIdDTO);
+    }
+
+    @PutMapping("/undirected/weighted")
+    public ResponseEntity<GraphIdDTO> updateGraphUndirectedWeighted(@RequestBody GraphDTO graphDTO) {
+
+        User loggedUser = this.userDetailsService.getLoggedUser();
+
+        StructureType type = structureTypeRepository.findByName(StructureTypeEnum.UNDIRECTED_WEIGHTED_GRAPH)
+                .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+
+        this.graphMapper.setStrategy(new UndirectedWeightedStrategy());
+
+        Graph currentGraph = this.graphService.getGraphById(graphDTO.id());
+
+        this.graphService.clearEdgesAndNodesGraph(currentGraph);
+
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser, type); // apenas para transferir os nos e arestas
+
+        graph.getNodes().forEach(node -> {
+            node.setGraph(currentGraph);
+            currentGraph.getNodes().add(node);
+        });
+
+        graph.getEdges().forEach(edge -> {
+            edge.setGraph(currentGraph);
+            currentGraph.getEdges().add(edge);
+        });
+
+        UUID graphId = this.graphService.saveGraph(currentGraph);
+
+        GraphIdDTO graphIdDTO = new GraphIdDTO(graphId);
+
+        return ResponseEntity.ok(graphIdDTO);
+    }
+
+    @PutMapping("/directed/unweighted")
+    public ResponseEntity<GraphIdDTO> updateGraphDirectedUnweighted(@RequestBody GraphDTO graphDTO) {
+
+        User loggedUser = this.userDetailsService.getLoggedUser();
+
+        StructureType type = structureTypeRepository.findByName(StructureTypeEnum.DIRECTED_UNWEIGHTED_GRAPH)
+                .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+
+        this.graphMapper.setStrategy(new DirectedUnweightedStrategy());
+
+        Graph currentGraph = this.graphService.getGraphById(graphDTO.id());
+
+        this.graphService.clearEdgesAndNodesGraph(currentGraph);
+
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser, type); // apenas para transferir os nos e arestas
+
+        graph.getNodes().forEach(node -> {
+            node.setGraph(currentGraph);
+            currentGraph.getNodes().add(node);
+        });
+
+        graph.getEdges().forEach(edge -> {
+            edge.setGraph(currentGraph);
+            currentGraph.getEdges().add(edge);
+        });
+
+
+        UUID graphId = this.graphService.saveGraph(currentGraph);
+
+        GraphIdDTO graphIdDTO = new GraphIdDTO(graphId);
+
+        return ResponseEntity.ok(graphIdDTO);
+    }
+
+    @PutMapping("/directed/weighted")
+    public ResponseEntity<GraphIdDTO> updateGraphDirectedWeighted(@RequestBody GraphDTO graphDTO) {
+
+        User loggedUser = this.userDetailsService.getLoggedUser();
+
+        StructureType type = structureTypeRepository.findByName(StructureTypeEnum.DIRECTED_WEIGHTED_GRAPH)
+                .orElseThrow(() -> new EntityNotFoundException("StructureType not found"));
+
+        this.graphMapper.setStrategy(new DirectedWeightedStrategy());
+
+        Graph currentGraph = this.graphService.getGraphById(graphDTO.id());
+
+        this.graphService.clearEdgesAndNodesGraph(currentGraph);
+
+        Graph graph = this.graphMapper.toGraph(graphDTO, loggedUser, type); // apenas para transferir os nos e arestas
+
+        graph.getNodes().forEach(node -> {
+            node.setGraph(currentGraph);
+            currentGraph.getNodes().add(node);
+        });
+
+        graph.getEdges().forEach(edge -> {
+            edge.setGraph(currentGraph);
+            currentGraph.getEdges().add(edge);
+        });
+
+        UUID graphId = this.graphService.saveGraph(currentGraph);
+
+        GraphIdDTO graphIdDTO = new GraphIdDTO(graphId);
 
         return ResponseEntity.ok(graphIdDTO);
     }

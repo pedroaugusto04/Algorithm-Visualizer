@@ -46,6 +46,18 @@ svg {
     margin-left: 1rem;
 }
 
+.edit {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    margin-right: 3rem;
+    margin-left: 3rem;
+}
+
+.edit-button {
+    width: 10rem;
+}
+
 .reset-active {
     background-color: red;
 }
