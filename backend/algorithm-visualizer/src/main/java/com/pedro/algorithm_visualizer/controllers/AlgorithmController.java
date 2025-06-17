@@ -23,8 +23,16 @@ import com.pedro.algorithm_visualizer.services.DataStructureService;
 import com.pedro.algorithm_visualizer.services.GraphService;
 import com.pedro.algorithm_visualizer.services.StructureTypeService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/algorithms")
+@Tag(name = "Algorithm Controller", description = "Endpoints para verificar informações acerca dos algoritmos e executá-los")
 public class AlgorithmController {
 
     private DataStructureService dataStructureService;
@@ -40,8 +48,18 @@ public class AlgorithmController {
         this.graphService = graphService;
     }
 
-    @GetMapping("/getStructureSupportedAlgorithms/")
-    public ResponseEntity<List<Algorithm>> getDataStructureSupportedAlgorithms(@RequestParam String dataStructureId) {
+    @Operation(
+        summary = "Listar algoritmos suportados por uma estrutura de dados",
+        description = "Retorna todos os algoritmos disponíveis para uma determinada estrutura de dados.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Lista de algoritmos retornada com sucesso",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = Algorithm.class))),
+            @ApiResponse(responseCode = "404", description = "Estrutura de dados não encontrada", content = @Content)
+        }
+    )
+    @GetMapping("/")
+    public ResponseEntity<List<Algorithm>> getDataStructureSupportedAlgorithms(@Parameter(description = "UUID da estrutura de dados", required = true) 
+    @RequestParam String dataStructureId) {
 
         UUID structureTypeId = this.dataStructureService.getStructureTypeById(UUID.fromString(dataStructureId)).getId();
 
@@ -51,7 +69,22 @@ public class AlgorithmController {
         return ResponseEntity.ok(supportedAlgorithms);
     }
 
-    @PostMapping("/executeGraphAlgorithm")
+    @Operation(
+        summary = "Executar algoritmo de grafo",
+        description = "Executa o algoritmo especificado sobre o grafo informado.",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            description = "Objeto contendo UUID do grafo e UUID do algoritmo a ser executado",
+            content = @Content(schema = @Schema(implementation = GraphAlgorithmDTO.class))
+        ),
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Algoritmo executado com sucesso",
+                content = @Content(mediaType = "application/json", schema = @Schema(implementation = ExecutedNodesDTO.class))),
+            @ApiResponse(responseCode = "400", description = "Algoritmo não suportado", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Grafo não encontrado", content = @Content)
+        }
+    )
+    @PostMapping("/execute/graph")
     public ResponseEntity<ExecutedNodesDTO> executeGraphAlgorithm(@RequestBody GraphAlgorithmDTO algorithm) {
         
         GraphAlgorithmStrategy algorithmEstrategy = 

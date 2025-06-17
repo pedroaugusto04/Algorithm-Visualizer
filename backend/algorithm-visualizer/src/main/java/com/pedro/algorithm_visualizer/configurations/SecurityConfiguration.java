@@ -34,8 +34,10 @@ public class SecurityConfiguration {
             "/users/login",
             "/users/register",
             "/graphs/**",
-            "/algorithms/getStructureSupportedAlgorithms/",
-            "/algorithms/executeGraphAlgorithm"
+            "/algorithms/",
+            "/algorithms/execute-graph",
+            "/api-docs/**",
+            "/swagger-ui/**",
     };
 
     @Bean

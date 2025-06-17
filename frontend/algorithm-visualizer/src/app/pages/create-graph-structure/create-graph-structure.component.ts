@@ -176,7 +176,6 @@ export class CreateGraphStructureComponent implements OnInit, AfterViewInit {
 
     this.graphStrategy.updateGraph(graph).subscribe({
       next: (graphIdDTO) => {
-
         const graphId = graphIdDTO.id;
 
         this.swalService.successNoButton("Graph updated successfully", "");
