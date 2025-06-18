@@ -69,7 +69,7 @@ public class UserController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Usuário autenticado com sucesso",
             content = @Content(mediaType = "application/json", schema = @Schema(implementation = JwtTokenDTO.class))),
-        @ApiResponse(responseCode = "403", description = "Credenciais inválidas", content = @Content)
+        @ApiResponse(responseCode = "401", description = "Credenciais inválidas", content = @Content)
     })
     @PostMapping("/login")
     public ResponseEntity<JwtTokenDTO> authenticateUser(@RequestBody LoginUserDTO loginUserDTO) {
@@ -96,9 +96,9 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @Operation(summary = "Listar IDs de grafos do usuário", description = "Retorna uma lista com os UUIDs dos grafos associados ao usuário autenticado.")
+    @Operation(summary = "Listar UUIDs de grafos do usuário", description = "Retorna uma lista com os UUIDs dos grafos associados ao usuário autenticado.")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "IDs dos grafos retornados com sucesso",
+        @ApiResponse(responseCode = "200", description = "UUIDs dos grafos retornados com sucesso",
             content = @Content(mediaType = "application/json", schema = @Schema(type = "array", implementation = UUID.class))),
         @ApiResponse(responseCode = "403", description = "Acesso proibido", content = @Content)
     })

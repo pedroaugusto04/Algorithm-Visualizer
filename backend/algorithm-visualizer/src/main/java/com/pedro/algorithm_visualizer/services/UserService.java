@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 
 import com.pedro.algorithm_visualizer.configurations.SecurityConfiguration;
@@ -49,11 +50,10 @@ public class UserService {
 
     public JwtTokenDTO authenticateUser(LoginUserDTO loginUserDTO) {
 
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                 loginUserDTO.email(), loginUserDTO.password());
 
-        Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
-
+        Authentication authentication = authenticationManager.authenticate(authToken);
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         return new JwtTokenDTO(jwtTokenService.generateToken(userDetails));
@@ -61,7 +61,7 @@ public class UserService {
 
     public UserDTO getUserInfo() {
         User user = this.userDetailsService.getLoggedUser();
-        
+
         UserDTO userDTO = new UserDTO(user.getName(), user.getPhoto());
 
         return userDTO;
@@ -73,7 +73,8 @@ public class UserService {
 
         User user = this.userRepository.findById(loggedUser.getId()).orElseThrow(() -> new EntityNotFoundException());
 
-        ProfileDTO profileDTO = new ProfileDTO(user.getName(),user.getEmail(),user.getPhoto(),user.getCreatedAt(),user.getGraphs().size(),0);
+        ProfileDTO profileDTO = new ProfileDTO(user.getName(), user.getEmail(), user.getPhoto(), user.getCreatedAt(),
+                user.getGraphs().size(), 0);
 
         return profileDTO;
     }

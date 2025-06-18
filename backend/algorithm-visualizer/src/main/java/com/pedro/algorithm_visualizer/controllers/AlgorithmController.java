@@ -81,7 +81,8 @@ public class AlgorithmController {
             @ApiResponse(responseCode = "200", description = "Algoritmo executado com sucesso",
                 content = @Content(mediaType = "application/json", schema = @Schema(implementation = ExecutedNodesDTO.class))),
             @ApiResponse(responseCode = "400", description = "Algoritmo não suportado", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Grafo não encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Grafo não encontrado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Acesso proibido", content = @Content)
         }
     )
     @PostMapping("/execute/graph")
