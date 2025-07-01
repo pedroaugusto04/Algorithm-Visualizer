@@ -44,8 +44,8 @@ export class AuthorizationInterceptor implements HttpInterceptor {
                     const isUserLoggedIn: boolean = this.userService.isUserLoggedIn();
                     
                     if (isUserLoggedIn){
-                        this.authService.logoutUser();
-                        this.swalService.errorNoButton("Your session has expired. Please log in again","");
+                        //this.authService.logoutUserHome();
+                        //this.swalService.errorNoButton("Your session has expired. Please log in again","");
                     }
 
 

@@ -39,6 +39,7 @@ public class SecurityConfiguration {
             "/algorithms/execute-graph",
             "/api-docs/**",
             "/swagger-ui/**",
+            "/gemini/explain"
     };
 
     @Bean

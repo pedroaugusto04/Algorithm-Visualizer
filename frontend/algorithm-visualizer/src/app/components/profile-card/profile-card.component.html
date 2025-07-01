@@ -1,6 +1,6 @@
 @if(profile$ | async; as profile) {
     <mat-card class="cardWithShadow text-center little-profile">
-        <mat-card-content class="p-24">
+        <mat-card-content class="p-24 card">
             <div class="pro-img">
                 <img [src]="profile?.photo || '/assets/images/profile/user-default.svg'" alt="user" width="50" class="rounded-circle" />
             </div>

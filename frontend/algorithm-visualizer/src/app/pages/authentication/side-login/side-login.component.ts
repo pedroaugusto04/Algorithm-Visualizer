@@ -9,10 +9,12 @@ import { LoginUserDTO } from 'src/app/models/DTO/User/LoginUserDTO';
 import { AuthService } from 'src/app/services/auth.service';
 import { CookieService } from "ngx-cookie-service";
 import { SwalService } from 'src/app/services/utils/swal/swal.service';
+import { MatInputModule } from '@angular/material/input';
+import { MatFormFieldModule } from '@angular/material/form-field';
 
 @Component({
   selector: 'app-side-login',
-  imports: [RouterModule, MaterialModule, FormsModule, ReactiveFormsModule],
+  imports: [RouterModule, MaterialModule, FormsModule, ReactiveFormsModule,MatInputModule,MatFormFieldModule],
   templateUrl: './side-login.component.html',
   styleUrl: './side-login.component.scss'
 })
@@ -20,10 +22,11 @@ export class AppSideLoginComponent {
 
   constructor(private router: Router, private authService: AuthService,
     private cookieService: CookieService, private swalService: SwalService
-  ) { }
+  ) {
+   }
 
   form = new FormGroup({
-    email: new FormControl('', [Validators.required, Validators.minLength(6)]),
+    email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', [Validators.required]),
   });
 
@@ -49,6 +52,7 @@ export class AppSideLoginComponent {
         // salva o token nos cookies
         this.cookieService.set("token", data.token, {
           expires: 1,
+          path: '/', 
           sameSite: "Strict",
           secure: true,
         });

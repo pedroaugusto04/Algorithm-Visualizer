@@ -10,7 +10,7 @@
 svg {
     display: flex;
     justify-content: center;
-    align-items: center;                                                          
+    align-items: center;
 }
 
 .graph-draw {
@@ -31,11 +31,11 @@ svg {
 }
 
 .form-graph {
-    overflow-y: auto; 
-    border: 1px solid #ccc; 
+    overflow-y: auto;
+    border: 1px solid #ccc;
     padding: 10px;
     min-width: 15rem;
-    max-width: 20rem;     
+    max-width: 20rem;
     overflow-x: hidden;
     height: 80%;
     margin-top: 1rem;
@@ -92,3 +92,18 @@ svg {
     fill: #666;
     text-anchor: middle;
 }
+
+.graph-create-ai {
+    padding: 1rem;
+    background-color: #e8f0fe;
+    border: 1px solid #b6d4fe;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.create-button-ai {
+    margin-top: 9rem;
+    width: 100%;
+}
+

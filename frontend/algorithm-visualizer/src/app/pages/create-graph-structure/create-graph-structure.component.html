@@ -41,6 +41,25 @@
           <button class="create-button" mat-flat-button color="warn" (click)="onClick()">{{ graphId != null ? 'Edit
             Graph' : 'Create Graph' }}</button>
         </div>
+        @if(graphId == null) {
+        <div class="graph-create-ai">
+          <mat-icon matPrefix>star</mat-icon>
+
+          <mat-form-field appearance="outline" class="ai-prompt-field">
+            <mat-label>AI Prompt</mat-label>
+            <input matInput placeholder="e.g. Generate a Sparse Graph with 10 nodes and 15 edges"
+              [(ngModel)]="aiPrompt" />
+              <mat-hint align="start">
+                Describe the graph you want. <strong>The graph will be created using the currently selected edge direction and weight settings.</strong>
+                Example: <i>Generate a bipartite graph with 12 nodes and 18 edges</i>.
+              </mat-hint> 
+          </mat-form-field>
+
+          <button class="create-button-ai" mat-flat-button color="warn" (click)="onClickAI()">Generate Graph with
+            AI</button>
+        </div>
+        }
+
       </div>
     </div>
   </div>

@@ -18,4 +18,5 @@ export const environment = {
     apiUpdateDirectedWeightedGraph: '/graphs/directed/weighted',
     apiUpdateUndirectedUnweightedGraph: '/graphs/undirected/unweighted',
     apiUpdateUndirectedWeightedGraph: '/graphs/undirected/weighted',
+    apiCallGemini: '/gemini/explain'
 };  
