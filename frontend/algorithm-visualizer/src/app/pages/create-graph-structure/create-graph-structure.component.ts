@@ -6,7 +6,7 @@ import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { GraphStrategy } from 'src/app/models/GraphStrategy/GraphStrategy';
 import { GraphStrategyFactory } from 'src/app/models/GraphStrategy/GraphStrategyFactory';
 import { GraphStructure } from 'src/app/models/GraphStructure';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SwalService } from 'src/app/services/utils/swal/swal.service';
 import { GraphItem } from 'src/app/models/GraphItem';
 import { MatIconModule } from '@angular/material/icon';
@@ -42,7 +42,7 @@ export class CreateGraphStructureComponent implements OnInit, AfterViewInit {
   aiPrompt: string = '';
 
   constructor(private graphStrategyFactory: GraphStrategyFactory, private swalService: SwalService, private route: ActivatedRoute,
-    private geminiService: GeminiService
+    private geminiService: GeminiService, private router:Router
   ) { }
 
   ngOnInit() {
@@ -161,7 +161,7 @@ export class CreateGraphStructureComponent implements OnInit, AfterViewInit {
         this.swalService.successNoButton("Graph created successfully", "");
 
         setTimeout(() => {
-          window.location.href = `/see-graph-structure/${graphId}`;
+          this.router.navigate([`/see-graph-structure/${graphId}`]);
         }, 1500);
 
       },
@@ -187,7 +187,7 @@ export class CreateGraphStructureComponent implements OnInit, AfterViewInit {
         this.swalService.successNoButton("AI Graph created successfully", "");
 
         setTimeout(() => {
-          window.location.href = `/see-graph-structure/${graphId}`;
+          this.router.navigate([`/see-graph-structure/${graphId}`]);
         }, 1500);
 
       },
@@ -325,7 +325,7 @@ export class CreateGraphStructureComponent implements OnInit, AfterViewInit {
         this.swalService.successNoButton("Graph updated successfully", "");
 
         setTimeout(() => {
-          window.location.href = `/see-graph-structure/${graphId}`;
+          this.router.navigate([`/see-graph-structure/${graphId}`]);
         }, 1500);
 
       },
