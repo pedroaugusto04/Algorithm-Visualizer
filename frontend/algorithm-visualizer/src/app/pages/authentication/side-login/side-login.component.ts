@@ -53,7 +53,7 @@ export class AppSideLoginComponent {
         this.cookieService.set("token", data.token, {
           expires: 1,
           path: '/', 
-          sameSite: "Strict",
+          sameSite: "None",
           secure: true,
         });
 
