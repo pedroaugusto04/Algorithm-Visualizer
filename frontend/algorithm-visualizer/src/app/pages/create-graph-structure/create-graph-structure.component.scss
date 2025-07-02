@@ -107,3 +107,29 @@ svg {
     width: 100%;
 }
 
+::ng-deep mat-form-field .mat-mdc-text-field-wrapper.mdc-text-field.mdc-text-field--outlined {
+    background-color: lightyellow !important;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .form-graph {
+        min-width: 12rem !important;
+        max-width: 12rem !important;
+        overflow-x: auto;
+    }
+
+    .graph-draw {
+        width: 100%;
+    }
+
+    .graph-options {
+        margin-left: 3rem;
+    }
+
+
+    .graph-create-ai {
+        margin-left: 4rem;
+    }
+}
