@@ -57,7 +57,7 @@ export class AppNavItemComponent implements OnChanges {
     if (!item.children || !item.children.length) {
 
       if (item.children && item.children.length == 0) {
-        this.swalService.warningNoButton("","Você ainda não possui estruturas desse tipo.")
+        this.swalService.warningNoButton("","You haven't created any structures of this type yet")
       }
 
       this.router.navigate([item.route]);
