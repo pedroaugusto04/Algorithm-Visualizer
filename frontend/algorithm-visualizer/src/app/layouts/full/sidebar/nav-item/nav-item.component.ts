@@ -16,6 +16,8 @@ import { MaterialModule } from 'src/app/material.module';
 import { CommonModule } from '@angular/common';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { UserService } from 'src/app/services/user.service';
+import { SnackBarService } from 'src/app/services/utils/snackbar/snack-bar.service';
+import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 @Component({
   selector: 'app-nav-item',
@@ -40,7 +42,7 @@ export class AppNavItemComponent implements OnChanges {
   @HostBinding('attr.aria-expanded') ariaExpanded = this.expanded;
   @Input() depth: any;
 
-  constructor(public navService: NavService, public router: Router, private userService: UserService) {}
+  constructor(public navService: NavService, public router: Router, private userService: UserService, private swalService: SwalService) {}
 
   ngOnChanges() {
     const url = this.navService.currentUrl();
@@ -51,9 +53,16 @@ export class AppNavItemComponent implements OnChanges {
   }
 
   onItemSelected(item: NavItem) {
+  
     if (!item.children || !item.children.length) {
+
+      if (item.children && item.children.length == 0) {
+        this.swalService.warningNoButton("","Você ainda não possui estruturas desse tipo.")
+      }
+
       this.router.navigate([item.route]);
     }
+
     if (item.children && item.children.length) {
       this.expanded = !this.expanded;
     }

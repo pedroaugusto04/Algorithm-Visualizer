@@ -39,7 +39,6 @@ export class SeeGraphStructureComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-
     this.route.paramMap.subscribe((params) => {
 
       this.graphId = params.get('graphId');
