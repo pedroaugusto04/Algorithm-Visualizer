@@ -42,7 +42,7 @@ export class CreateGraphStructureComponent implements OnInit, AfterViewInit {
   aiPrompt: string = '';
 
   constructor(private graphStrategyFactory: GraphStrategyFactory, private swalService: SwalService, private route: ActivatedRoute,
-    private geminiService: GeminiService, private router:Router
+    private geminiService: GeminiService, private router: Router
   ) { }
 
   ngOnInit() {
@@ -234,6 +234,10 @@ export class CreateGraphStructureComponent implements OnInit, AfterViewInit {
         "Por exemplo:\n" +
         "1 2 3\n4 5 6\n7 8 9\n" +
         "Indica que existe uma aresta de 1 para 2 (e de 2 para 1 se não direcionado) com peso 3.\n\n";
+
+      prompt +=
+        "Caso o usuário não solicite explicitamente, gere um grafo " +
+        "sem múltiplas arestas entre o mesmo par de nós (ou seja, nenhuma aresta paralela).\n\n";
     }
 
     prompt +=
@@ -241,14 +245,14 @@ export class CreateGraphStructureComponent implements OnInit, AfterViewInit {
       "Error: <mensagem explicativa curta>\n\n" +
       "Não escreva mais nada além disso. Caso contrário, responda apenas os dados das arestas no formato especificado.\n\n";
 
-      prompt +=
+    prompt +=
       "O grafo gerado deve ter no máximo 50 nós e no máximo 50 arestas.\n\n";
 
     prompt += `Descrição do usuário: "${this.aiPrompt.trim()}"\n\n`;
 
     prompt +=
       "Se o usuário não fornecer explicitamente o número de nós ou arestas na descrição, " +
-      "por favor, utilize como padrão um grafo com cerca de 10 a 15 nós e 10 a 15 arestas.\n\n" +
+      "utilize como padrão um grafo com cerca de 10 a 15 nós e 10 a 15 arestas.\n\n" +
 
       "Se o usuário pedir um tipo específico de grafo (como bipartido, árvore, completo, ciclo, etc.), " +
       "gere esse tipo corretamente, mas **respeitando o formato de saída exigido**.\n" +
