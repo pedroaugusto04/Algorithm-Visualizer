@@ -66,19 +66,19 @@ export class GraphStrategyUndirectedUnweighted implements GraphStrategy {
 
             // campos vazios sao desconsiderados
             if (subItem.length == 0) continue;
-    
-            if (subItem.length !== 2 || 
-                !this.isDigit(subItem[0]) || 
+
+            if (subItem.length !== 2 ||
+                !this.isDigit(subItem[0]) ||
                 !this.isDigit(subItem[1])) {
                 return false;
             }
         }
         return true;
     }
-    
-      isDigit(input: string) {
+
+    isDigit(input: string) {
         return input >= '0' && input <= '9';
-      }
+    }
 
     renderizeGraph(svg: any, items: any[], graphContainer: any): void {
 
@@ -128,13 +128,9 @@ export class GraphStrategyUndirectedUnweighted implements GraphStrategy {
             .attr('stroke-width', 2);
 
         const node = svg.append('g')
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 1.5)
-            .selectAll('circle')
+            .selectAll('g')
             .data(nodes)
-            .join('circle')
-            .attr('r', 20)
-            .attr('fill', 'steelblue')
+            .join('g')
             .attr('cursor', 'pointer')
             .call(d3.drag()
                 .on('start', (event: any, d: any) => {
@@ -152,10 +148,13 @@ export class GraphStrategyUndirectedUnweighted implements GraphStrategy {
                     d.fy = null;
                 }));
 
-        const label = svg.append('g')
-            .selectAll('text')
-            .data(nodes)
-            .join('text')
+        node.append('circle')
+            .attr('r', 20)
+            .attr('fill', 'steelblue')
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 1.5);
+
+        node.append('text')
             .text((d: any) => d.id)
             .attr('text-anchor', 'middle')
             .attr('dy', '.35em')
@@ -163,19 +162,14 @@ export class GraphStrategyUndirectedUnweighted implements GraphStrategy {
             .attr('fill', '#fff');
 
         simulation.on('tick', () => {
-            node
-                .attr('cx', (d: any) => d.x = Math.max(20, Math.min(width - 20, d.x)))
-                .attr('cy', (d: any) => d.y = Math.max(20, Math.min(height - 20, d.y)));
+            node.attr('transform', (d: any) =>
+                `translate(${d.x = Math.max(20, Math.min(width - 20, d.x))},${d.y = Math.max(20, Math.min(height - 20, d.y))})`);
 
             link
                 .attr('x1', (d: any) => d.source.x)
                 .attr('y1', (d: any) => d.source.y)
                 .attr('x2', (d: any) => d.target.x)
                 .attr('y2', (d: any) => d.target.y);
-
-            label
-                .attr('x', (d: any) => d.x)
-                .attr('y', (d: any) => d.y);
         });
     }
 }

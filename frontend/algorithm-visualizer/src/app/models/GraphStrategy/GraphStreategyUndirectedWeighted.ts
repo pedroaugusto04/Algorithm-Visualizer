@@ -63,13 +63,13 @@ export class GraphStrategyUndirectedWeighted implements GraphStrategy {
     validateGraphInput(graphItems: GraphItem[]): boolean {
         for (const item of graphItems) {
             const subItem: string[] = item.text.split(" ");
-            
+
             // campos vazios sao desconsiderados
             if (subItem.length == 0) continue;
-    
-            if (subItem.length !== 3 || 
-                !this.isDigit(subItem[0]) || 
-                !this.isDigit(subItem[1]) || 
+
+            if (subItem.length !== 3 ||
+                !this.isDigit(subItem[0]) ||
+                !this.isDigit(subItem[1]) ||
                 !this.isDigit(subItem[2])) {
                 return false;
             }
@@ -143,13 +143,9 @@ export class GraphStrategyUndirectedWeighted implements GraphStrategy {
 
 
         const node = svg.append('g')
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 1.5)
-            .selectAll('circle')
+            .selectAll('g')
             .data(nodes)
-            .join('circle')
-            .attr('r', 20)
-            .attr('fill', 'steelblue')
+            .join('g')
             .attr('cursor', 'pointer')
             .call(d3.drag()
                 .on('start', (event: any, d: any) => {
@@ -167,10 +163,13 @@ export class GraphStrategyUndirectedWeighted implements GraphStrategy {
                     d.fy = null;
                 }));
 
-        const label = svg.append('g')
-            .selectAll('text')
-            .data(nodes)
-            .join('text')
+        node.append('circle')
+            .attr('r', 20)
+            .attr('fill', 'steelblue')
+            .attr('stroke', '#fff')
+            .attr('stroke-width', 1.5);
+
+        node.append('text')
             .text((d: any) => d.id)
             .attr('text-anchor', 'middle')
             .attr('dy', '.35em')
@@ -178,23 +177,18 @@ export class GraphStrategyUndirectedWeighted implements GraphStrategy {
             .attr('fill', '#fff');
 
         simulation.on('tick', () => {
-            node
-                .attr('cx', (d: any) => d.x = Math.max(20, Math.min(width - 20, d.x)))
-                .attr('cy', (d: any) => d.y = Math.max(20, Math.min(height - 20, d.y)));
+            node.attr('transform', (d: any) =>
+                `translate(${d.x = Math.max(20, Math.min(width - 20, d.x))}, ${d.y = Math.max(20, Math.min(height - 20, d.y))})`);
 
             link
                 .attr('x1', (d: any) => d.source.x)
                 .attr('y1', (d: any) => d.source.y)
                 .attr('x2', (d: any) => d.target.x)
-                .attr('y2', (d: any) => d.target.y)
-
-            label
-                .attr('x', (d: any) => d.x)
-                .attr('y', (d: any) => d.y)
+                .attr('y2', (d: any) => d.target.y);
 
             linkLabel
                 .attr('x', (d: any) => (d.source.x + d.target.x) / 2)
-                .attr('y', (d: any) => (d.source.y + d.target.y) / 2 - 15); // desloca um pouco pra cima
+                .attr('y', (d: any) => (d.source.y + d.target.y) / 2 - 15);
         });
     }
 }
