@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.auth0.jwt.JWT;
@@ -15,21 +16,21 @@ import com.pedro.algorithm_visualizer.models.UserDetailsImpl;
 @Service
 public class JwtTokenService {
 
-    private static final String SECRET_KEY = "4Z^XrroxR@dWxqf$mTTKwW$!@#qGr4P";
+    @Value("${jwt.secret}")
+    private String secretKey;
 
-    private static final String ISSUER = "algorithm_visualizer_api";
+    @Value("${jwt.issuer}")
+    private String issuer;
 
     public String generateToken(UserDetailsImpl user) {
         try {
-            // Define o algoritmo HMAC SHA256 para criar a assinatura do token passando a
-            // chave secreta definida
-            Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
+            Algorithm algorithm = Algorithm.HMAC256(this.secretKey);
             return JWT.create()
-                    .withIssuer(ISSUER) // Define o emissor do token
-                    .withIssuedAt(creationDate()) // Define a data de emissão do token
-                    .withExpiresAt(expirationDate()) // Define a data de expiração do token
-                    .withSubject(user.getUsername()) // Define o assunto do token (neste caso, o nome de usuário)
-                    .sign(algorithm); // Assina o token usando o algoritmo especificado
+                    .withIssuer(this.issuer) 
+                    .withIssuedAt(creationDate()) 
+                    .withExpiresAt(expirationDate()) 
+                    .withSubject(user.getUsername()) 
+                    .sign(algorithm); 
         } catch (JWTCreationException exception) {
             throw new JWTCreationException("Erro ao gerar token.", exception);
         }
@@ -37,14 +38,13 @@ public class JwtTokenService {
 
     public String getSubjectFromToken(String token) {
         try {
-            // Define o algoritmo HMAC SHA256 para verificar a assinatura do token passando
-            // a chave secreta definida
-            Algorithm algorithm = Algorithm.HMAC256(SECRET_KEY);
+
+            Algorithm algorithm = Algorithm.HMAC256(this.secretKey);
             return JWT.require(algorithm)
-                    .withIssuer(ISSUER) // Define o emissor do token
+                    .withIssuer(this.issuer) 
                     .build()
-                    .verify(token) // Verifica a validade do token
-                    .getSubject(); // Obtem o assunto (neste caso, o nome de usuario) do token
+                    .verify(token) 
+                    .getSubject(); 
         } catch (JWTVerificationException exception) {
             throw new JWTVerificationException("Token not valid or expired");
         }
