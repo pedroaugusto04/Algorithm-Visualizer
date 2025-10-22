@@ -1,6 +1,6 @@
 export const environment = {
     production: true,
-    baseUrl: 'http://129.148.43.143:8080',
+    baseUrl: 'https://129.148.43.143:8443',
     apiUserLogin: '/users/login',
     apiUserRegister: '/users/register',
     apiUserInfo: '/users/info',
