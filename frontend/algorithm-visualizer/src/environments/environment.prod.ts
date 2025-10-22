@@ -1,6 +1,6 @@
 export const environment = {
     production: true,
-    baseUrl: 'https://projeto-pw-4syb.onrender.com/',
+    baseUrl: 'http://129.148.43.143:8080',
     apiUserLogin: '/users/login',
     apiUserRegister: '/users/register',
     apiUserInfo: '/users/info',

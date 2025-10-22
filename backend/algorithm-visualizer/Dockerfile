@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21
+FROM eclipse-temurin:21-alpine
 
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
