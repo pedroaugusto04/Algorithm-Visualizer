@@ -55,7 +55,7 @@ public class SecurityConfiguration {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration corsConfig = new CorsConfiguration();
-        corsConfig.setAllowedOrigins(List.of("http://localhost:4200/","https://projeto-pw-sigma.vercel.app/"));
+        corsConfig.setAllowedOrigins(List.of("http://localhost:4200/","https://projeto-pw-sigma.vercel.app/","https://algorithmvisualizer.ddns.net/"));
         corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         corsConfig.setAllowedHeaders(List.of("*"));
         corsConfig.setAllowCredentials(true);
