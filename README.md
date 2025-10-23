@@ -2,7 +2,7 @@
 
 A web application designed to make learning graph algorithms easier. Build your own graph and visualize algorithms running in real time
 
-https://projeto-pw-sigma.vercel.app/
+https://pedro-duarte.ddns.net/algorithm-visualizer/home
 
 <img width="1901" height="861" alt="image" src="https://github.com/user-attachments/assets/a7cb1fe1-1c96-43e5-89e7-23d7dad3cbb0" />
 
