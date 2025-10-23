@@ -15,7 +15,7 @@
   <!-- --------------------------------------------------------------- -->
   @if(user){
   <button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Notifications">
-    <img [src]="user?.photo || '/assets/images/profile/user-default.svg'" class="rounded-circle object-cover d-block"
+    <img [src]="user?.photo || 'assets/images/profile/user-default.svg'" class="rounded-circle object-cover d-block"
       width="35" />
   </button>
   <mat-menu #profilemenu="matMenu" class="cardWithShadow topbar-dd">
@@ -30,7 +30,7 @@
   </mat-menu>
   } @else {
     <button mat-mini-fab [matMenuTriggerFor]="profilemenu" aria-label="Notifications">
-      <img [src]="'/assets/images/profile/user-default.svg'" class="rounded-circle object-cover d-block" width="35" />
+      <img [src]="'assets/images/profile/user-default.svg'" class="rounded-circle object-cover d-block" width="35" />
     </button>
     <mat-menu #profilemenu="matMenu" class="cardWithShadow topbar-dd">
       <button mat-menu-item>
