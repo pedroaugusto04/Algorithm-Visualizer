@@ -207,6 +207,6 @@ export class SeeGraphStructureComponent implements OnInit {
   }
 
   editGraph() {
-    this.router.navigate([`/create-graph-structure`, this.graphId]);
+    this.router.navigate([`create-graph-structure`, this.graphId]);
   }
 }
