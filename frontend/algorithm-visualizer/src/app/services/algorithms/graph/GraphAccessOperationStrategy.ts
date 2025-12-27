@@ -3,13 +3,14 @@ import { StructureWindow } from "src/app/models/StructureWindow";
 import { AlgorithmOperationStrategy } from "../AlgorithmOperationStrategy";
 import { Injectable } from "@angular/core";
 import { GraphRenderer } from "../../renderers/GraphRenderer";
+import { GlobalRenderer } from "../../renderers/GlobalRenderer";
 
 @Injectable({ providedIn: 'root' })
 export class GraphAccessOperationStrategy implements AlgorithmOperationStrategy {
 
-    constructor(private globalRenderer: GraphRenderer) { }
+    constructor(private globalRenderer: GlobalRenderer) { }
 
-    execute(structure: StructureWindow, entry: ExecutionLogEntry, skipRender: boolean): void {
+    execute(structure: StructureWindow, structures: StructureWindow[],  entry: ExecutionLogEntry, skipRender: boolean): void {
 
         if (!structure.d3Data) {
             structure.d3Data = {
@@ -32,7 +33,7 @@ export class GraphAccessOperationStrategy implements AlgorithmOperationStrategy 
 
         if (skipRender) return;
 
-        this.globalRenderer.renderElements(d3Data);
+        this.globalRenderer.renderElements(structures);
         this.pulseNode(svg, nodeId);
     }
 

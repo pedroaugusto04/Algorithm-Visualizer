@@ -3,13 +3,14 @@ import { StructureWindow } from "src/app/models/StructureWindow";
 import { AlgorithmOperationStrategy } from "../AlgorithmOperationStrategy";
 import { Injectable } from "@angular/core";
 import { ArrayRenderer } from "../../renderers/ArrayRenderer";
+import { GlobalRenderer } from "../../renderers/GlobalRenderer";
 
 @Injectable({ providedIn: 'root' })
 export class ArrayUpdateOperationStrategy implements AlgorithmOperationStrategy {
 
-  constructor(private globalRenderer: ArrayRenderer) { }
+  constructor(private globalRenderer: GlobalRenderer) { }
 
-  execute(structure: StructureWindow, entry: ExecutionLogEntry, skipRender: boolean): void {
+  execute(structure: StructureWindow, structures: StructureWindow[],  entry: ExecutionLogEntry, skipRender: boolean): void {
     if (!structure.d3Data) {
       structure.d3Data = {
         nodes: [] as any[],
@@ -28,7 +29,7 @@ export class ArrayUpdateOperationStrategy implements AlgorithmOperationStrategy 
 
     if (skipRender) return;
 
-    this.globalRenderer.renderElements(structure.d3Data);
+    this.globalRenderer.renderElements(structures);
     this.pulseNode(structure.d3Data.svg, index);
   }
 

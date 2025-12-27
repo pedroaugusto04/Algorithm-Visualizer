@@ -13,7 +13,7 @@ export class ArrayRenderer implements Renderer {
     const cells = svg.selectAll('g.array-cell')
       .data(arrayData, (d: any, i: number) => i);
 
-    const cellsEnter = cells.join(
+    const allCells = cells.join(
       (enter: any) => {
         const g = enter.append('g').attr('class', 'array-cell');
         
@@ -45,11 +45,11 @@ export class ArrayRenderer implements Renderer {
       }
     );
 
-    cellsEnter.transition()
+    allCells.transition()
       .duration(300)
       .attr('transform', (d: any, i: number) => `translate(${i * (cellSize + padding) + 40}, 50)`);
 
-    cellsEnter.select('text.cell-text').text((d: any) => d);
-    cellsEnter.select('text.index-text').text((d: any, i: number) => `[${i}]`);
+    allCells.select('text.cell-text').text((d: any) => d);
+    allCells.select('text.index-text').text((d: any, i: number) => `[${i}]`);
   }
 }

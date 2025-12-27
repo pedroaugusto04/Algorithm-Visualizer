@@ -3,5 +3,5 @@ import { StructureWindow } from "src/app/models/StructureWindow";
 
 
 export interface AlgorithmOperationStrategy {
-    execute(structure: StructureWindow, entry: ExecutionLogEntry, skipRender: boolean): void;
+    execute(structure: StructureWindow, structrures: StructureWindow[], entry: ExecutionLogEntry, skipRender: boolean): void;
 }

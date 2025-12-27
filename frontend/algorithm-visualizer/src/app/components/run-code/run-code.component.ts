@@ -184,7 +184,7 @@ export class RunCodeComponent implements OnDestroy {
         const strategy = this.operationFactory.getStrategy(rootStructure.type, entry.op);
         if (strategy) {
           const isLastStepOfJump = (i === end);
-          strategy.execute(rootStructure, entry, !isLastStepOfJump);
+          strategy.execute(rootStructure, this.structures, entry, !isLastStepOfJump);
         }
       }
       this.currentStep.set(i);
@@ -206,14 +206,9 @@ export class RunCodeComponent implements OnDestroy {
         if (s.d3Data.simulation) s.d3Data.simulation.stop();
         if (s.d3Data.svg) s.d3Data.svg.selectAll('*').remove();
 
-        // grafo
         s.d3Data.nodes.length = 0;
         s.d3Data.links.length = 0;
-
-        // array
-        if (s.d3Data.arrayData) {
-          s.d3Data.arrayData.length = 0;
-        }
+        s.d3Data.arrayData = [];
       }
     });
 
