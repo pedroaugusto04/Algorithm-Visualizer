@@ -143,6 +143,12 @@ export class FullComponent implements OnInit {
           },
           {
             id: this.IncrementAndGetNavItemId(),
+            displayName: 'Run Code',
+            iconName: 'player-play',
+            route: '/run-code',
+          },
+          {
+            id: this.IncrementAndGetNavItemId(),
             displayName: 'Create Structure',
             iconName: 'apps',
             children: [
@@ -177,6 +183,12 @@ export class FullComponent implements OnInit {
           {
             id: this.IncrementAndGetNavItemId(),
             navCap: 'Data Structures',
+          },
+          {
+            id: this.IncrementAndGetNavItemId(),
+            displayName: 'Run Code',
+            iconName: 'player-play',
+            route: '/run-code',
           },
           {
             id: this.IncrementAndGetNavItemId(),
@@ -291,7 +303,7 @@ export class FullComponent implements OnInit {
   }
 
   alertAnonymousUser() {
-    
+
     this.router.navigate(['/create-graph-structure']); // apenas para visualizacao por parte do usuario
 
     this.dialog.open(AnonymousAlertDialogComponent, {
@@ -302,7 +314,7 @@ export class FullComponent implements OnInit {
 
   onNavItemClick(item: NavItem): void {
     if (item.onClick) {
-      item.onClick(); 
+      item.onClick();
     }
   }
 

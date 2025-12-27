@@ -11,3 +11,16 @@
 .button-anonymous span {
     margin-left: 1rem;
 }
+
+.google-button-container {
+    width: 100%; 
+    max-width: 25rem;
+}
+
+
+@media (min-width: 768px) {
+    .google-button-container {
+        width: 12.5rem;
+        max-width: 12.5rem; 
+    }
+}

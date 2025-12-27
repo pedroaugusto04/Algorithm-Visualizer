@@ -1,0 +1,106 @@
+<div class="content">
+    <div class="form-container">
+        <div class="row">
+            <div class="col-sm-12">
+                <mat-label class="f-s-14 f-w-600 d-block m-b-16">Execution Settings</mat-label>
+            </div>
+
+            <div class="col-sm-12 m-b-16">
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Language</mat-label>
+                    <mat-select [formControl]="languageControl">
+                        <mat-option value="cpp17">C++ 17</mat-option>
+                    </mat-select>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Platform</mat-label>
+                    <mat-select [formControl]="platformControl">
+                        <mat-option value="leetcode">LeetCode</mat-option>
+                        <mat-option value="codeforces">Codeforces</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+
+            <div class="col-sm-12">
+                <mat-label class="f-s-12 f-w-600">Source Code</mat-label>
+                <mat-form-field appearance="outline" class="w-100 code-field">
+                    <textarea matInput rows="10" placeholder="Paste your code here..." [ngModel]="sourceCode()"
+                        (ngModelChange)="sourceCode.set($event)" (paste)="onPaste($event)">
+                    </textarea>
+                </mat-form-field>
+            </div>
+
+            <div class="col-sm-12 m-t-16">
+                @if (platformControl.value === 'leetcode') {
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>LeetCode Test Case</mat-label>
+                    <textarea matInput placeholder="e.g. [1,2,3], target = 5" [ngModel]="testCaseInput()"
+                        (ngModelChange)="testCaseInput.set($event)">
+                    </textarea>
+                </mat-form-field>
+                } @else if (platformControl.value === 'codeforces') {
+                <div class="file-upload-box">
+                    <mat-label class="d-block m-b-8">Upload Input File (.in)</mat-label>
+                    <button mat-stroked-button type="button" (click)="fileInput.click()">
+                        <mat-icon>upload_file</mat-icon> Select File
+                    </button>
+                    <input #fileInput type="file" (change)="onFileSelected($event)" style="display:none" />
+
+                    @if (selectedFileName()) {
+                    <span class="f-s-12 d-block m-t-8"><strong>Selected:</strong> {{ selectedFileName() }}</span>
+                    }
+                </div>
+                }
+            </div>
+
+            <div class="col-sm-12 m-t-24">
+                <button class="run-button" mat-flat-button color="warn" (click)="onRunCode()" [disabled]="isPlaying()">
+                    <mat-icon>play_arrow</mat-icon> RUN CODE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="visualization-container">
+        @if (totalSteps() > 0) {
+        <div class="animation-player">
+            <div class="controls-row">
+                <button mat-icon-button (click)="prevStep()" [disabled]="currentStep() === 0">
+                    <mat-icon>skip_previous</mat-icon>
+                </button>
+
+                <button mat-mini-fab color="primary" (click)="togglePlay()">
+                    <mat-icon>{{ isPlaying() ? 'pause' : 'play_arrow' }}</mat-icon>
+                </button>
+
+                <button mat-icon-button (click)="nextStep()" [disabled]="currentStep() >= totalSteps() - 1">
+                    <mat-icon>skip_next</mat-icon>
+                </button>
+            </div>
+
+            <div class="slider-row">
+                <span class="step-label">Passo {{ currentStep() + 1 }} de {{ totalSteps() }}</span>
+                <input type="range" class="custom-slider" [min]="0" [max]="totalSteps() - 1" [value]="currentStep()"
+                    (input)="goToStep($any($event.target).valueAsNumber)">
+            </div>
+        </div>
+        }
+
+        <mat-tab-group animationDuration="0ms">
+            @for (struct of structures; track struct.path) {
+            <mat-tab [label]="struct.path">
+                <div class="structure-render">
+                    <app-structure-visualizer [struct]="struct"></app-structure-visualizer>
+                </div>
+            </mat-tab>
+            }
+
+            <mat-tab label="Output Console">
+                <div class="console-output">
+                    <pre><code>{{ executionResult() || 'Waiting for execution...' }}</code></pre>
+                </div>
+            </mat-tab>
+        </mat-tab-group>
+    </div>
+</div>

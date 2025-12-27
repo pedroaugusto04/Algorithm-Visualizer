@@ -7,18 +7,7 @@
             <h2>Algorithm Visualizer</h2>
           </div>
 
-          <div class="row m-t-24 custom-row google-div">
-            <div class="col-12 col-sm-6">
-              <button mat-stroked-button class="w-100">
-                <div class="d-flex align-items-center">
-                  <img src="assets/images/svgs/google-icon.svg" alt="google" width="16" class="m-r-8" />
-                  <span>
-                  Sign in with Google
-                </span>
-                </div>
-              </button>
-            </div>
-          </div>
+          <!--<app-google-signin></app-google-signin>-->
 
           <div class="row m-t-24 custom-row google-div">
             <div class="col-12 col-sm-6">
@@ -26,8 +15,8 @@
                 <div class="d-flex align-items-center">
                   <mat-icon>person</mat-icon>
                   <span>
-                  Enter as Guest
-                </span>
+                    Enter as Guest
+                  </span>
                 </div>
               </button>
             </div>
@@ -38,12 +27,12 @@
           <form class="m-t-30" [formGroup]="form">
             <mat-label class="f-s-14 f-w-600 m-b-12 d-block">Email</mat-label>
             <mat-form-field appearance="outline" class="w-100" color="primary">
-              <input matInput formControlName="email"/>
+              <input matInput formControlName="email" />
             </mat-form-field>
             <!-- password -->
             <mat-label class="f-s-14 f-w-600 m-b-12 d-block">Password</mat-label>
             <mat-form-field appearance="outline" class="w-100" color="primary">
-              <input matInput type="password" formControlName="password"/>
+              <input matInput type="password" formControlName="password" />
             </mat-form-field>
 
             <div class="d-flex align-items-center m-b-12">

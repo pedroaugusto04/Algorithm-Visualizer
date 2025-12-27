@@ -5,6 +5,7 @@ import { CreateGraphStructureComponent } from './pages/create-graph-structure/cr
 import { CreateMatrixStructureComponent } from './pages/create-matrix-structure/create-matrix-structure.component';
 import { SeeGraphStructureComponent } from './pages/see-graph-structure/see-graph-structure.component';
 import { ProfileComponent } from './pages/profile/profile.component';
+import { RunCodeComponent } from './components/run-code/run-code.component';
 
 export const routes: Routes = [
   {
@@ -28,6 +29,10 @@ export const routes: Routes = [
       {
         path: 'create-graph-structure',
         component: CreateGraphStructureComponent,
+      },
+      {
+        path: 'run-code',
+        component: RunCodeComponent,
       },
       {
         path: 'create-graph-structure/:graphId',

@@ -11,19 +11,23 @@ import { CookieService } from "ngx-cookie-service";
 import { SwalService } from 'src/app/services/utils/swal/swal.service';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { CommonModule } from '@angular/common';
+import { GoogleSigninComponent } from 'src/app/components/google-signin/google-signin.component';
 
 @Component({
   selector: 'app-side-login',
-  imports: [RouterModule, MaterialModule, FormsModule, ReactiveFormsModule,MatInputModule,MatFormFieldModule],
+  standalone: true,
+  imports: [RouterModule, MaterialModule, FormsModule, ReactiveFormsModule, MatInputModule, MatFormFieldModule, CommonModule,GoogleSigninComponent
+  ],
   templateUrl: './side-login.component.html',
-  styleUrl: './side-login.component.scss'
+  styleUrls: ['./side-login.component.scss']
 })
 export class AppSideLoginComponent {
 
   constructor(private router: Router, private authService: AuthService,
     private cookieService: CookieService, private swalService: SwalService
   ) {
-   }
+  }
 
   form = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
@@ -37,7 +41,7 @@ export class AppSideLoginComponent {
   onSignIn() {
 
     if (!this.form.valid) {
-      this.swalService.errorNoButton("Invalid input","Please, enter valid information");
+      this.swalService.errorNoButton("Invalid input", "Please, enter valid information");
       return;
     }
 
@@ -48,21 +52,21 @@ export class AppSideLoginComponent {
 
     this.authService.loginUser(loginUserDTO).subscribe({
       next: (data) => {
-        
+
         // salva o token nos cookies
         this.cookieService.set("token", data.token, {
           expires: 1,
-          path: '/', 
+          path: '/',
           sameSite: "None",
           secure: true,
         });
 
         this.router.navigate(['/'])
 
-        this.swalService.successNoButton("Login successful","");
+        this.swalService.successNoButton("Login successful", "");
       },
       error: () => {
-        this.swalService.errorNoButton("Invalid credentials","Please, try again");
+        this.swalService.errorNoButton("Invalid credentials", "Please, try again");
       }
     })
 
@@ -70,5 +74,9 @@ export class AppSideLoginComponent {
 
   onSignInAnonymous() {
     this.router.navigate(['/']);
+  }
+
+  handleCredentialResponse(response: any) {
+    console.log(response);
   }
 }

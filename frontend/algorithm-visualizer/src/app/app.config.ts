@@ -14,7 +14,7 @@ import {
   withComponentInputBinding,
   withInMemoryScrolling,
 } from '@angular/router';
-import {  provideClientHydration } from '@angular/platform-browser';
+import { provideClientHydration } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 // icons
@@ -29,6 +29,7 @@ import { MaterialModule } from './material.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthorizationInterceptor } from './interceptors/authorization.interceptor';
 import { LoadingInterceptor } from './interceptors/loading.interceptor';
+import { GoogleLoginProvider, SocialAuthServiceConfig, SocialLoginModule } from '@abacritt/angularx-social-login';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -51,6 +52,23 @@ export const appConfig: ApplicationConfig = {
       provide: HTTP_INTERCEPTORS,
       useClass: LoadingInterceptor,
       multi: true,
+    },
+    {
+      provide: 'SocialAuthServiceConfig',
+      useValue: {
+        autoLogin: false,
+        providers: [
+          {
+            id: GoogleLoginProvider.PROVIDER_ID,
+            provider: new GoogleLoginProvider(
+              '159652630258-q4l81gbo4114le6el37gubp7vu5n5c6u.apps.googleusercontent.com'
+            )
+          }
+        ],
+        onError: (error: any) => {
+          console.error(error);
+        }
+      }
     },
     provideClientHydration(),
     provideAnimations(),
