@@ -13,6 +13,16 @@ export class GraphRenderer implements Renderer {
             return;
         }
 
+        const link = d3Data.svg.selectAll('.link-item')
+            .data(d3Data.links, (d: any) => `${d.source.id || d.source}-${d.target.id || d.target}`);
+
+        link.exit().remove();
+
+        const node = d3Data.svg.selectAll('.node-item')
+            .data(d3Data.nodes, (d: any) => d.id);
+
+        node.exit().remove();
+
         const { width, height } = this.getDimensions(d3Data.svg);
         const radius = 20;
 

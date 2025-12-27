@@ -15,7 +15,7 @@ export class GlobalRenderer implements Renderer {
             return;
         }
 
-        this.graphRenderer.renderElements(d3Data);
-        this.arrayRenderer.renderElements(d3Data);
+        //this.graphRenderer.renderElements(d3Data);
+        //this.arrayRenderer.renderElements(d3Data);
     }
 }

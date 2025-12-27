@@ -48,6 +48,7 @@ export class AlgorithmUtilsService {
       type: type,
       children: [],
       d3Data: {
+        arrayData: [],
         nodes: [],
         links: [],
         simulation: null as any,

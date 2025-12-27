@@ -14,6 +14,7 @@ import { StructureWindow } from 'src/app/models/StructureWindow';
 import { AlgorithmOperationFactory } from 'src/app/services/algorithms/AlgorithmOperationFactory';
 import { AlgorithmUtilsService } from 'src/app/services/utils/algorithms/algorithm-utils.service';
 import { StructureVisualizerComponent } from '../app-structure-visualizer/app-structure-visualizer.component';
+import { Q } from '@angular/cdk/keycodes';
 
 @Component({
   selector: 'app-run-code',
@@ -160,7 +161,7 @@ export class RunCodeComponent implements OnDestroy {
       this.play();
       return;
     }
-    
+
     setTimeout(() => {
       this.applyOperations(this.currentStep() + 1, stepIndex);
     }, 0);
@@ -199,7 +200,22 @@ export class RunCodeComponent implements OnDestroy {
 
   private resetStructures() {
 
-    this.structures = [];
+    this.structures.forEach(s => {
+      if (s.d3Data) {
+
+        if (s.d3Data.simulation) s.d3Data.simulation.stop();
+        if (s.d3Data.svg) s.d3Data.svg.selectAll('*').remove();
+
+        // grafo
+        s.d3Data.nodes.length = 0;
+        s.d3Data.links.length = 0;
+
+        // array
+        if (s.d3Data.arrayData) {
+          s.d3Data.arrayData.length = 0;
+        }
+      }
+    });
 
     this.entries.filter(e => e.op === 'init').forEach(entry => {
       this.algorithmUtilsService.getOrCreateStructure(this.structures, entry.path, entry.type);
