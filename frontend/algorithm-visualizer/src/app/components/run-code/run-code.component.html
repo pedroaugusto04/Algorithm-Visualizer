@@ -95,10 +95,12 @@
         }
 
         <mat-tab-group animationDuration="0ms" [selectedIndex]="selectedTabIndex()"
-            (selectedIndexChange)="selectedTabIndex.set($event)"
-            (click)="setTabManully($event)">
+            (selectedIndexChange)="selectedTabIndex.set($event)" (click)="setTabManully($event)">
             @for (struct of structures; track struct.path) {
-            <mat-tab [label]="struct.path" [labelClass]="struct.isHighlighting ? 'glow-active' : ''">
+            <mat-tab [labelClass]="struct.isHighlighting ? 'glow-active' : ''">
+                <ng-template mat-tab-label>
+                    {{ struct.path }} ({{ struct.type | titlecase }})
+                </ng-template>
                 <div class="structure-render">
                     @if (hasData(struct)) {
                     <app-structure-visualizer [struct]="struct"></app-structure-visualizer>
