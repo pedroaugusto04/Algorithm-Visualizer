@@ -39,36 +39,88 @@ app-structure-visualizer {
 }
 
 .animation-player {
-  background: #f4f4f7;
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    background: #f4f4f7;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 
-  .controls-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
+    .controls-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
 
-  .slider-row {
+    .slider-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+
+        .step-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+        }
+
+        .custom-slider {
+            width: 100%;
+            cursor: pointer;
+        }
+    }
+}
+
+.empty-structure-state {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    color: #888;
+    text-align: center;
+    background-color: #2e2e2e;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    margin: 20px;
 
-    .step-label {
-      font-size: 12px;
-      font-weight: 600;
-      color: #666;
+    mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 16px;
+        color: #555;
     }
 
-    .custom-slider {
-      width: 100%;
-      cursor: pointer;
+    p {
+        font-size: 16px;
+        margin-bottom: 8px;
+        color: #bbb;
+
+        strong {
+            color: #ff9800;
+        }
     }
+
+    span {
+        font-size: 13px;
+        max-width: 250px;
+    }
+}
+
+@keyframes full-tab-glow {
+  0% { background-color: transparent; }
+  50% { background-color: rgba(255, 215, 0, 0.4); }
+  100% { background-color: transparent; }
+}
+
+::ng-deep .mat-mdc-tab.glow-active {
+  animation: full-tab-glow 0.8s ease-in-out;
+  
+  .mdc-tab__ripple {
+    background-color: rgba(255, 215, 0, 0.1);
   }
 }
 
@@ -79,7 +131,7 @@ app-structure-visualizer {
     .mat-mdc-tab-body,
     .mat-mdc-tab-body-content {
         height: 100% !important;
-        overflow: hidden !important; 
+        overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
     }
@@ -111,14 +163,14 @@ app-structure-visualizer {
 
 .structure-render {
     flex-grow: 1;
-    width: auto; 
+    width: auto;
     height: 100%;
     background-color: #E0E0E0;
     margin: 10px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-sizing: border-box; 
+    box-sizing: border-box;
 }
 
 app-structure-visualizer {
@@ -166,6 +218,12 @@ app-structure-visualizer {
     height: 70vh;
     border-radius: 4px;
     overflow-y: auto;
+
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-family: monospace;
+    }
 }
 
 ::ng-deep mat-form-field .mat-mdc-text-field-wrapper.mdc-text-field.mdc-text-field--outlined {

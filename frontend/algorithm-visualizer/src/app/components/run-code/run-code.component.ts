@@ -54,6 +54,10 @@ export class RunCodeComponent implements OnDestroy {
   animationInterval: any;
   readonly STEP_DELAY = 700;
 
+  private resumeTimeout: any;
+
+  selectedTabIndex = signal<number>(0);
+
   constructor(
     private codeService: CodeService,
     private operationFactory: AlgorithmOperationFactory,
@@ -76,18 +80,33 @@ export class RunCodeComponent implements OnDestroy {
 
     this.codeService.executeCode(executeCodeDTO).subscribe({
       next: (res: ExecuteCodeResponse) => {
+
         if (res.success) {
+
           this.executionResult.set(res.systemLogs || 'Success!');
 
-          const entries: ExecutionLogEntry[] = res.executionLogs
-            .trim()
-            .split('\n')
-            .filter(line => line.trim().length > 0)
-            .map(line => JSON.parse(line));
+          let userLogs = "";
+          const parsedEntries: ExecutionLogEntry[] = [];
 
-          this.entries = entries;
+          const lines = res.executionLogs.trim().split('\n');
 
-          const operations: ExecutionLogEntry[] = entries.filter(e => e.op !== 'init');
+          lines.forEach(line => {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) return;
+
+            try {
+              const entry: ExecutionLogEntry = JSON.parse(trimmedLine);
+              parsedEntries.push(entry);
+            } catch (e) {
+              userLogs += trimmedLine + "\n";
+            }
+          });
+
+          this.executionResult.set((res.systemLogs || 'Success!') + "\n" + userLogs);
+
+          this.entries = parsedEntries;
+
+          const operations: ExecutionLogEntry[] = this.entries.filter(e => e.op !== 'init');
 
           this.operations = operations;
 
@@ -119,7 +138,7 @@ export class RunCodeComponent implements OnDestroy {
     this.isPlaying.set(true);
     this.animationInterval = setInterval(() => {
       if (this.currentStep() < this.totalSteps() - 1) {
-        this.nextStep();
+        this.nextStep(false);
       } else {
         this.pause();
       }
@@ -135,37 +154,61 @@ export class RunCodeComponent implements OnDestroy {
     if (this.animationInterval) clearInterval(this.animationInterval);
   }
 
-  nextStep(): void {
+  nextStep(isManual: boolean = true): void {
+    if (isManual) {
+      this.pause();
+      if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
+    }
+
     if (this.currentStep() < this.totalSteps() - 1) {
       const nextIdx = this.currentStep() + 1;
       this.goToStep(nextIdx);
     }
+
+    if (isManual) {
+      this.resumeTimeout = setTimeout(() => {
+        if (this.currentStep() < this.totalSteps() - 1) {
+          this.play();
+        }
+      }, 1000);
+    }
   }
 
-  prevStep(): void {
-    if (this.currentStep() > 0) {
-      this.goToStep(this.currentStep() - 1);
+  prevStep(isManual: boolean = true): void {
+    if (isManual) {
+      this.pause();
+      if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
     }
+
+    if (this.currentStep() > 0) {
+      const prevIdx = this.currentStep() - 1;
+      this.goToStep(prevIdx);
+    }
+
+    if (isManual) {
+      this.resumeTimeout = setTimeout(() => {
+        if (this.currentStep() < this.totalSteps() - 1) {
+          this.play();
+        }
+      }, 1000);
+    }
+
   }
 
   goToStep(stepIndex: number): void {
     const isMovingBackwards = stepIndex < this.currentStep();
-
-    this.pause();
 
     if (isMovingBackwards) {
       this.resetStructures();
       setTimeout(() => {
         this.applyOperations(0, stepIndex);
       }, 0);
-      this.play();
       return;
     }
 
     setTimeout(() => {
       this.applyOperations(this.currentStep() + 1, stepIndex);
     }, 0);
-    this.play();
   }
 
   goFrom0ToStep(stepIndex: number): void {
@@ -178,9 +221,17 @@ export class RunCodeComponent implements OnDestroy {
       if (!entry) break;
 
       const rootPath = entry.path.split('[')[0];
+      const structIndex = this.structures.findIndex(s => s.path === rootPath);
       const rootStructure = this.structures.find(s => s.path === rootPath);
 
       if (rootStructure) {
+
+        rootStructure.initialized = true;
+
+        console.log(entry.op, entry.path, entry.time, entry.type, entry.value);
+
+        this.highlightStructure(rootStructure, structIndex);
+
         const strategy = this.operationFactory.getStrategy(rootStructure.type, entry.op);
         if (strategy) {
           const isLastStepOfJump = (i === end);
@@ -193,16 +244,18 @@ export class RunCodeComponent implements OnDestroy {
 
   private resetState(): void {
     this.pause();
-    this.resetStructures();
+    this.resetStructures(true);
     this.currentStep.set(0);
     this.totalSteps.set(0);
   }
 
-  private resetStructures() {
+  private resetStructures(resetInitialized: boolean = false) {
 
     this.structures.forEach(s => {
       if (s.d3Data) {
-
+        if (resetInitialized) {
+          s.initialized = false;
+        }
         if (s.d3Data.simulation) s.d3Data.simulation.stop();
         if (s.d3Data.svg) s.d3Data.svg.selectAll('*').remove();
 
@@ -219,10 +272,6 @@ export class RunCodeComponent implements OnDestroy {
     this.currentStep.set(0);
   }
 
-  ngOnDestroy(): void {
-    this.resetState();
-  }
-
   onFileSelected(event: Event): void {
     const element = event.currentTarget as HTMLInputElement;
     if (element.files?.length) this.selectedFileName.set(element.files[0].name);
@@ -230,8 +279,54 @@ export class RunCodeComponent implements OnDestroy {
 
   onPaste(event: ClipboardEvent): void {
     event.preventDefault();
-    const text = event.clipboardData?.getData('text').replace(/\\n/g, '\n');
+
+    let text = event.clipboardData?.getData('text').replace(/\\n/g, '\n') ?? "";
+
+    text = text.replace(/\\n/g, '\n');
+
+    text = text.replace(/\\"/g, '"');
+
     if (text) this.sourceCode.set(text);
+  }
+
+  onSliderInput(stepIndex: number): void {
+    this.pause();
+    if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
+
+    this.goToStep(stepIndex);
+  }
+
+  onSliderChange(): void {
+    if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
+
+    this.resumeTimeout = setTimeout(() => {
+      if (this.currentStep() < this.totalSteps() - 1) {
+        this.play();
+      }
+    }, 1000);
+  }
+
+  hasData(struct: StructureWindow): boolean {
+    return (struct.initialized ?? false);
+  }
+
+  highlightStructure(struct: StructureWindow, tabIndex: number) {
+    struct.isHighlighting = true;
+
+    this.selectedTabIndex.set(tabIndex);
+
+    setTimeout(() => {
+      struct.isHighlighting = true;
+
+      setTimeout(() => {
+        struct.isHighlighting = false;
+      }, this.STEP_DELAY - 50); 
+    }, 10);
+  }
+
+  ngOnDestroy(): void {
+    this.resetState();
+    if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
   }
 
 }

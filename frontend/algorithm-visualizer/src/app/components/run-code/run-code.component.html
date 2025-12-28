@@ -80,18 +80,27 @@
             </div>
 
             <div class="slider-row">
-                <span class="step-label">Passo {{ currentStep() + 1 }} de {{ totalSteps() }}</span>
+                <span class="step-label">Step {{ currentStep() + 1 }} of {{ totalSteps() }}</span>
                 <input type="range" class="custom-slider" [min]="0" [max]="totalSteps() - 1" [value]="currentStep()"
-                    (input)="goToStep($any($event.target).valueAsNumber)">
+                    (input)="onSliderInput($any($event.target).valueAsNumber)" (change)="onSliderChange()">
             </div>
         </div>
         }
 
-        <mat-tab-group animationDuration="0ms">
+        <mat-tab-group animationDuration="0ms" [selectedIndex]="selectedTabIndex()"
+            (selectedIndexChange)="selectedTabIndex.set($event)">
             @for (struct of structures; track struct.path) {
-            <mat-tab [label]="struct.path">
+            <mat-tab [label]="struct.path" [labelClass]="struct.isHighlighting ? 'glow-active' : ''">
                 <div class="structure-render">
+                    @if (hasData(struct)) {
                     <app-structure-visualizer [struct]="struct"></app-structure-visualizer>
+                    } @else {
+                    <div class="empty-structure-state">
+                        <mat-icon>analytics</mat-icon>
+                        <p>Waiting for operations in <strong>{{ struct.path }}</strong>...</p>
+                        <span>Advance the steps to visualize the structure.</span>
+                    </div>
+                    }
                 </div>
             </mat-tab>
             }

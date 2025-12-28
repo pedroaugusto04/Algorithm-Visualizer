@@ -24,7 +24,7 @@ public class CodeService {
 
             String resultOutput = runStep(workspace, "g++ /work/instrumented.cpp -o /work/run && /work/run");
 
-            return new ExecutionResponseDTO(true, resultOutput, "Sucesso", null);
+            return new ExecutionResponseDTO(true, resultOutput, "Code executed successfully!", null);
 
         } catch (Exception e) {
             return new ExecutionResponseDTO(false, null, "Erro: " + e.getMessage(), null);

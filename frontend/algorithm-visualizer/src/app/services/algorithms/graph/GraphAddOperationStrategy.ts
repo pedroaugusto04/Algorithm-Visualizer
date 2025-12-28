@@ -29,7 +29,7 @@ export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
 
     if (sourceId === null) return;
 
-    const { width, height } = this.getDimensions(svg);
+    const { width, height } = this.getDimensions();
 
     this.ensureNodeExists(nodes, sourceId, width, height);
     this.ensureNodeExists(nodes, targetId, width, height);
@@ -53,16 +53,11 @@ export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
     this.pulseNode(svg, sourceId);
   }
 
-  private getDimensions(svg: any): { width: number, height: number } {
-    const svgNode = svg.node() as SVGSVGElement;
-    const viewBox = svgNode.viewBox.baseVal;
-    let width = viewBox.width;
-    let height = viewBox.height;
+  private getDimensions(): { width: number, height: number } {
 
-    if (width === 0 || height === 0) {
-      width = svgNode.clientWidth || 800;
-      height = svgNode.clientHeight || 600;
-    }
+    const width = 800;
+    const height = 600;
+
     return { width, height };
   }
 
@@ -78,6 +73,7 @@ export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
   }
 
   private pulseNode(svg: any, id: number) {
+    if (!svg) return;
     svg.selectAll('g.node-item')
       .filter((d: any) => d.id === id)
       .select('circle')

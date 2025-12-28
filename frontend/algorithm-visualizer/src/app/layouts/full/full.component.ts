@@ -118,7 +118,12 @@ export class FullComponent implements OnInit {
             id: this.IncrementAndGetNavItemId(),
             navCap: 'Data Structures',
           },
-
+          {
+            id: this.IncrementAndGetNavItemId(),
+            displayName: 'Run Code',
+            iconName: 'player-play',
+            route: '/run-code',
+          },
           {
             id: this.IncrementAndGetNavItemId(),
             displayName: 'My Data Structures',
@@ -140,12 +145,6 @@ export class FullComponent implements OnInit {
               },
             ],
             type: 'DataStructure'
-          },
-          {
-            id: this.IncrementAndGetNavItemId(),
-            displayName: 'Run Code',
-            iconName: 'player-play',
-            route: '/run-code',
           },
           {
             id: this.IncrementAndGetNavItemId(),
