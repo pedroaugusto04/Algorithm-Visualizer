@@ -37,6 +37,7 @@ public class SecurityConfiguration {
             "/graphs/**",
             "/algorithms/**",
             "/algorithms/execute-graph",
+            "/code/execute",
             "/api-docs/**",
             "/swagger-ui/**",
             "/gemini/explain"
