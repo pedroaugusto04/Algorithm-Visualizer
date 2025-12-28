@@ -3,33 +3,63 @@ package com.pedro.algorithm_visualizer.services;
 import com.pedro.algorithm_visualizer.models.DTO.CodeRequestDTO;
 import com.pedro.algorithm_visualizer.models.DTO.ExecutionResponseDTO;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 
 @Service
 public class CodeService {
 
-    public ExecutionResponseDTO execute(CodeRequestDTO dto) {
-        Path workspace = null;
+    public ExecutionResponseDTO execute(
+            String language,
+            String code,
+            String testcase,
+            MultipartFile inputFile
+    ) {
         try {
-            workspace = Files.createTempDirectory("algo-run-");
+            Path workspace = Files.createTempDirectory("algo-run-");
 
-            Path userCode = workspace.resolve("main.cpp");
-            Files.writeString(userCode, dto.code());
-            Files.copy(Paths.get("instrumenter.py"), workspace.resolve("instrumenter.py"), StandardCopyOption.REPLACE_EXISTING);
+            String normalizedCode = code
+                    .replace("\\r\\n", "\n")
+                    .replace("\\n", "\n");
 
-            Path testcaseFile = workspace.resolve("testcase.txt");
-            String testcaseContent = dto.testcase() != null ? dto.testcase().trim() : "";
-            testcaseContent = testcaseContent.replaceAll("[\\r\\n\\t]+", "");
-            Files.writeString(testcaseFile, testcaseContent);
+            Files.writeString(
+                    workspace.resolve("main.cpp"),
+                    normalizedCode,
+                    StandardCharsets.UTF_8
+            );
 
-            String instrumentedCode = runStep(workspace, "python3 /work/instrumenter.py /work/main.cpp /work/testcase.txt");
-            Files.writeString(workspace.resolve("instrumented.cpp"), instrumentedCode);
+            Files.copy(Paths.get("instrumenter.py"),
+                    workspace.resolve("instrumenter.py"),
+                    StandardCopyOption.REPLACE_EXISTING);
 
-            String resultOutput = runStep(workspace, "g++ /work/instrumented.cpp -o /work/run && /work/run");
+            Path testcasePath;
 
-            return new ExecutionResponseDTO(true, resultOutput, "Code executed successfully!", null);
+            if (inputFile != null && !inputFile.isEmpty()) {
+                String name = inputFile.getOriginalFilename();
+                if (name == null || name.isBlank()) name = "input.txt";
+                testcasePath = workspace.resolve(name);
+                Files.copy(inputFile.getInputStream(), testcasePath);
+            } else {
+                testcasePath = workspace.resolve("testcase.txt");
+                Files.writeString(testcasePath, testcase == null ? "" : testcase);
+            }
+
+            String instrumented = runStep(
+                    workspace,
+                    "python3 /work/instrumenter.py /work/main.cpp /work/" + testcasePath.getFileName()
+            );
+
+            Files.writeString(workspace.resolve("instrumented.cpp"), instrumented);
+
+            String output = runStep(
+                    workspace,
+                    "g++ /work/instrumented.cpp -o /work/run && /work/run"
+            );
+
+            return new ExecutionResponseDTO(true, output, "Code executed successfully!", null);
 
         } catch (Exception e) {
             return new ExecutionResponseDTO(false, null, "Erro: " + e.getMessage(), null);
