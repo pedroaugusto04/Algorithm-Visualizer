@@ -19,7 +19,12 @@ public class CodeService {
             Files.writeString(userCode, dto.code());
             Files.copy(Paths.get("instrumenter.py"), workspace.resolve("instrumenter.py"), StandardCopyOption.REPLACE_EXISTING);
 
-            String instrumentedCode = runStep(workspace, "python3 /work/instrumenter.py /work/main.cpp");
+            Path testcaseFile = workspace.resolve("testcase.txt");
+            String testcaseContent = dto.testcase() != null ? dto.testcase().trim() : "";
+            testcaseContent = testcaseContent.replaceAll("[\\r\\n\\t]+", "");
+            Files.writeString(testcaseFile, testcaseContent);
+
+            String instrumentedCode = runStep(workspace, "python3 /work/instrumenter.py /work/main.cpp /work/testcase.txt");
             Files.writeString(workspace.resolve("instrumented.cpp"), instrumentedCode);
 
             String resultOutput = runStep(workspace, "g++ /work/instrumented.cpp -o /work/run && /work/run");
