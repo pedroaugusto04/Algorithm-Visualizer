@@ -14,7 +14,6 @@ import { StructureWindow } from 'src/app/models/StructureWindow';
 import { AlgorithmOperationFactory } from 'src/app/services/algorithms/AlgorithmOperationFactory';
 import { AlgorithmUtilsService } from 'src/app/services/utils/algorithms/algorithm-utils.service';
 import { StructureVisualizerComponent } from '../app-structure-visualizer/app-structure-visualizer.component';
-import { Q } from '@angular/cdk/keycodes';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 @Component({
@@ -42,7 +41,6 @@ export class RunCodeComponent implements OnDestroy {
 
   sourceCode = signal<string>('');
   testCaseInput = signal<string>('');
-  selectedFileName = signal<string | null>(null);
   executionResult = signal<string>('');
 
   entries: ExecutionLogEntry[] = [];
@@ -54,7 +52,7 @@ export class RunCodeComponent implements OnDestroy {
   totalSteps = signal<number>(0);
   isPlaying = signal<boolean>(false);
   animationInterval: any;
-  readonly STEP_DELAY = 700;
+  readonly STEP_DELAY = 1000;
 
   private resumeTimeout: any;
 
@@ -62,11 +60,22 @@ export class RunCodeComponent implements OnDestroy {
   selectedTabIndex = signal<number>(0);
   autoSwitchTabs = signal<boolean>(true);
 
+  // file
+  selectedInputFile: File | null = null;
+
   constructor(
     private codeService: CodeService,
     private operationFactory: AlgorithmOperationFactory,
     private algorithmUtilsService: AlgorithmUtilsService
   ) { }
+
+  ngOnInit() {
+    this.platformControl.valueChanges.subscribe(value => {
+      if (value !== 'codeforces') {
+        this.selectedInputFile = null;
+      }
+    });
+  }
 
   onRunCode(): void {
     if (!this.sourceCode() || !this.languageControl.value) {
@@ -77,59 +86,79 @@ export class RunCodeComponent implements OnDestroy {
     this.resetState();
     this.executionResult.set('Compiling and running...');
 
-    const executeCodeDTO = {
+    const payload = {
       language: this.languageControl.value,
-      code: this.sourceCode().trimEnd()
+      code: this.sourceCode(),
+      testcase: this.testCaseInput().trim()
     };
 
-    this.codeService.executeCode(executeCodeDTO).subscribe({
-      next: (res: ExecuteCodeResponse) => {
+    // LEETCODE (JSON)
 
-        if (res.success) {
+    if (this.platformControl.value === 'leetcode') {
 
-          this.executionResult.set(res.systemLogs || 'Success!');
-
-          let userLogs = "";
-          const parsedEntries: ExecutionLogEntry[] = [];
-
-          const lines = res.executionLogs.trim().split('\n');
-
-          lines.forEach(line => {
-            const trimmedLine = line.trim();
-            if (!trimmedLine) return;
-
-            try {
-              const entry: ExecutionLogEntry = JSON.parse(trimmedLine);
-              parsedEntries.push(entry);
-            } catch (e) {
-              userLogs += trimmedLine + "\n";
-            }
-          });
-
-          this.executionResult.set((res.systemLogs || 'Success!') + "\n" + userLogs);
-
-          this.entries = parsedEntries;
-
-          const operations: ExecutionLogEntry[] = this.entries.filter(e => e.op !== 'init');
-
-          this.operations = operations;
-
-          this.totalSteps.set(this.operations.length);
-
-          this.resetStructures();
-          this.play();
-
-        } else {
-          this.executionResult.set(`Error: ${res.error}`);
+      this.codeService.executeCode(payload).subscribe({
+        next: (res: ExecuteCodeResponse) => {
+          this.proccessResult(res);
+        },
+        error: () => {
+          this.executionResult.set('Execution failed. Check your connection.');
         }
+      });
+
+      return;
+    }
+
+    // CODEFORCES (MULTIPART)
+
+    if (!this.selectedInputFile) {
+      this.executionResult.set('Error: Input file is required');
+      return;
+    }
+
+    this.codeService.executeCodeMultipart(payload, this.selectedInputFile!).subscribe({
+      next: (res: ExecuteCodeResponse) => {
+        this.proccessResult(res);
       },
-      error: (err) => {
-        console.error(err);
+      error: () => {
         this.executionResult.set('Execution failed. Check your connection.');
       }
-    });
+    })
   }
 
+  private proccessResult(res: ExecuteCodeResponse) {
+    if (res.success) {
+      this.executionResult.set(res.systemLogs || 'Success!');
+
+      let userLogs = '';
+      const parsedEntries: ExecutionLogEntry[] = [];
+
+      const lines = res.executionLogs?.trim().split('\n') ?? [];
+
+      lines.forEach(line => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return;
+        try {
+          const entry: ExecutionLogEntry = JSON.parse(trimmedLine); parsedEntries.push(entry);
+        } catch { userLogs += trimmedLine + '\n'; }
+      });
+
+      this.executionResult.set((res.systemLogs || 'Success!') + '\n' + userLogs);
+
+      this.entries = parsedEntries;
+
+      const operations: ExecutionLogEntry[] = this.entries.filter(e => e.op !== 'init');
+
+      this.operations = operations;
+
+      this.totalSteps.set(this.operations.length);
+
+      this.resetStructures();
+      this.play();
+
+    } else {
+      this.executionResult.set(`Error: ${res.error}`);
+    }
+  }
 
   private play(): void {
     if (this.isPlaying()) return;
@@ -276,21 +305,17 @@ export class RunCodeComponent implements OnDestroy {
     this.currentStep.set(0);
   }
 
-  onFileSelected(event: Event): void {
-    const element = event.currentTarget as HTMLInputElement;
-    if (element.files?.length) this.selectedFileName.set(element.files[0].name);
-  }
-
   onPaste(event: ClipboardEvent): void {
     event.preventDefault();
 
-    let text = event.clipboardData?.getData('text').replace(/\\n/g, '\n') ?? "";
+    let text = event.clipboardData?.getData('text') ?? '';
 
-    text = text.replace(/\\n/g, '\n');
+    text = text
+      .replace(/\\r\\n/g, '\n')
+      .replace(/\\n/g, '\n')
+      .replace(/\\"/g, '"');
 
-    text = text.replace(/\\"/g, '"');
-
-    if (text) this.sourceCode.set(text);
+    this.sourceCode.set(text);
   }
 
   onSliderInput(stepIndex: number): void {
@@ -335,6 +360,17 @@ export class RunCodeComponent implements OnDestroy {
       this.autoSwitchTabs.set(false);
     }
   }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    if (input.files && input.files.length > 0) {
+      this.selectedInputFile = input.files[0];
+    } else {
+      this.selectedInputFile = null;
+    }
+  }
+
 
   ngOnDestroy(): void {
     this.resetState();

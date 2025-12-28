@@ -16,16 +16,45 @@ import { ExecuteCodeResponse } from '../models/Responses/ExecuteCodeResponse';
 })
 export class CodeService {
 
-  private headers = new HttpHeaders().set('Content-Type', 'application/json; charset=utf-8');
-
   constructor(private httpClient: HttpClient) { }
 
-  executeCode(executeCodeDTO: ExecuteCode): Observable<ExecuteCodeResponse> {
+  executeCode(payload: {
+    language: string;
+    code: string;
+    testcase?: string;
+  }) {
 
     const executeCodeUrl = new URL(environment.apiExecuteCode, environment.baseUrl).toString();
 
-    const requestBody: string = JSON.stringify(executeCodeDTO);
+    return this.httpClient.post<ExecuteCodeResponse>(
+      executeCodeUrl,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  }
 
-    return this.httpClient.post<ExecuteCodeResponse>(executeCodeUrl, requestBody, { headers: this.headers });
+  executeCodeMultipart(payload: any, file: File) {
+
+    const formData = new FormData();
+
+    formData.append(
+      'payload',
+      new Blob([JSON.stringify(payload)], { type: 'application/json' })
+    );
+
+    if (file) {
+      formData.append('inputFile', file);
+    }
+
+    const url = new URL(
+      environment.apiExecuteCodeMultipart,
+      environment.baseUrl
+    ).toString();
+
+    return this.httpClient.post<ExecuteCodeResponse>(url, formData);
   }
 }

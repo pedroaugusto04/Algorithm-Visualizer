@@ -26,7 +26,7 @@
                 <mat-label class="f-s-12 f-w-600">Source Code</mat-label>
                 <mat-form-field appearance="outline" class="w-100 code-field">
                     <textarea matInput rows="10" placeholder="Paste your code here..." [ngModel]="sourceCode()"
-                        (ngModelChange)="sourceCode.set($event)" (paste)="onPaste($event)">
+                        (ngModelChange)="sourceCode.set($event)" >
                     </textarea>
                 </mat-form-field>
             </div>
@@ -35,20 +35,28 @@
                 @if (platformControl.value === 'leetcode') {
                 <mat-form-field appearance="outline" class="w-100">
                     <mat-label>LeetCode Test Case</mat-label>
-                    <textarea matInput placeholder="e.g. [1,2,3], target = 5" [ngModel]="testCaseInput()"
+                    <textarea matInput placeholder="e.g. nums = [1,2,3], k = 3, target = 5" [ngModel]="testCaseInput()"
                         (ngModelChange)="testCaseInput.set($event)">
                     </textarea>
                 </mat-form-field>
-                } @else if (platformControl.value === 'codeforces') {
-                <div class="file-upload-box">
-                    <mat-label class="d-block m-b-8">Upload Input File (.in)</mat-label>
-                    <button mat-stroked-button type="button" (click)="fileInput.click()">
-                        <mat-icon>upload_file</mat-icon> Select File
-                    </button>
-                    <input #fileInput type="file" (change)="onFileSelected($event)" style="display:none" />
+                }
+                @else if (platformControl.value === 'codeforces') {
+                <div class="w-100">
+                    <mat-label class="f-s-12 f-w-600 d-block m-b-8">
+                        Codeforces Input File
+                    </mat-label>
 
-                    @if (selectedFileName()) {
-                    <span class="f-s-12 d-block m-t-8"><strong>Selected:</strong> {{ selectedFileName() }}</span>
+                    <input hidden type="file" #fileInput accept=".txt" (change)="onFileSelected($event)" />
+
+                    <button mat-stroked-button color="primary" type="button" class="w-100" (click)="fileInput.click()">
+                        <mat-icon>upload_file</mat-icon>
+                        Choose input file
+                    </button>
+
+                    @if (selectedInputFile) {
+                    <div class="f-s-12 m-t-4" style="color: #666;">
+                        Selected: <strong>{{ selectedInputFile.name }}</strong>
+                    </div>
                     }
                 </div>
                 }
