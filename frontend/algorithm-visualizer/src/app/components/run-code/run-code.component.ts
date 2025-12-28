@@ -15,6 +15,7 @@ import { AlgorithmOperationFactory } from 'src/app/services/algorithms/Algorithm
 import { AlgorithmUtilsService } from 'src/app/services/utils/algorithms/algorithm-utils.service';
 import { StructureVisualizerComponent } from '../app-structure-visualizer/app-structure-visualizer.component';
 import { Q } from '@angular/cdk/keycodes';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
 @Component({
   selector: 'app-run-code',
@@ -29,7 +30,8 @@ import { Q } from '@angular/cdk/keycodes';
     MatButtonModule,
     MatIconModule,
     MatTabsModule,
-    StructureVisualizerComponent
+    StructureVisualizerComponent,
+    MatSlideToggleModule
   ],
   templateUrl: './run-code.component.html',
   styleUrls: ['./run-code.component.scss']
@@ -56,7 +58,9 @@ export class RunCodeComponent implements OnDestroy {
 
   private resumeTimeout: any;
 
+  // tabs
   selectedTabIndex = signal<number>(0);
+  autoSwitchTabs = signal<boolean>(true);
 
   constructor(
     private codeService: CodeService,
@@ -313,15 +317,23 @@ export class RunCodeComponent implements OnDestroy {
   highlightStructure(struct: StructureWindow, tabIndex: number) {
     struct.isHighlighting = true;
 
-    this.selectedTabIndex.set(tabIndex);
+    if (this.autoSwitchTabs()) {
+      this.selectedTabIndex.set(tabIndex);
+    }
 
     setTimeout(() => {
       struct.isHighlighting = true;
 
       setTimeout(() => {
         struct.isHighlighting = false;
-      }, this.STEP_DELAY - 50); 
+      }, this.STEP_DELAY - 50);
     }, 10);
+  }
+
+  setTabManully(event: any) {
+    if (this.autoSwitchTabs()) {
+      this.autoSwitchTabs.set(false);
+    }
   }
 
   ngOnDestroy(): void {

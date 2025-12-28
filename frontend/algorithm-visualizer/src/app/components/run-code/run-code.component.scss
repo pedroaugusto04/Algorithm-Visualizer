@@ -124,6 +124,27 @@ app-structure-visualizer {
   }
 }
 
+.controls-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+
+    .toggle-container {
+        margin-left: auto; 
+        padding-right: 8px;
+        
+        span {
+            color: #bbb;
+            font-weight: 500;
+        }
+    }
+}
+
+::ng-deep .mat-mdc-slide-toggle .mdc-label {
+    padding-left: 8px;
+}
+
 ::ng-deep {
 
     .mat-mdc-tab-group,

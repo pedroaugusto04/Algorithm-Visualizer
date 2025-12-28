@@ -77,6 +77,13 @@
                 <button mat-icon-button (click)="nextStep()" [disabled]="currentStep() >= totalSteps() - 1">
                     <mat-icon>skip_next</mat-icon>
                 </button>
+
+                <div class="toggle-container">
+                    <mat-slide-toggle color="accent" [checked]="autoSwitchTabs()"
+                        (change)="autoSwitchTabs.set($any($event).checked)">
+                        <span class="f-s-12">Auto-switch Tabs</span>
+                    </mat-slide-toggle>
+                </div>
             </div>
 
             <div class="slider-row">
@@ -88,7 +95,8 @@
         }
 
         <mat-tab-group animationDuration="0ms" [selectedIndex]="selectedTabIndex()"
-            (selectedIndexChange)="selectedTabIndex.set($event)">
+            (selectedIndexChange)="selectedTabIndex.set($event)"
+            (click)="setTabManully($event)">
             @for (struct of structures; track struct.path) {
             <mat-tab [label]="struct.path" [labelClass]="struct.isHighlighting ? 'glow-active' : ''">
                 <div class="structure-render">
