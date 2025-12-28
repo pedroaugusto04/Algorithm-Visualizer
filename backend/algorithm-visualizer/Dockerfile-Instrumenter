@@ -3,10 +3,15 @@ FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
-    libclang-dev \
+    libclang-18-dev \
+    clang-18 \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install clang --break-system-packages
+# Cria o link simbólico para a biblioteca do sistema
+RUN ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
+
+# Instala a versão 18.1.8 (que aparece na sua lista de versões disponíveis)
+RUN pip3 install clang==18.1.8 --break-system-packages
 
 WORKDIR /work
