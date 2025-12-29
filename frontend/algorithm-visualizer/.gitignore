@@ -40,3 +40,10 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# crt
+*.crt
+
+# key
+
+*.key
