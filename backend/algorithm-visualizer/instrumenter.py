@@ -70,7 +70,11 @@ struct AssignmentProxy {
     // Suporte para cin >> a[i]
     friend std::istream& operator>>(std::istream& is, AssignmentProxy<T> proxy) {
         is >> proxy.ref;
-        if constexpr (std::is_arithmetic_v<T>) __log("array", proxy.path, "update", (double)proxy.ref);
+        // Remova ou altere o is_arithmetic_v para incluir strings
+        if constexpr (std::is_arithmetic_v<T>) 
+            __log("array", proxy.path, "update", (double)proxy.ref);
+        else 
+            __log("array", proxy.path, "update", 0); // Log para strings
         return is;
     }
 
@@ -95,12 +99,18 @@ struct AssignmentProxy {
 
 
 template<typename T> class ObservedVector : public std::vector<T> {
-    std::string path;
+    std::string path = "internal";
 public:
     using std::vector<T>::vector;
+    
     ObservedVector() : path("internal") {}
     ObservedVector(std::string p) : path(p) { __log("array", path, "init", 0); }
     void override_identity(std::string parent, std::string key) { path = parent + "[" + key + "]"; }
+    
+    void set_name(std::string p) { 
+        path = p; 
+        __log("array", path, "init", 0); 
+    }
     
     void push_back(const T& v) {
         std::vector<T>::push_back(v);
@@ -294,20 +304,19 @@ def instrument(file_path, testcase_file):
 
                 for stl, obs in subs.items():
                     if f"{stl}" in t and "Observed" not in t:
-                        clean_type = t.replace("std::", "")
-                        for s, o in subs.items():
-                            clean_type = re.sub(r"\b" + re.escape(stl) + r"\b", obs, clean_type)
-
                         start = node.extent.start
-                        end = node.extent.end
-                        new_text = f"{clean_type} {node.spelling}(\"{node.spelling}\")"
+                        original_line = lines[start.line - 1]
+                        new_line = original_line.replace(f"std::{stl}", obs).replace(stl, obs)
 
-                        replacements.append({
+                        if ";" in new_line:
+                            new_text = new_line.replace(";", f"; {node.spelling}.set_name(\"{node.spelling}\");", 1)
+
+                            replacements.append({
                             'line': start.line - 1,
-                            'start': start.column - 1,
-                            'end': end.column - 1,
+                            'start': 0,
+                            'end': len(original_line),
                             'text': new_text
-                        })
+                            })
                         break
 
         for c in node.get_children():
@@ -374,8 +383,14 @@ int main() {{
         print(main_code)
 
 if __name__ == "__main__":
-    if len(sys.argv) > 2:
-        instrument(sys.argv[1], sys.argv[2])
-    else:
-        sys.stderr.write("Uso: python3 instrumenter.py arquivo.cpp testcase.txt\n")
+    try:
+        if len(sys.argv) > 2:
+            instrument(sys.argv[1], sys.argv[2])
+        else:
+            sys.stderr.write("Uso: python3 instrumenter.py arquivo.cpp testcase.txt\n")
+            sys.exit(1)
+    except Exception as e:
+        import traceback
+        # Isso imprime a pilha de erro completa (linha e arquivo) para o stderr
+        traceback.print_exc(file=sys.stderr)
         sys.exit(1)

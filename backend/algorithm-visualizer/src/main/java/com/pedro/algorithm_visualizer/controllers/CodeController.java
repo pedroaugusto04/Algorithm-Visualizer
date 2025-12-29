@@ -31,14 +31,13 @@ public class CodeController {
     public ResponseEntity<ExecutionResponseDTO> executeCode(
             @RequestBody CodeRequestDTO dto
     ) {
-        return ResponseEntity.ok(
-                codeService.execute(
-                        dto.language(),
-                        dto.code(),
-                        dto.testcase(),
-                        null
-                )
+        ExecutionResponseDTO responseDTO = codeService.execute(
+                dto.language(),
+                dto.code(),
+                dto.testcase(),
+                null
         );
+        return ResponseEntity.ok(responseDTO);
     }
 
     @Operation(
@@ -53,14 +52,13 @@ public class CodeController {
             @RequestPart("payload") CodeRequestDTO dto,
             @RequestPart(value = "inputFile", required = false) MultipartFile inputFile
     ) {
-        return ResponseEntity.ok(
-                codeService.execute(
-                        dto.language(),
-                        dto.code(),
-                        dto.testcase(),
-                        inputFile
-                )
+        ExecutionResponseDTO responseDTO = codeService.execute(
+                dto.language(),
+                dto.code(),
+                dto.testcase(),
+                inputFile
         );
+        return ResponseEntity.ok(responseDTO);
     }
 
 }

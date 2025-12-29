@@ -21,7 +21,13 @@ public class CodeService {
         try {
             Path workspace = Files.createTempDirectory("algo-run-");
 
-            String normalizedCode = code.replace("\r", "");
+            // formata o codigo pra evitar problemas com quebras de linha e caracteres indesejados
+            String normalizedCode = code.replace("\\n\"", "___PROTECTED_N_QUOTE___");
+            normalizedCode = normalizedCode.replace("'\\n'", "___PROTECTED_N_CHAR___");
+            normalizedCode = normalizedCode.replace("\\n", "\n");
+            normalizedCode = normalizedCode.replace("___PROTECTED_N_QUOTE___", "\\n\"");
+            normalizedCode = normalizedCode.replace("___PROTECTED_N_CHAR___", "'\\n'");
+            normalizedCode = normalizedCode.replace("\r", "");
 
             Files.writeString(
                     workspace.resolve("main.cpp"),
@@ -77,11 +83,12 @@ public class CodeService {
         );
 
         Process p = pb.start();
-        String stdout = new String(p.getInputStream().readAllBytes());
-        String stderr = new String(p.getErrorStream().readAllBytes());
+        String stdout = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+        String stderr = new String(p.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
 
-        if (p.waitFor() != 0) {
-            throw new RuntimeException(stderr);
+        int exitCode = p.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("Erro no processo (Exit " + exitCode + "): " + stderr);
         }
         return stdout;
     }
