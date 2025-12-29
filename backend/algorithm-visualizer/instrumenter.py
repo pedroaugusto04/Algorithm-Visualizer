@@ -18,6 +18,9 @@ CPP_LIBRARY = """
 #include <stack>
 #include <queue>
 #include <map>
+#include <unordered_map>
+#include <unordered_set>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <algorithm>
@@ -27,31 +30,69 @@ void __log(std::string type, std::string path, std::string op, double val) {
     std::cout << "{\\"time\\":" << __step++ << ",\\"type\\":\\"" << type << "\\",\\"path\\":\\"" << path << "\\",\\"op\\":\\"" << op << "\\",\\"value\\":" << val << "}" << std::endl;
 }
 
+template<typename T>
+void __print(const T& v) {
+    std::cout << v;
+}
+
+template<typename T>
+void __print(const std::vector<T>& v) {
+    std::cout << "[";
+    for (size_t i = 0; i < v.size(); i++) {
+        __print(v[i]);
+        if (i + 1 < v.size()) std::cout << ", ";
+    }
+    std::cout << "]";
+}
+
+template<typename T>
+std::string __to_str(const T& val) {
+    if constexpr (std::is_arithmetic_v<T>) return std::to_string(val);
+    else if constexpr (std::is_convertible_v<T, std::string>) return (std::string)val;
+    else return "obj";
+}
+
 template <typename T, typename = void> struct is_observable : std::false_type {};
 template <typename T> struct is_observable<T, std::void_t<decltype(std::declval<T>().override_identity("", ""))>> : std::true_type {};
 
-template <typename T>
+template<typename T>
 struct AssignmentProxy {
     T& ref;
     std::string path;
     AssignmentProxy(T& r, std::string p) : ref(r), path(p) {}
 
-    T& operator=(const T& v) {
+    // ESSENCIAL: Conversão implícita para o tipo base
+    operator T&() { return ref; }
+    operator const T&() const { return ref; }
+    bool operator<(const T& other) const { return ref < other; }
+    bool operator==(const T& other) const { return ref == other; }
+
+    // Suporte para cin >> a[i]
+    friend std::istream& operator>>(std::istream& is, AssignmentProxy<T> proxy) {
+        is >> proxy.ref;
+        if constexpr (std::is_arithmetic_v<T>) __log("array", proxy.path, "update", (double)proxy.ref);
+        return is;
+    }
+
+    AssignmentProxy& operator=(const T& v) {
         ref = v;
-        __log("array", path, "update", (double)v);
-        return ref;
+        if constexpr (std::is_arithmetic_v<T>) __log("array", path, "update", (double)v);
+        return *this;
     }
 
-    T& operator=(const AssignmentProxy<T>& other) {
-        return *this = (T)other;
+    AssignmentProxy& operator=(const AssignmentProxy<T>& other) {
+        return *this = static_cast<T>(other.ref);
     }
 
-    T& operator+=(const T& v) { return *this = (ref + v); }
-    T& operator-=(const T& v) { return *this = (ref - v); }
-    T operator++(int) { T old = ref; *this = (ref + 1); return old; }
-
-    operator T() const { return ref; }
+    // Operadores compostos para evitar ambiguidades
+    AssignmentProxy& operator+=(const T& v) { return *this = ref + v; }
+    AssignmentProxy& operator-=(const T& v) { return *this = ref - v; }
+    
+    // Incremento/Decremento
+    T operator++(int) { T old = ref; *this = ref + 1; return old; }
+    T& operator++() { *this = ref + 1; return ref; }
 };
+
 
 template<typename T> class ObservedVector : public std::vector<T> {
     std::string path;
@@ -97,12 +138,55 @@ public:
     ObservedMap(std::string p) : path(p) { __log("map", path, "init", 0); }
     
     V& operator[](const K& key) {
-        std::string ks = std::to_string(key);
-        bool exists = this->count(key);
-        V& val = std::map<K, V>::operator[](key);
+        const K& realKey = (const K&)key;
+        std::string ks = __to_str(realKey);
+        bool exists = this->count(realKey);
+        V& val = std::map<K, V>::operator[](realKey);
         if constexpr (is_observable<V>::value) val.override_identity(path, ks);
-        __log("map", path + "[" + ks + "]", exists ? "access" : "add", (is_observable<V>::value ? 0 : (double)key));
+        __log("map", path + "[" + ks + "]", exists ? "access" : "add", (is_observable<V>::value ? 0 : (double)realKey));
         return val;
+    }
+};
+
+template<typename K, typename V>
+class ObservedUnorderedMap : public std::unordered_map<K, V> {
+    std::string path;
+public:
+    using std::unordered_map<K, V>::unordered_map;
+
+    ObservedUnorderedMap() : path("internal") {}
+    ObservedUnorderedMap(std::string p) : path(p) {
+        __log("map", path, "init", 0);
+    }
+
+    V& operator[](const K& key) {
+        const K& realKey = (const K&)key;
+        std::string ks = __to_str(realKey);
+        bool exists = this->count(realKey);
+
+        V& val = std::unordered_map<K, V>::operator[](realKey);
+
+        if constexpr (is_observable<V>::value)
+            val.override_identity(path, ks);
+
+        __log("map", path + "[" + ks + "]",
+              exists ? "access" : "add",
+              is_observable<V>::value ? 0 : (double)realKey);
+
+        return val;
+    }
+};
+
+template<typename T>
+class ObservedUnorderedSet : public std::unordered_set<T> {
+    std::string path;
+public:
+    using std::unordered_set<T>::unordered_set;
+    ObservedUnorderedSet() : path("internal") {}
+    ObservedUnorderedSet(std::string p) : path(p) { __log("array", path, "init", 0); }
+    void insert(const T& v) {
+        std::unordered_set<T>::insert(v);
+        __log("array", path, "add", (double)v);
     }
 };
 
@@ -145,6 +229,24 @@ public:
         __log("array", path, "remove", 0);
     }
 };
+
+template<typename T>
+class ObservedSet : public std::set<T> {
+    std::string path;
+public:
+    using std::set<T>::set;
+
+    ObservedSet() : path("internal") {}
+    ObservedSet(std::string p) : path(p) {
+        __log("array", path, "init", 0);
+    }
+
+    void insert(const T& v) {
+        std::set<T>::insert(v);
+        __log("array", path, "add", (double)v);
+    }
+};
+
 """
 
 # 3. Instrumentação com Clang
@@ -179,14 +281,22 @@ def instrument(file_path, testcase_file):
         if node.location.file and os.path.abspath(node.location.file.name) == abs_path:
             if node.kind == clang.cindex.CursorKind.VAR_DECL:
                 t = node.type.spelling
-                subs = {"vector": "ObservedVector", "map": "ObservedMap",
-                        "queue": "ObservedQueue", "stack": "ObservedStack"}
+                subs = {
+                    "unordered_map": "ObservedUnorderedMap",
+                    "unordered_set": "ObservedUnorderedSet",
+                    "map": "ObservedMap",
+                    "set": "ObservedSet",
+                    "vector": "ObservedVector",
+                    "queue": "ObservedQueue",
+                    "stack": "ObservedStack"
+                }
+
 
                 for stl, obs in subs.items():
                     if f"{stl}" in t and "Observed" not in t:
                         clean_type = t.replace("std::", "")
                         for s, o in subs.items():
-                            clean_type = clean_type.replace(s, o)
+                            clean_type = re.sub(r"\b" + re.escape(stl) + r"\b", obs, clean_type)
 
                         start = node.extent.start
                         end = node.extent.end
@@ -207,7 +317,7 @@ def instrument(file_path, testcase_file):
 
     for r in sorted(replacements, key=lambda x: (x['line'], x['start']), reverse=True):
         line = lines[r['line']]
-        lines[r['line']] = line[:r['start']] + r['text'] + ";" + line[r['end']:]
+        lines[r['line']] = line[:r['start']] + r['text'] + line[r['end']:]
 
     print(CPP_LIBRARY)
     print("".join(lines))
@@ -255,7 +365,9 @@ int main() {{
     {main_vars_code}
 
     {method_return_type} result = sol.{method_name}({args_list});
-    std::cout << "SystemLog: " << result << std::endl;
+    std::cout << "SystemLog: ";
+    __print(result);
+    std::cout << std::endl;
     return 0;
 }}
 """

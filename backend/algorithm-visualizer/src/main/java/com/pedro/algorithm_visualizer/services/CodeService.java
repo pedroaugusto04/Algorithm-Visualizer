@@ -21,9 +21,7 @@ public class CodeService {
         try {
             Path workspace = Files.createTempDirectory("algo-run-");
 
-            String normalizedCode = code
-                    .replace("\\r\\n", "\n")
-                    .replace("\\n", "\n");
+            String normalizedCode = code.replace("\r", "");
 
             Files.writeString(
                     workspace.resolve("main.cpp"),
@@ -54,9 +52,13 @@ public class CodeService {
 
             Files.writeString(workspace.resolve("instrumented.cpp"), instrumented);
 
+            String runCommand = "g++ /work/instrumented.cpp -o /work/run && /work/run";
+            if (inputFile != null && !inputFile.isEmpty() && Files.exists(testcasePath)) {
+                runCommand += " < /work/" + testcasePath.getFileName();
+            }
+
             String output = runStep(
-                    workspace,
-                    "g++ /work/instrumented.cpp -o /work/run && /work/run"
+                    workspace,runCommand
             );
 
             return new ExecutionResponseDTO(true, output, "Code executed successfully!", null);
