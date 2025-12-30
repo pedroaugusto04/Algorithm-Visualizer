@@ -24,11 +24,23 @@ export class ArrayAddOperationStrategy implements AlgorithmOperationStrategy {
 
     if (!structure.d3Data.arrayData) structure.d3Data.arrayData = [];
 
-    structure.d3Data.arrayData.push(entry.value);
+    const index = this.extractIndex(entry.path);
+
+    if (index !== null) {
+      structure.d3Data.arrayData[index] = entry.value;
+    } else {
+      structure.d3Data.arrayData.push(entry.value);
+    }
 
     if (skipRender) return;
 
     this.globalRenderer.renderElements(structures);
+  }
+
+
+  private extractIndex(path: string): number | null {
+    const match = path.match(/\[(\d+)\]/);
+    return match ? parseInt(match[1]) : null;
   }
 
 }

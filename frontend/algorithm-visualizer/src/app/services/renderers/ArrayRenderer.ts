@@ -16,7 +16,7 @@ export class ArrayRenderer implements Renderer {
     const allCells = cells.join(
       (enter: any) => {
         const g = enter.append('g').attr('class', 'array-cell');
-        
+
         g.append('rect')
           .attr('width', cellSize)
           .attr('height', cellSize)
@@ -49,7 +49,10 @@ export class ArrayRenderer implements Renderer {
       .duration(300)
       .attr('transform', (d: any, i: number) => `translate(${i * (cellSize + padding) + 40}, 50)`);
 
-    allCells.select('text.cell-text').text((d: any) => d);
-    allCells.select('text.index-text').text((d: any, i: number) => `[${i}]`);
+    allCells.select('text.cell-text')
+      .text((d: any) => (d == undefined ? 0 : d == null ? "" : d.toString()));
+
+    allCells.select('text.index-text')
+      .text((d: any, i: number) => `[${i}]`);
   }
 }

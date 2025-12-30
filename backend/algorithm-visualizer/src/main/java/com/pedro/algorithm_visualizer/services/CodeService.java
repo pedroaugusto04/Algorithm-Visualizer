@@ -16,6 +16,7 @@ public class CodeService {
             String language,
             String code,
             String testcase,
+            String functionName,
             MultipartFile inputFile
     ) {
         try {
@@ -53,7 +54,7 @@ public class CodeService {
 
             String instrumented = runStep(
                     workspace,
-                    "python3 /work/instrumenter.py /work/main.cpp /work/" + testcasePath.getFileName()
+                    "python3 /work/instrumenter.py /work/main.cpp /work/" + testcasePath.getFileName() + " " + functionName
             );
 
             Files.writeString(workspace.resolve("instrumented.cpp"), instrumented);

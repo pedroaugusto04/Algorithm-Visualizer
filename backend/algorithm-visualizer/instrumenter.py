@@ -24,31 +24,81 @@ CPP_LIBRARY = """
 #include <string>
 #include <type_traits>
 #include <algorithm>
+#include <limits>
+
+static constexpr int MIN_VALUE_INT = std::numeric_limits<int>::min();
 
 static int __step = 1;
-void __log(std::string type, std::string path, std::string op, double val) {
+void __log(std::string type, std::string path, std::string op, std::string val) {
     std::cout << "{\\"time\\":" << __step++ << ",\\"type\\":\\"" << type << "\\",\\"path\\":\\"" << path << "\\",\\"op\\":\\"" << op << "\\",\\"value\\":" << val << "}" << std::endl;
 }
 
-template<typename T>
-void __print(const T& v) {
-    std::cout << v;
+// ===================== SERIALIZER =====================
+// std::string
+inline std::string __serialize(const std::string& s) {
+    return "\"" + s + "\"";
 }
 
+// fallback genérico
 template<typename T>
-void __print(const std::vector<T>& v) {
-    std::cout << "[";
-    for (size_t i = 0; i < v.size(); i++) {
-        __print(v[i]);
-        if (i + 1 < v.size()) std::cout << ", ";
+std::string __serialize(const T& v) {
+    if constexpr (std::is_arithmetic_v<T>) {
+        return std::to_string(v);
+    } 
+    else {
+        return std::string("<") + typeid(T).name() + ">";
     }
-    std::cout << "]";
+}
+
+// vector
+template<typename T>
+std::string __serialize(const std::vector<T>& v) {
+    std::string out = "[";
+    for (size_t i = 0; i < v.size(); i++) {
+        out += __serialize(v[i]);
+        if (i + 1 < v.size()) out += ", ";
+    }
+    out += "]";
+    return out;
+}
+
+// map
+template<typename K, typename V>
+std::string __serialize(const std::map<K, V>& m) {
+    std::string out = "{";
+    bool first = true;
+    for (const auto& kv : m) {
+        if (!first) out += ", ";
+        first = false;
+        out += __serialize(kv.first) + ": " + __serialize(kv.second);
+    }
+    out += "}";
+    return out;
+}
+
+// unordered_map
+template<typename K, typename V>
+std::string __serialize(const std::unordered_map<K, V>& m) {
+    std::string out = "{";
+    bool first = true;
+    for (const auto& kv : m) {
+        if (!first) out += ", ";
+        first = false;
+        out += __serialize(kv.first) + ": " + __serialize(kv.second);
+    }
+    out += "}";
+    return out;
+}
+
+// ===================== PRINT (WRAPPER) =====================
+template<typename T>
+void __print(const T& v) {
+    std::cout << __serialize(v);
 }
 
 template<typename T>
 std::string __to_str(const T& val) {
-    if constexpr (std::is_arithmetic_v<T>) return std::to_string(val);
-    else if constexpr (std::is_convertible_v<T, std::string>) return (std::string)val;
+    if constexpr (std::is_convertible_v<T, std::string>) return (std::string)val;
     else return "obj";
 }
 
@@ -70,17 +120,13 @@ struct AssignmentProxy {
     // Suporte para cin >> a[i]
     friend std::istream& operator>>(std::istream& is, AssignmentProxy<T> proxy) {
         is >> proxy.ref;
-        // Remova ou altere o is_arithmetic_v para incluir strings
-        if constexpr (std::is_arithmetic_v<T>) 
-            __log("array", proxy.path, "update", (double)proxy.ref);
-        else 
-            __log("array", proxy.path, "update", 0); // Log para strings
+            __log("array", proxy.path, "update", __serialize(proxy.ref));
         return is;
     }
 
     AssignmentProxy& operator=(const T& v) {
         ref = v;
-        if constexpr (std::is_arithmetic_v<T>) __log("array", path, "update", (double)v);
+        __log("array", path, "update", __serialize(v));
         return *this;
     }
 
@@ -104,25 +150,25 @@ public:
     using std::vector<T>::vector;
     
     ObservedVector() : path("internal") {}
-    ObservedVector(std::string p) : path(p) { __log("array", path, "init", 0); }
+    ObservedVector(std::string p) : path(p) { __log("array", path, "init", __serialize(MIN_VALUE_INT)); }
     void override_identity(std::string parent, std::string key) { path = parent + "[" + key + "]"; }
     
     void set_name(std::string p) { 
         path = p; 
-        __log("array", path, "init", 0); 
+        __log("array", path, "init", __serialize(MIN_VALUE_INT)); 
     }
     
     void push_back(const T& v) {
         std::vector<T>::push_back(v);
         std::string idx = std::to_string(this->size()-1);
         if constexpr (is_observable<T>::value) const_cast<T&>(this->back()).override_identity(path, idx);
-        __log("array", path + "[" + idx + "]", "add", (is_observable<T>::value ? 0 : (double)v));
+        __log("array", path + "[" + idx + "]", "add", (is_observable<T>::value ? __serialize(MIN_VALUE_INT) : __serialize(v)));
     }
     
     auto operator[](size_t i) {
         std::string p = path + "[" + std::to_string(i) + "]";
         if constexpr (std::is_same_v<T, bool>) {
-            __log("array", p, "access", 0);
+            __log("array", p, "access", __serialize(MIN_VALUE_INT));
             return std::vector<T>::operator[](i);
         } else if constexpr (is_observable<T>::value) {
             std::vector<T>::operator[](i).override_identity(path, std::to_string(i));
@@ -135,7 +181,7 @@ public:
     void assign(size_t n, const T& v) {
         std::vector<T>::assign(n, v);
         for(size_t i = 0; i < n; ++i) {
-            __log("array", path + "[" + std::to_string(i) + "]", "add", (double)v);
+            __log("array", path + "[" + std::to_string(i) + "]", "add", __serialize(v));
         }
     }
 };
@@ -145,7 +191,7 @@ template<typename K, typename V> class ObservedMap : public std::map<K, V> {
 public:
     using std::map<K, V>::map;
     ObservedMap() : path("internal") {}
-    ObservedMap(std::string p) : path(p) { __log("map", path, "init", 0); }
+    ObservedMap(std::string p) : path(p) { __log("map", path, "init", __serialize(MIN_VALUE_INT)); }
     
     V& operator[](const K& key) {
         const K& realKey = (const K&)key;
@@ -153,7 +199,7 @@ public:
         bool exists = this->count(realKey);
         V& val = std::map<K, V>::operator[](realKey);
         if constexpr (is_observable<V>::value) val.override_identity(path, ks);
-        __log("map", path + "[" + ks + "]", exists ? "access" : "add", (is_observable<V>::value ? 0 : (double)realKey));
+        __log("map", path + "[" + ks + "]", exists ? "access" : "add", (is_observable<V>::value ? __serialize(MIN_VALUE_INT) :  __serialize(realKey)));
         return val;
     }
 };
@@ -166,7 +212,7 @@ public:
 
     ObservedUnorderedMap() : path("internal") {}
     ObservedUnorderedMap(std::string p) : path(p) {
-        __log("map", path, "init", 0);
+        __log("map", path, "init", __serialize(MIN_VALUE_INT));
     }
 
     V& operator[](const K& key) {
@@ -181,7 +227,7 @@ public:
 
         __log("map", path + "[" + ks + "]",
               exists ? "access" : "add",
-              is_observable<V>::value ? 0 : (double)realKey);
+              is_observable<V>::value ? __serialize(MIN_VALUE_INT) : __serialize(realKey));
 
         return val;
     }
@@ -193,10 +239,10 @@ class ObservedUnorderedSet : public std::unordered_set<T> {
 public:
     using std::unordered_set<T>::unordered_set;
     ObservedUnorderedSet() : path("internal") {}
-    ObservedUnorderedSet(std::string p) : path(p) { __log("array", path, "init", 0); }
+    ObservedUnorderedSet(std::string p) : path(p) { __log("array", path, "init", __serialize(MIN_VALUE_INT)); }
     void insert(const T& v) {
         std::unordered_set<T>::insert(v);
-        __log("array", path, "add", (double)v);
+        __log("array", path, "add", __serialize(v));
     }
 };
 
@@ -205,17 +251,17 @@ template<typename T> class ObservedQueue : public std::queue<T> {
 public:
     using std::queue<T>::queue;
     ObservedQueue() : path("internal") {}
-    ObservedQueue(std::string p) : path(p) { __log("array", path, "init", 0); }
+    ObservedQueue(std::string p) : path(p) { __log("array", path, "init", __serialize(MIN_VALUE_INT)); }
     void push(const T& v) {
         std::queue<T>::push(v);
-        __log("array", path, "add", (double)v);
+        __log("array", path, "add", __serialize(v));
     }
     T& front() {
-        __log("array", path, "access", 0);
+        __log("array", path, "access", __serialize(MIN_VALUE_INT));
         return std::queue<T>::front();
     }
     void pop() {
-        __log("array", path, "remove", 0);
+        __log("array", path, "remove", __serialize(MIN_VALUE_INT));
         std::queue<T>::pop();
     }
 };
@@ -225,18 +271,18 @@ template<typename T> class ObservedStack : public std::stack<T> {
 public:
     using std::stack<T>::stack;
     ObservedStack() : path("internal") {}
-    ObservedStack(std::string p) : path(p) { __log("array", path, "init", 0); }
+    ObservedStack(std::string p) : path(p) { __log("array", path, "init", __serialize(MIN_VALUE_INT)); }
     void push(const T& v) {
         std::stack<T>::push(v);
-        __log("array", path, "add", (double)v);
+        __log("array", path, "add", __serialize(v));
     }
     T& top() {
-        __log("array", path, "access", 0);
+        __log("array", path, "access", __serialize(MIN_VALUE_INT));
         return std::stack<T>::top();
     }
     void pop() {
         std::stack<T>::pop();
-        __log("array", path, "remove", 0);
+        __log("array", path, "remove", __serialize(MIN_VALUE_INT));
     }
 };
 
@@ -248,22 +294,24 @@ public:
 
     ObservedSet() : path("internal") {}
     ObservedSet(std::string p) : path(p) {
-        __log("array", path, "init", 0);
+        __log("array", path, "init", __serialize(MIN_VALUE_INT));
     }
 
     void insert(const T& v) {
         std::set<T>::insert(v);
-        __log("array", path, "add", (double)v);
+        __log("array", path, "add", __serialize(v));
     }
 };
 
 """
 
 # 3. Instrumentação com Clang
-def instrument(file_path, testcase_file):
+def instrument(file_path, testcase_file, method_to_call):
     index = clang.cindex.Index.create()
     abs_path = os.path.abspath(file_path)
     tu = index.parse(abs_path, args=["-std=c++17"])
+    method_param_types = {}
+    structs = {}
 
     with open(abs_path, "r") as f:
         lines = f.readlines()
@@ -279,14 +327,17 @@ def instrument(file_path, testcase_file):
         if node.kind == clang.cindex.CursorKind.FUNCTION_DECL:
             if node.spelling == "main":
                 has_main = True
-        # Detecta classe Solution e pega o primeiro método
+        # Detecta classe Solution e pega o metodo pelo nome informado
         if node.kind == clang.cindex.CursorKind.CLASS_DECL and node.spelling == "Solution":
             for c in node.get_children():
                 if c.kind == clang.cindex.CursorKind.CXX_METHOD:
-                    if method_name is None:
+                    if c.spelling == method_to_call:
                         method_name = c.spelling
                         method_return_type = c.result_type.spelling
-                    break
+                        for arg in c.get_arguments():
+                            if arg.spelling:
+                                method_param_types[arg.spelling] = arg.type.spelling
+                        break
         # Substituição de variáveis para Observed*
         if node.location.file and os.path.abspath(node.location.file.name) == abs_path:
             if node.kind == clang.cindex.CursorKind.VAR_DECL:
@@ -322,6 +373,13 @@ def instrument(file_path, testcase_file):
         for c in node.get_children():
             walk(c)
 
+    for node in tu.cursor.get_children():
+        if node.kind == clang.cindex.CursorKind.STRUCT_DECL and node.is_definition():
+            fields = []
+            for f in node.get_children():
+                if f.kind == clang.cindex.CursorKind.FIELD_DECL:
+                    fields.append(f.spelling)
+            structs[node.spelling] = fields
     walk(tu.cursor)
 
     for r in sorted(replacements, key=lambda x: (x['line'], x['start']), reverse=True):
@@ -354,10 +412,25 @@ def instrument(file_path, testcase_file):
 
         for name, value in user_params.items():
             if isinstance(value, list):
-                main_vars.append(f"ObservedVector<int> {name};")
-                main_vars.append(f"{name}.assign({len(value)}, 0);")
-                for i, val in enumerate(value):
-                    main_vars.append(f"{name}[{i}] = {val};")
+                param_type = method_param_types[name]  # ex: vector<Item>
+                if "vector<" in param_type:
+                    inner = param_type.split("<")[1].split(">")[0]
+
+                if inner in structs:
+                    # vetor de struct
+                    main_vars.append(f"ObservedVector<{inner}> {name};")
+                    for val in value:
+                        fields = structs[inner]
+                        if len(fields) == 1:
+                            main_vars.append(f"{name}.push_back({inner}{{{val}}});")
+                        else:
+                            raise Exception("Struct com múltiplos campos ainda não suportada")
+                else:
+                    # vetor primitivo
+                    main_vars.append(f"ObservedVector<int> {name};")
+                    main_vars.append(f"{name}.assign({len(value)}, 0);")
+                    for i, v in enumerate(value):
+                        main_vars.append(f"{name}[{i}] = {v};")
             elif isinstance(value, str):
                 main_vars.append(f'std::string {name} = "{value}";')
             elif isinstance(value, bool):
@@ -384,8 +457,8 @@ int main() {{
 
 if __name__ == "__main__":
     try:
-        if len(sys.argv) > 2:
-            instrument(sys.argv[1], sys.argv[2])
+        if len(sys.argv) > 3:
+            instrument(sys.argv[1], sys.argv[2],sys.argv[3])
         else:
             sys.stderr.write("Uso: python3 instrumenter.py arquivo.cpp testcase.txt\n")
             sys.exit(1)

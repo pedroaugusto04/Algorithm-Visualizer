@@ -22,6 +22,7 @@ export class CodeService {
     language: string;
     code: string;
     testcase?: string;
+    functionName?: string;
   }) {
 
     const executeCodeUrl = new URL(environment.apiExecuteCode, environment.baseUrl).toString();

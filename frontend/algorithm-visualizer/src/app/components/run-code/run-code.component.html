@@ -26,7 +26,7 @@
                 <mat-label class="f-s-12 f-w-600">Source Code</mat-label>
                 <mat-form-field appearance="outline" class="w-100 code-field">
                     <textarea matInput rows="10" placeholder="Paste your code here..." [ngModel]="sourceCode()"
-                        (ngModelChange)="sourceCode.set($event)" >
+                        (ngModelChange)="sourceCode.set($event)">
                     </textarea>
                 </mat-form-field>
             </div>
@@ -38,6 +38,11 @@
                     <textarea matInput placeholder="e.g. nums = [1,2,3], k = 3, target = 5" [ngModel]="testCaseInput()"
                         (ngModelChange)="testCaseInput.set($event)">
                     </textarea>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>LeetCode method</mat-label>
+                    <input matInput placeholder="Type LeetCode method name (ex: twoSum)"
+                        [ngModel]="functionNameInput()" (ngModelChange)="functionNameInput.set($event)">
                 </mat-form-field>
                 }
                 @else if (platformControl.value === 'codeforces') {

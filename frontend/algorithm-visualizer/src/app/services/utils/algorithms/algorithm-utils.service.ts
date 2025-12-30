@@ -16,19 +16,18 @@ export class AlgorithmUtilsService {
     let current = structures.find(s => s.path === rootName);
 
     if (!current) {
-      current = this.createNewNode(rootName, rootName, type);
+      current = this.createNewNode(rootName, type);
       structures.push(current);
     }
 
-    let accumulatedPath = rootName;
     for (let i = 1; i < parts.length; i++) {
+      
       const partName = parts[i];
-      accumulatedPath += `[${partName}]`;
 
       let child: any = current!.children.find(c => c.path === partName);
 
       if (!child) {
-        child = this.createNewNode(partName, accumulatedPath, type);
+        child = this.createNewNode(partName, type);
         current!.children.push(child);
       }
       current = child;
@@ -41,10 +40,9 @@ export class AlgorithmUtilsService {
     return current;
   }
 
-  private createNewNode(name: string, fullPath: string, type: string): StructureWindow {
+  private createNewNode(name: string, type: string): StructureWindow {
     return {
       path: name,
-      fullPath: fullPath,
       type: type,
       children: [],
       d3Data: {

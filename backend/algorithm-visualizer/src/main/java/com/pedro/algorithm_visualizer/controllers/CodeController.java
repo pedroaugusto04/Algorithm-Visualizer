@@ -35,6 +35,7 @@ public class CodeController {
                 dto.language(),
                 dto.code(),
                 dto.testcase(),
+                dto.functionName(),
                 null
         );
         return ResponseEntity.ok(responseDTO);
@@ -56,6 +57,7 @@ public class CodeController {
                 dto.language(),
                 dto.code(),
                 dto.testcase(),
+                dto.functionName(),
                 inputFile
         );
         return ResponseEntity.ok(responseDTO);

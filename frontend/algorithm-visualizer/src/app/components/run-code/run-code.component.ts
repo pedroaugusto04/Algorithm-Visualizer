@@ -42,13 +42,14 @@ export class RunCodeComponent implements OnDestroy {
   sourceCode = signal<string>('');
   testCaseInput = signal<string>('');
   executionResult = signal<string>('');
+  functionNameInput = signal<string>('');
 
   entries: ExecutionLogEntry[] = [];
   operations: ExecutionLogEntry[] = [];
 
   initialStructures: StructureWindow[] = [];
   structures: StructureWindow[] = [];
-  currentStep = signal<number>(0);
+  currentStep = signal<number>(-1);
   totalSteps = signal<number>(0);
   isPlaying = signal<boolean>(false);
   animationInterval: any;
@@ -89,7 +90,8 @@ export class RunCodeComponent implements OnDestroy {
     const payload = {
       language: this.languageControl.value,
       code: this.sourceCode(),
-      testcase: this.testCaseInput().trim()
+      testcase: this.testCaseInput().trim(),
+      functionName: this.functionNameInput().trim()
     };
 
     // LEETCODE (JSON)
@@ -261,7 +263,7 @@ export class RunCodeComponent implements OnDestroy {
 
         rootStructure.initialized = true;
 
-        console.log(entry.op, entry.path, entry.time, entry.type, entry.value);
+        console.log(entry.op, entry.path, entry.time, entry.type, entry.value, rootStructure.path);
 
         this.highlightStructure(rootStructure, structIndex);
 
@@ -278,7 +280,7 @@ export class RunCodeComponent implements OnDestroy {
   private resetState(): void {
     this.pause();
     this.resetStructures(true);
-    this.currentStep.set(0);
+    this.currentStep.set(-1);
     this.totalSteps.set(0);
   }
 
@@ -302,7 +304,7 @@ export class RunCodeComponent implements OnDestroy {
       this.algorithmUtilsService.getOrCreateStructure(this.structures, entry.path, entry.type);
     });
 
-    this.currentStep.set(0);
+    this.currentStep.set(-1);
   }
 
   onPaste(event: ClipboardEvent): void {
