@@ -9,7 +9,7 @@ export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
 
   constructor(private globalRenderer: GlobalRenderer) { }
 
-  execute(structure: StructureWindow, structures: StructureWindow[],  entry: ExecutionLogEntry, skipRender: boolean): void {
+  execute(structure: StructureWindow, structures: StructureWindow[], entry: ExecutionLogEntry, skipRender: boolean): void {
 
     if (!structure.d3Data) {
       structure.d3Data = {
@@ -22,9 +22,10 @@ export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
       };
     }
 
-    const { nodes, links, svg } = structure.d3Data
-    ;
+    const { nodes, links, svg } = structure.d3Data;
+
     const sourceId = this.extractSourceId(entry.path);
+
     const targetId = entry.value;
 
     if (sourceId === null) return;
@@ -32,18 +33,19 @@ export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
     const { width, height } = this.getDimensions();
 
     this.ensureNodeExists(nodes, sourceId, width, height);
-    this.ensureNodeExists(nodes, targetId, width, height);
+
+    this.ensureNodeExists(nodes,targetId,width,height);
 
     const sourceNode = nodes.find((n: any) => n.id === sourceId);
-    const targetNode = nodes.find((n: any) => n.id === targetId);
+    const targetNode = nodes.find((n:any) => n.id === targetId);
 
     const linkExists = links.some((l: any) => {
-      const s = typeof l.source === 'object' ? l.source.id : l.source;
-      const t = typeof l.target === 'object' ? l.target.id : l.target;
+      const s = l.source;
+      const t = l.target;
       return s === sourceId && t === targetId;
     });
 
-    if (!linkExists && sourceId !== targetId) {
+    if (!linkExists && sourceId != targetId) {
       links.push({ source: sourceNode, target: targetNode });
     }
 
@@ -71,7 +73,7 @@ export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
       nodes.push({ id, x: width / 2, y: height / 2 });
     }
   }
-
+  
   private pulseNode(svg: any, id: number) {
     if (!svg) return;
     svg.selectAll('g.node-item')

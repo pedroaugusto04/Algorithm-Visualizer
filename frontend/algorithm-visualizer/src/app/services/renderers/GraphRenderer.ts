@@ -61,7 +61,7 @@ export class GraphRenderer implements Renderer {
 
                 g.append('text')
                     .attr('class', 'node-text')
-                    .text((d: any) => d.id)
+                    .text((d: any) => d.value ? d.value:d.id)
                     .attr('text-anchor', 'middle')
                     .attr('dy', '.35em')
                     .attr('fill', '#fff')
