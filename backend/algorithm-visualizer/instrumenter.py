@@ -1,17 +1,14 @@
-#!/usr/bin/env python3
 import clang.cindex
 import sys
 import os
 import ast
 import re
 
-# 1. Configuração automática da biblioteca libclang
 for path in ["/usr/lib/llvm-18/lib/libclang.so.1"]:
     if os.path.exists(path):
         clang.cindex.Config.set_library_file(path)
         break
 
-# 2. Biblioteca C++ que será injetada no topo do código do usuário
 CPP_LIBRARY = """
 #include <iostream>
 #include <vector>
@@ -98,8 +95,15 @@ void __print(const T& v) {
 
 template<typename T>
 std::string __to_str(const T& val) {
-    if constexpr (std::is_convertible_v<T, std::string>) return (std::string)val;
-    else return "obj";
+    if constexpr (std::is_arithmetic_v<T>) {
+        return std::to_string(val);
+    } 
+    else if constexpr (std::is_convertible_v<T, std::string>) {
+        return (std::string)val;
+    } 
+    else {
+        return "obj";
+    }
 }
 
 template <typename T, typename = void> struct is_observable : std::false_type {};
@@ -111,13 +115,11 @@ struct AssignmentProxy {
     std::string path;
     AssignmentProxy(T& r, std::string p) : ref(r), path(p) {}
 
-    // ESSENCIAL: Conversão implícita para o tipo base
     operator T&() { return ref; }
     operator const T&() const { return ref; }
     bool operator<(const T& other) const { return ref < other; }
     bool operator==(const T& other) const { return ref == other; }
 
-    // Suporte para cin >> a[i]
     friend std::istream& operator>>(std::istream& is, AssignmentProxy<T> proxy) {
         is >> proxy.ref;
             __log("array", proxy.path, "update", __serialize(proxy.ref));
@@ -134,15 +136,30 @@ struct AssignmentProxy {
         return *this = static_cast<T>(other.ref);
     }
 
-    // Operadores compostos para evitar ambiguidades
     AssignmentProxy& operator+=(const T& v) { return *this = ref + v; }
     AssignmentProxy& operator-=(const T& v) { return *this = ref - v; }
     
-    // Incremento/Decremento
     T operator++(int) { T old = ref; *this = ref + 1; return old; }
     T& operator++() { *this = ref + 1; return ref; }
 };
 
+template<typename V>
+struct MapAssignmentProxy {
+    V& ref;
+    std::string path;
+    MapAssignmentProxy(V& r, std::string p) : ref(r), path(p) {}
+    operator V&() { return ref; }
+    operator const V&() const { return ref; }
+
+    MapAssignmentProxy& operator=(const V& v) {
+        ref = v;
+        __log("map", path, "update", __serialize(v));
+        return *this;
+    }
+    V* operator->() { return &ref; }
+    auto begin() { return ref.begin(); }
+    auto end() { return ref.end(); }
+};
 
 template<typename T> class ObservedVector : public std::vector<T> {
     std::string path = "internal";
@@ -187,49 +204,57 @@ public:
 };
 
 template<typename K, typename V> class ObservedMap : public std::map<K, V> {
-    std::string path;
+    std::string path = "internal";
 public:
     using std::map<K, V>::map;
     ObservedMap() : path("internal") {}
     ObservedMap(std::string p) : path(p) { __log("map", path, "init", __serialize(MIN_VALUE_INT)); }
     
-    V& operator[](const K& key) {
-        const K& realKey = (const K&)key;
-        std::string ks = __to_str(realKey);
-        bool exists = this->count(realKey);
-        V& val = std::map<K, V>::operator[](realKey);
-        if constexpr (is_observable<V>::value) val.override_identity(path, ks);
-        __log("map", path + "[" + ks + "]", exists ? "access" : "add", (is_observable<V>::value ? __serialize(MIN_VALUE_INT) :  __serialize(realKey)));
-        return val;
+    void override_identity(std::string parent, std::string key) { path = parent + "[" + key + "]"; }
+    void set_name(std::string p) { 
+        path = p; 
+        __log("map", path, "init", __serialize(MIN_VALUE_INT)); 
+    }
+    
+    auto operator[](const K& key) {
+        std::string ks = __to_str(key);
+        V& val = std::map<K, V>::operator[](key);
+        std::string full_path = path + "[" + ks + "]";
+        if constexpr (is_observable<V>::value) {
+            val.override_identity(path, ks);
+            __log("map", full_path, "access", __serialize(MIN_VALUE_INT));
+            return (V&)val;
+        } else {
+            return MapAssignmentProxy<V>(val, full_path);
+        }
     }
 };
 
 template<typename K, typename V>
 class ObservedUnorderedMap : public std::unordered_map<K, V> {
-    std::string path;
+    std::string path = "internal";
 public:
     using std::unordered_map<K, V>::unordered_map;
-
     ObservedUnorderedMap() : path("internal") {}
-    ObservedUnorderedMap(std::string p) : path(p) {
-        __log("map", path, "init", __serialize(MIN_VALUE_INT));
+    ObservedUnorderedMap(std::string p) : path(p) { __log("map", path, "init", __serialize(MIN_VALUE_INT)); }
+
+    void override_identity(std::string parent, std::string key) { path = parent + "[" + key + "]"; }
+    void set_name(std::string p) { 
+        path = p; 
+        __log("map", path, "init", __serialize(MIN_VALUE_INT)); 
     }
 
-    V& operator[](const K& key) {
-        const K& realKey = (const K&)key;
-        std::string ks = __to_str(realKey);
-        bool exists = this->count(realKey);
-
-        V& val = std::unordered_map<K, V>::operator[](realKey);
-
-        if constexpr (is_observable<V>::value)
+    auto operator[](const K& key) {
+        std::string ks = __to_str(key);
+        V& val = std::unordered_map<K, V>::operator[](key);
+        std::string full_path = path + "[" + ks + "]";
+        if constexpr (is_observable<V>::value) {
             val.override_identity(path, ks);
-
-        __log("map", path + "[" + ks + "]",
-              exists ? "access" : "add",
-              is_observable<V>::value ? __serialize(MIN_VALUE_INT) : __serialize(realKey));
-
-        return val;
+            __log("map", full_path, "access", __serialize(MIN_VALUE_INT));
+            return (V&)val;
+        } else {
+            return MapAssignmentProxy<V>(val, full_path);
+        }
     }
 };
 
@@ -252,6 +277,12 @@ public:
     using std::queue<T>::queue;
     ObservedQueue() : path("internal") {}
     ObservedQueue(std::string p) : path(p) { __log("array", path, "init", __serialize(MIN_VALUE_INT)); }
+    
+     void set_name(std::string p) { 
+        path = p; 
+        __log("array", path, "init", __serialize(MIN_VALUE_INT)); 
+    }
+    
     void push(const T& v) {
         std::queue<T>::push(v);
         __log("array", path, "add", __serialize(v));
@@ -305,7 +336,7 @@ public:
 
 """
 
-# 3. Instrumentação com Clang
+# Instrumentacao (CLANG)
 def instrument(file_path, testcase_file, method_to_call):
     index = clang.cindex.Index.create()
     abs_path = os.path.abspath(file_path)
@@ -323,11 +354,9 @@ def instrument(file_path, testcase_file, method_to_call):
 
     def walk(node):
         nonlocal has_main, method_name
-        # Detecta main
         if node.kind == clang.cindex.CursorKind.FUNCTION_DECL:
             if node.spelling == "main":
                 has_main = True
-        # Detecta classe Solution e pega o metodo pelo nome informado
         if node.kind == clang.cindex.CursorKind.CLASS_DECL and node.spelling == "Solution":
             for c in node.get_children():
                 if c.kind == clang.cindex.CursorKind.CXX_METHOD:
@@ -338,7 +367,6 @@ def instrument(file_path, testcase_file, method_to_call):
                             if arg.spelling:
                                 method_param_types[arg.spelling] = arg.type.spelling
                         break
-        # Substituição de variáveis para Observed*
         if node.location.file and os.path.abspath(node.location.file.name) == abs_path:
             if node.kind == clang.cindex.CursorKind.VAR_DECL:
                 t = node.type.spelling
@@ -352,23 +380,27 @@ def instrument(file_path, testcase_file, method_to_call):
                     "stack": "ObservedStack"
                 }
 
+                start = node.extent.start
+                original_line = lines[start.line - 1]
+                new_line = original_line
 
+                changed = False
                 for stl, obs in subs.items():
-                    if f"{stl}" in t and "Observed" not in t:
-                        start = node.extent.start
-                        original_line = lines[start.line - 1]
-                        new_line = original_line.replace(f"std::{stl}", obs).replace(stl, obs)
+                    if re.search(rf'\b(std::)?{stl}\b', new_line) and obs not in new_line:
+                        new_line = re.sub(rf'\bstd::{stl}\b', obs, new_line)
+                        new_line = re.sub(rf'\b{stl}\b', obs, new_line)
+                        changed = True
 
-                        if ";" in new_line:
-                            new_text = new_line.replace(";", f"; {node.spelling}.set_name(\"{node.spelling}\");", 1)
+                if changed:
+                    if ";" in new_line:
+                        new_line = new_line.replace(";", f"; {node.spelling}.set_name(\"{node.spelling}\");", 1)
 
-                            replacements.append({
-                            'line': start.line - 1,
-                            'start': 0,
-                            'end': len(original_line),
-                            'text': new_text
-                            })
-                        break
+                    replacements.append({
+                        'line': start.line - 1,
+                        'start': 0,
+                        'end': len(original_line),
+                        'text': new_line
+                    })
 
         for c in node.get_children():
             walk(c)
@@ -389,14 +421,12 @@ def instrument(file_path, testcase_file, method_to_call):
     print(CPP_LIBRARY)
     print("".join(lines))
 
-    # Gera main automático se não houver e houver método Solution
     if not has_main and method_name and os.path.exists(testcase_file):
         with open(testcase_file, "r") as f:
             testcase = f.read().strip()
 
         user_params = {}
         if testcase:
-            # Regex para separar name = value sem quebrar listas
             pattern = r"(\w+)\s*=\s*(\[.*?\]|[^,]+)"
             matches = re.findall(pattern, testcase)
             for name, val in matches:
@@ -412,12 +442,11 @@ def instrument(file_path, testcase_file, method_to_call):
 
         for name, value in user_params.items():
             if isinstance(value, list):
-                param_type = method_param_types[name]  # ex: vector<Item>
+                param_type = method_param_types[name]
                 if "vector<" in param_type:
                     inner = param_type.split("<")[1].split(">")[0]
 
                 if inner in structs:
-                    # vetor de struct
                     main_vars.append(f"ObservedVector<{inner}> {name};")
                     for val in value:
                         fields = structs[inner]
@@ -426,7 +455,6 @@ def instrument(file_path, testcase_file, method_to_call):
                         else:
                             raise Exception("Struct com múltiplos campos ainda não suportada")
                 else:
-                    # vetor primitivo
                     main_vars.append(f"ObservedVector<int> {name};")
                     main_vars.append(f"{name}.assign({len(value)}, 0);")
                     for i, v in enumerate(value):
@@ -464,6 +492,5 @@ if __name__ == "__main__":
             sys.exit(1)
     except Exception as e:
         import traceback
-        # Isso imprime a pilha de erro completa (linha e arquivo) para o stderr
         traceback.print_exc(file=sys.stderr)
         sys.exit(1)
