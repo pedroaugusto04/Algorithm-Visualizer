@@ -70,7 +70,7 @@ export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
 
   private ensureNodeExists(nodes: any[], id: number, width: number, height: number) {
     if (!nodes.some(n => n.id === id)) {
-      nodes.push({ id, x: width / 2, y: height / 2 });
+      nodes.push({ id:id, value: id, x: width / 2, y: height / 2 });
     }
   }
   

@@ -5,11 +5,11 @@ import { Injectable } from "@angular/core";
 import { GlobalRenderer } from "../../renderers/GlobalRenderer";
 
 @Injectable({ providedIn: 'root' })
-export class GraphAccessOperationStrategy implements AlgorithmOperationStrategy {
+export class MapAccessOperationStrategy implements AlgorithmOperationStrategy {
 
     constructor(private globalRenderer: GlobalRenderer) { }
 
-    execute(structure: StructureWindow, structures: StructureWindow[],  entry: ExecutionLogEntry, skipRender: boolean): void {
+    execute(structure: StructureWindow, structures: StructureWindow[], entry: ExecutionLogEntry, skipRender: boolean): void {
 
         if (!structure.d3Data) {
             structure.d3Data = {
@@ -18,14 +18,15 @@ export class GraphAccessOperationStrategy implements AlgorithmOperationStrategy 
                 simulation: null,
                 svg: null,
                 width: 800,
-                height: 600
+                height: 600,
+                targetCounter: 0
             };
         }
 
         const d3Data = structure.d3Data;
 
-        const nodeId = this.extractIdFromPath(entry.path);
-        
+        const nodeId = this.extractSourceId(entry.path);
+
         if (nodeId === null) return;
 
         const { svg } = d3Data;
@@ -36,13 +37,15 @@ export class GraphAccessOperationStrategy implements AlgorithmOperationStrategy 
         this.pulseNode(svg, nodeId);
     }
 
-    private extractIdFromPath(path: string): number | null {
-        const match = path.match(/\[(\d+)\]/);
-        return match ? parseInt(match[1]) : null;
+    private extractSourceId(path: string): string | null {
+        const matches = [...path.matchAll(/\[(\d+)\]/g)].map(m => m[1]);
+        if (matches.length === 0) return null;
+
+        return `k${matches[0]}`;
     }
 
 
-    private pulseNode(svg: any, id: number) {
+    private pulseNode(svg: any, id: string) {
         svg.selectAll('g.node-item')
             .filter((d: any) => d.id === id)
             .select('circle')

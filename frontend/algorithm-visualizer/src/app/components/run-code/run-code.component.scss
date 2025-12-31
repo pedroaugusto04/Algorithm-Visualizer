@@ -111,17 +111,25 @@ app-structure-visualizer {
 }
 
 @keyframes full-tab-glow {
-  0% { background-color: transparent; }
-  50% { background-color: rgba(255, 215, 0, 0.4); }
-  100% { background-color: transparent; }
+    0% {
+        background-color: transparent;
+    }
+
+    50% {
+        background-color: rgba(255, 215, 0, 0.4);
+    }
+
+    100% {
+        background-color: transparent;
+    }
 }
 
 ::ng-deep .mat-mdc-tab.glow-active {
-  animation: full-tab-glow 0.8s ease-in-out;
-  
-  .mdc-tab__ripple {
-    background-color: rgba(255, 215, 0, 0.1);
-  }
+    animation: full-tab-glow 0.8s ease-in-out;
+
+    .mdc-tab__ripple {
+        background-color: rgba(255, 215, 0, 0.1);
+    }
 }
 
 .controls-row {
@@ -131,9 +139,9 @@ app-structure-visualizer {
     margin-bottom: 8px;
 
     .toggle-container {
-        margin-left: auto; 
+        margin-left: auto;
         padding-right: 8px;
-        
+
         span {
             color: #bbb;
             font-weight: 500;
@@ -241,6 +249,57 @@ app-structure-visualizer {
 
 ::ng-deep mat-form-field .mat-mdc-text-field-wrapper.mdc-text-field.mdc-text-field--outlined {
     background-color: lightyellow !important;
+}
+
+.map-mode-selector {
+    display: flex;
+    justify-content: flex-end;
+    margin: 8px;
+}
+
+.map-mode-selector::ng-deep .mat-button-toggle-group {
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 2px;
+    height: 32px;
+}
+
+.map-mode-selector::ng-deep .mat-button-toggle {
+    border-radius: 999px !important;
+    min-width: 64px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #555;
+    transition: all 150ms ease;
+}
+
+.map-mode-selector::ng-deep .mat-button-toggle:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.map-mode-selector::ng-deep .mat-button-toggle-checked {
+    background: #3f51b5;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(63, 81, 181, 0.35);
+}
+
+.map-mode-selector::ng-deep .mat-button-toggle-group-appearance-legacy {
+    border: none;
+}
+
+.view-as-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    user-select: none;
+    margin-top: 8px;
+    margin-right: 8px;
 }
 
 @media (max-width: 768px) {

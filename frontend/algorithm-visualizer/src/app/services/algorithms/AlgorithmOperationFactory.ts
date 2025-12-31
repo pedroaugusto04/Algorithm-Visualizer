@@ -8,6 +8,10 @@ import { ArrayAccessOperationStrategy } from "./array/ArrayAccessOperationStrate
 import { ArrayAddOperationStrategy } from "./array/ArrayAddOperationStrategy";
 import { ArrayRemoveOperationStrategy } from "./array/ArrayRemoveOperationStrategy";
 import { ArrayUpdateOperationStrategy } from "./array/ArrayUpdateOperationStrategy";
+import { MapAccessOperationStrategy } from "./map/MapAccessOperationStrategy";
+import { MapAddOperationStrategy } from "./map/MapAddOperationStrategy";
+import { MapUpdateOperationStrategy } from "./map/MapUpdateOperationStrategy";
+import { MapRemoveOperationStrategy } from "./map/MapRemoveOperationStrategy";
 
 @Injectable({ providedIn: 'root' })
 export class AlgorithmOperationFactory {
@@ -19,6 +23,10 @@ export class AlgorithmOperationFactory {
   };
 
   constructor(
+    private mapAccess: MapAccessOperationStrategy,
+    private mapAdd: MapAddOperationStrategy,
+    private mapUpdate: MapUpdateOperationStrategy,
+    private mapDelete: MapRemoveOperationStrategy,
     private graphAccess: GraphAccessOperationStrategy,
     private graphAdd: GraphAddOperationStrategy,
     private graphUpdate: GraphUpdateOperationStrategy,
@@ -30,6 +38,12 @@ export class AlgorithmOperationFactory {
   ) {
     this.strategies = {
       map: {
+        access: this.mapAccess,
+        add: this.mapAdd,
+        update: this.mapUpdate,
+        remove: this.mapDelete
+      },
+      graph: {
         access: this.graphAccess,
         add: this.graphAdd,
         update: this.graphUpdate,
@@ -44,7 +58,14 @@ export class AlgorithmOperationFactory {
     };
   }
 
-  getStrategy(type: string, operation: string): AlgorithmOperationStrategy | null {
-    return this.strategies[type]?.[operation] || null;
+  getStrategy(type: string, viewMode: string, operation: string): AlgorithmOperationStrategy | null {
+
+    let effectiveType = type;
+
+    if (type === 'map' && viewMode === 'graph') {
+      effectiveType = 'graph';
+    }
+
+    return this.strategies[effectiveType]?.[operation] || null;
   }
 }

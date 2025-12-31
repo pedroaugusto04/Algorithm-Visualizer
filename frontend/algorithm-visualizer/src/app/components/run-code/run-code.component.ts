@@ -15,6 +15,7 @@ import { AlgorithmOperationFactory } from 'src/app/services/algorithms/Algorithm
 import { AlgorithmUtilsService } from 'src/app/services/utils/algorithms/algorithm-utils.service';
 import { StructureVisualizerComponent } from '../app-structure-visualizer/app-structure-visualizer.component';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
   selector: 'app-run-code',
@@ -30,7 +31,8 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
     MatIconModule,
     MatTabsModule,
     StructureVisualizerComponent,
-    MatSlideToggleModule
+    MatSlideToggleModule,
+    MatButtonToggleModule
   ],
   templateUrl: './run-code.component.html',
   styleUrls: ['./run-code.component.scss']
@@ -267,7 +269,7 @@ export class RunCodeComponent implements OnDestroy {
 
         this.highlightStructure(rootStructure, structIndex);
 
-        const strategy = this.operationFactory.getStrategy(rootStructure.type, entry.op);
+        const strategy = this.operationFactory.getStrategy(rootStructure.type, rootStructure.viewMode || "", entry.op);
         if (strategy) {
           const isLastStepOfJump = (i === end);
           strategy.execute(rootStructure, this.structures, entry, !isLastStepOfJump);
@@ -370,6 +372,29 @@ export class RunCodeComponent implements OnDestroy {
       this.selectedInputFile = input.files[0];
     } else {
       this.selectedInputFile = null;
+    }
+  }
+
+  changeStructureViewMode(
+    struct: StructureWindow,
+    newMode: 'map' | 'graph'
+  ): void {
+
+    if (struct.viewMode === newMode) return;
+
+    struct.viewMode = newMode;
+
+    if (struct.initialized) {
+      const current = this.currentStep();
+
+      this.pause();
+      this.resetStructures();
+
+      setTimeout(() => {
+        if (current >= 0) {
+          this.goFrom0ToStep(current);
+        }
+      }, 0);
     }
   }
 

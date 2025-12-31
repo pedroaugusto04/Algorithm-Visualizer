@@ -201,6 +201,18 @@ public:
             __log("array", path + "[" + std::to_string(i) + "]", "add", __serialize(v));
         }
     }
+    
+    void clear() {
+        for (size_t i = 0; i < this->size(); ++i) {
+            __log(
+                "array",
+                path + "[" + std::to_string(i) + "]",
+                "remove",
+                __serialize(MIN_VALUE_INT)
+            );
+        }
+        std::vector<T>::clear();
+    }
 };
 
 template<typename K, typename V> class ObservedMap : public std::map<K, V> {
@@ -216,17 +228,37 @@ public:
         __log("map", path, "init", __serialize(MIN_VALUE_INT)); 
     }
     
-    auto operator[](const K& key) {
+    V& operator[](const K& key) {
         std::string ks = __to_str(key);
         V& val = std::map<K, V>::operator[](key);
         std::string full_path = path + "[" + ks + "]";
+
         if constexpr (is_observable<V>::value) {
             val.override_identity(path, ks);
             __log("map", full_path, "access", __serialize(MIN_VALUE_INT));
-            return (V&)val;
-        } else {
-            return MapAssignmentProxy<V>(val, full_path);
         }
+
+        return val;
+    }
+    
+    size_t erase(const K& key) {
+        std::string ks = __to_str(key);
+        std::string full_path = path + "[" + ks + "]";
+
+        auto it = this->find(key);
+        if (it != this->end()) {
+            __log("map", full_path, "remove", __serialize(it->second));
+            return std::map<K, V>::erase(key);
+        }
+        return 0;
+    }
+    
+    void clear() {
+        for (const auto& kv : *this) {
+            std::string ks = __to_str(kv.first);
+            __log("map", path + "[" + ks + "]", "remove", __serialize(kv.second));
+        }
+        std::map<K, V>::clear();
     }
 };
 

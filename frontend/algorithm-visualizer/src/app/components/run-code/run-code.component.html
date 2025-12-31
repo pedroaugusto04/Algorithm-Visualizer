@@ -41,8 +41,8 @@
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="w-100">
                     <mat-label>LeetCode method</mat-label>
-                    <input matInput placeholder="Type LeetCode method name (ex: twoSum)"
-                        [ngModel]="functionNameInput()" (ngModelChange)="functionNameInput.set($event)">
+                    <input matInput placeholder="Type LeetCode method name (ex: twoSum)" [ngModel]="functionNameInput()"
+                        (ngModelChange)="functionNameInput.set($event)">
                 </mat-form-field>
                 }
                 @else if (platformControl.value === 'codeforces') {
@@ -115,6 +115,28 @@
                     {{ struct.path }} ({{ struct.type | titlecase }})
                 </ng-template>
                 <div class="structure-render">
+
+                    @if (struct.type === 'map') {
+                    <div class="map-mode-selector m-b-8">
+
+                        <span class="view-as-label">View as</span>
+
+                        <mat-button-toggle-group [value]="struct.viewMode"
+                            (change)="changeStructureViewMode(struct, $any($event.value))" exclusive
+                            appearance="legacy">
+
+                            <mat-button-toggle value="map">
+                                Map
+                            </mat-button-toggle>
+
+                            <mat-button-toggle value="graph">
+                                Graph
+                            </mat-button-toggle>
+
+                        </mat-button-toggle-group>
+                    </div>
+                    }
+
                     @if (hasData(struct)) {
                     <app-structure-visualizer [struct]="struct"></app-structure-visualizer>
                     } @else {

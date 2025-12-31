@@ -4,6 +4,7 @@ export interface StructureWindow {
   initialized?: boolean;
   isHighlighting?: boolean;
   children: StructureWindow[];
+  viewMode?: 'map' | 'graph' | 'array';
   d3Data?: {
     arrayData?: any[],
     nodes: any[],
@@ -11,6 +12,7 @@ export interface StructureWindow {
     simulation: any,
     svg: any,
     width: number,
-    height: number
+    height: number,
+    targetCounter?: number
   };
 }
