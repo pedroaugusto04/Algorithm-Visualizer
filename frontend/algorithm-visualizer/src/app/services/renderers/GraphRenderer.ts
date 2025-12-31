@@ -53,9 +53,9 @@ export class GraphRenderer implements Renderer {
                     .style('cursor', 'pointer')
                     .call(this.drag(d3Data.simulation));
 
+
                 g.append('circle')
                     .attr('r', radius)
-                    .attr('fill', enter.color || 'steelblue')
                     .attr('stroke', '#fff')
                     .attr('stroke-width', 1.5);
 
@@ -72,6 +72,9 @@ export class GraphRenderer implements Renderer {
 
                 return g;
             });
+
+        nodeSelection.select('circle')
+            .attr('fill', (d: any) => (d.color || 'steelblue'));
 
         d3Data.simulation.nodes(d3Data.nodes);
         d3Data.simulation.force('link').links(d3Data.links);

@@ -43,8 +43,8 @@ export class MapAddOperationStrategy implements AlgorithmOperationStrategy {
 
     const targetId = `v${targetValue}_${structure.d3Data.targetCounter++}`;
 
-    this.ensureNode(nodes, sourceId, sourceValue, width, height);
-    this.ensureNode(nodes, targetId, targetValue, width, height);
+    this.ensureNode(nodes, sourceId,sourceValue,"orange",width, height);
+    this.ensureNode(nodes, targetId, targetValue,"steelblue",width, height);
 
     const sourceNode = nodes.find(n => n.id === sourceId);
     const targetNode = nodes.find(n => n.id === targetId);
@@ -69,13 +69,15 @@ export class MapAddOperationStrategy implements AlgorithmOperationStrategy {
     nodes: any[],
     id: string,
     value: number,
+    color: string,
     width: number,
     height: number
   ) {
     if (!nodes.some(n => n.id === id)) {
       nodes.push({
-        id,
-        value,
+        id: id,
+        value: value,
+        color: color,
         x: width / 2,
         y: height / 2
       });
