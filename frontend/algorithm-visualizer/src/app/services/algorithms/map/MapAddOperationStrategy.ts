@@ -23,8 +23,7 @@ export class MapAddOperationStrategy implements AlgorithmOperationStrategy {
         simulation: null,
         svg: null,
         width: 800,
-        height: 600,
-        targetCounter: 0
+        height: 600
       };
     }
 
@@ -33,18 +32,14 @@ export class MapAddOperationStrategy implements AlgorithmOperationStrategy {
     const sourceId = this.extractSourceId(entry.path);
     if (!sourceId) return;
 
-    const sourceValue = Number(sourceId.substring(1));
+    const sourceValue = this.extractLastIndex(sourceId);
 
     const targetValue = entry.value;
 
-    if (!structure.d3Data.targetCounter) {
-      structure.d3Data.targetCounter = 0;
-    }
+    const targetId = entry.path;
 
-    const targetId = `v${targetValue}_${structure.d3Data.targetCounter++}`;
-
-    this.ensureNode(nodes, sourceId,sourceValue,"orange",width, height);
-    this.ensureNode(nodes, targetId, targetValue,"steelblue",width, height);
+    this.ensureNode(nodes, sourceId, sourceValue, "orange", width, height);
+    this.ensureNode(nodes, targetId, targetValue, "steelblue", width, height);
 
     const sourceNode = nodes.find(n => n.id === sourceId);
     const targetNode = nodes.find(n => n.id === targetId);
@@ -60,9 +55,15 @@ export class MapAddOperationStrategy implements AlgorithmOperationStrategy {
 
 
   private extractSourceId(path: string): string | null {
-    const matches = [...path.matchAll(/\[(\d+)\]/g)].map(m => m[1]);
-    if (matches.length < 1) return null;
-    return `k${matches[matches.length - 2]}`;
+    const lastBracketIndex = path.lastIndexOf('[');
+    if (lastBracketIndex === -1) return null;
+
+    return path.substring(0, lastBracketIndex);
+  }
+
+  private extractLastIndex(path: string): number {
+    const matches = path.match(/\[(\d+)\](?=[^[]*$)/); 
+    return matches ? Number(matches[1]) : 0;
   }
 
   private ensureNode(

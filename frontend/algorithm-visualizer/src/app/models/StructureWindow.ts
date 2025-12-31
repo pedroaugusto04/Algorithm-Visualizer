@@ -12,7 +12,6 @@ export interface StructureWindow {
     simulation: any,
     svg: any,
     width: number,
-    height: number,
-    targetCounter?: number
+    height: number
   };
 }

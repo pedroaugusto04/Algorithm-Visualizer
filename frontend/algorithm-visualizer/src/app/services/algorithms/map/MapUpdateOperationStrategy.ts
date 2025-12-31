@@ -15,30 +15,23 @@ export class MapUpdateOperationStrategy implements AlgorithmOperationStrategy {
     entry: ExecutionLogEntry,
     skipRender: boolean
   ): void {
-
     if (!structure.d3Data) return;
 
     const { svg, nodes } = structure.d3Data;
+    const targetIdPrefix = entry.path;
+    
+    const nodeToUpdate = nodes
+      .filter((n: any) => n.id.startsWith(targetIdPrefix))
+      .pop();
 
-    const sourceId = this.extractSourceId(entry.path);
-    if (!sourceId) return;
+    if (!nodeToUpdate) return;
 
-    const newValue = entry.value;
-
-    const node = nodes.find((n: any) => n.id === sourceId);
-    if (node) {
-      node.value = newValue;
-    }
+    nodeToUpdate.value = entry.value;
 
     if (skipRender) return;
 
     this.globalRenderer.renderElements(structures);
-    this.pulseNode(svg, sourceId);
-  }
-
-  private extractSourceId(path: string): string | null {
-    const match = path.match(/\[(\d+)\]/);
-    return match ? `k${match[1]}` : null;
+    this.pulseNode(svg, nodeToUpdate.id);
   }
 
   private pulseNode(svg: any, id: string) {
@@ -48,7 +41,7 @@ export class MapUpdateOperationStrategy implements AlgorithmOperationStrategy {
       .filter((d: any) => d.id === id)
       .select('circle')
       .transition().duration(300)
-      .attr('fill', '#4CAF50')
+      .attr('fill', '#4CAF50') 
       .attr('r', 25)
       .transition().duration(300)
       .attr('fill', 'steelblue')

@@ -18,8 +18,7 @@ export class MapAccessOperationStrategy implements AlgorithmOperationStrategy {
                 simulation: null,
                 svg: null,
                 width: 800,
-                height: 600,
-                targetCounter: 0
+                height: 600
             };
         }
 
@@ -38,12 +37,11 @@ export class MapAccessOperationStrategy implements AlgorithmOperationStrategy {
     }
 
     private extractSourceId(path: string): string | null {
-        const matches = [...path.matchAll(/\[(\d+)\]/g)].map(m => m[1]);
-        if (matches.length === 0) return null;
+        const lastBracketIndex = path.lastIndexOf('[');
+        if (lastBracketIndex === -1) return null;
 
-        return `k${matches[0]}`;
+        return path.substring(0, lastBracketIndex);
     }
-
 
     private pulseNode(svg: any, id: string) {
         svg.selectAll('g.node-item')

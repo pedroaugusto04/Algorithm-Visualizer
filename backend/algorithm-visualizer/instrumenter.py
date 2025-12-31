@@ -368,6 +368,62 @@ public:
 
 """
 
+
+class TypeNode:
+    def __init__(self, name, args=None):
+        self.name = name
+        self.args = args or []
+
+def parse_type(clang_type):
+    kind = clang_type.kind
+
+    if kind == clang.cindex.TypeKind.TYPEDEF:
+        return parse_type(clang_type.get_canonical())
+
+    if kind in (
+            clang.cindex.TypeKind.LVALUEREFERENCE,
+            clang.cindex.TypeKind.RVALUEREFERENCE,
+            clang.cindex.TypeKind.POINTER
+    ):
+        return parse_type(clang_type.get_pointee())
+
+    if kind in (
+            clang.cindex.TypeKind.INT,
+            clang.cindex.TypeKind.BOOL,
+            clang.cindex.TypeKind.DOUBLE
+    ):
+        return TypeNode(clang_type.spelling)
+
+    if clang_type.get_num_template_arguments() > 0:
+        base = clang_type.spelling.split("<")[0].replace("std::", "").strip()
+        args = []
+        for i in range(clang_type.get_num_template_arguments()):
+            arg = clang_type.get_template_argument_type(i)
+            args.append(parse_type(arg))
+        return TypeNode(base, args)
+
+    if kind == clang.cindex.TypeKind.RECORD:
+        return TypeNode(clang_type.spelling)
+
+    return TypeNode(clang_type.spelling)
+
+OBS_MAP = {
+    "vector": "ObservedVector",
+    "map": "ObservedMap",
+    "unordered_map": "ObservedUnorderedMap",
+    "set": "ObservedSet",
+    "unordered_set": "ObservedUnorderedSet",
+    "queue": "ObservedQueue",
+    "stack": "ObservedStack"
+}
+
+def observed_typename(node: TypeNode):
+    name = OBS_MAP.get(node.name, node.name)
+    if not node.args:
+        return name
+    inner = ", ".join(observed_typename(a) for a in node.args)
+    return f"{name}<{inner}>"
+
 # Instrumentacao (CLANG)
 def instrument(file_path, testcase_file, method_to_call):
     index = clang.cindex.Index.create()
@@ -401,38 +457,27 @@ def instrument(file_path, testcase_file, method_to_call):
                         break
         if node.location.file and os.path.abspath(node.location.file.name) == abs_path:
             if node.kind == clang.cindex.CursorKind.VAR_DECL:
-                t = node.type.spelling
-                subs = {
-                    "unordered_map": "ObservedUnorderedMap",
-                    "unordered_set": "ObservedUnorderedSet",
-                    "map": "ObservedMap",
-                    "set": "ObservedSet",
-                    "vector": "ObservedVector",
-                    "queue": "ObservedQueue",
-                    "stack": "ObservedStack"
-                }
-
-                start = node.extent.start
-                original_line = lines[start.line - 1]
-                new_line = original_line
+                tnode = parse_type(node.type)
+                new_type = observed_typename(tnode)
+                new_line = lines[node.location.line - 1]
 
                 changed = False
-                for stl, obs in subs.items():
+                for stl, obs in OBS_MAP.items():
                     if re.search(rf'\b(std::)?{stl}\b', new_line) and obs not in new_line:
                         new_line = re.sub(rf'\bstd::{stl}\b', obs, new_line)
                         new_line = re.sub(rf'\b{stl}\b', obs, new_line)
                         changed = True
 
-                if changed:
-                    if ";" in new_line:
+                if changed and ";" in new_line:
+                    if any(obs in new_type for obs in OBS_MAP.values()):
                         new_line = new_line.replace(";", f"; {node.spelling}.set_name(\"{node.spelling}\");", 1)
 
-                    replacements.append({
-                        'line': start.line - 1,
-                        'start': 0,
-                        'end': len(original_line),
-                        'text': new_line
-                    })
+                replacements.append({
+                    'line': node.location.line - 1,
+                    'start': 0,
+                    'end': len(lines[node.location.line - 1]),
+                    'text': new_line
+                })
 
         for c in node.get_children():
             walk(c)

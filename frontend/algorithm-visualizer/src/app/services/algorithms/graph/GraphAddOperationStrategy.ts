@@ -1,89 +1,76 @@
+import { Injectable } from "@angular/core";
 import { ExecutionLogEntry } from "src/app/models/ExecutionLogEntry";
 import { StructureWindow } from "src/app/models/StructureWindow";
-import { AlgorithmOperationStrategy } from "../AlgorithmOperationStrategy";
-import { Injectable } from "@angular/core";
 import { GlobalRenderer } from "../../renderers/GlobalRenderer";
+import { AlgorithmOperationStrategy } from "../AlgorithmOperationStrategy";
 
 @Injectable({ providedIn: 'root' })
 export class GraphAddOperationStrategy implements AlgorithmOperationStrategy {
-
   constructor(private globalRenderer: GlobalRenderer) { }
 
   execute(structure: StructureWindow, structures: StructureWindow[], entry: ExecutionLogEntry, skipRender: boolean): void {
-
     if (!structure.d3Data) {
-      structure.d3Data = {
-        nodes: [] as any[],
-        links: [] as any[],
-        simulation: null,
-        svg: null,
-        width: 800,
-        height: 600
-      };
+      structure.d3Data = { nodes: [], links: [], simulation: null, svg: null, width: 800, height: 600 };
     }
 
-    const { nodes, links, svg } = structure.d3Data;
+    const { nodes, links, svg, width, height } = structure.d3Data;
 
-    const sourceId = this.extractSourceId(entry.path);
+    const sourceValue = this.extractPenultimateValue(entry.path);
 
-    const targetId = entry.value;
+    if (sourceValue === null) return;
 
-    if (sourceId === null) return;
+    const sourceId = String(sourceValue);
+    const targetId = String(entry.value);
 
-    const { width, height } = this.getDimensions();
+    const sourcePathId = this.extractSourcePathId(entry.path);
+    const targetPathId = entry.path;
 
-    this.ensureNodeExists(nodes, sourceId, width, height);
+    if (sourcePathId == null) return;
 
-    this.ensureNodeExists(nodes,targetId,width,height);
+    this.ensureNode(nodes, sourceId, sourcePathId, sourceValue, width, height);
+    this.ensureNode(nodes, targetId, targetPathId, entry.value, width, height);
 
     const sourceNode = nodes.find((n: any) => n.id === sourceId);
-    const targetNode = nodes.find((n:any) => n.id === targetId);
+    const targetNode = nodes.find((n: any) => n.id === targetId);
 
     const linkExists = links.some((l: any) => {
-      const s = l.source;
-      const t = l.target;
+      const s = typeof l.source === 'object' ? l.source.id : l.source;
+      const t = typeof l.target === 'object' ? l.target.id : l.target;
       return s === sourceId && t === targetId;
     });
 
-    if (!linkExists && sourceId != targetId) {
+    if (!linkExists && sourceId !== targetId) {
       links.push({ source: sourceNode, target: targetNode });
     }
 
     if (skipRender) return;
-
     this.globalRenderer.renderElements(structures);
     this.pulseNode(svg, sourceId);
   }
 
-  private getDimensions(): { width: number, height: number } {
-
-    const width = 800;
-    const height = 600;
-
-    return { width, height };
+  private extractPenultimateValue(path: string): string | null {
+    const matches = Array.from(path.matchAll(/\[(\d+)\]/g));
+    if (matches.length < 1) return null;
+    return matches.length >= 2 ? matches[matches.length - 2][1] : matches[0][1];
   }
 
-  private extractSourceId(path: string): number | null {
-    const match = path.match(/\[(\d+)\]/);
-    return match ? parseInt(match[1]) : null;
+  private extractSourcePathId(path: string): string | null {
+    const lastBracketIndex = path.lastIndexOf('[');
+    if (lastBracketIndex === -1) return null;
+
+    return path.substring(0, lastBracketIndex);
   }
 
-  private ensureNodeExists(nodes: any[], id: number, width: number, height: number) {
+  private ensureNode(nodes: any[], id: string, pathId: string, value: string,  width: number, height: number) {
     if (!nodes.some(n => n.id === id)) {
-      nodes.push({ id:id, value: id, x: width / 2, y: height / 2 });
+      nodes.push({ id: id, pathId: pathId, value: value, x: width / 2, y: height / 2 });
     }
   }
-  
-  private pulseNode(svg: any, id: number) {
+
+  private pulseNode(svg: any, id: string) {
     if (!svg) return;
-    svg.selectAll('g.node-item')
-      .filter((d: any) => d.id === id)
-      .select('circle')
-      .transition().duration(300)
-      .attr('fill', 'orange')
-      .attr('r', 25)
-      .transition().duration(300)
-      .attr('fill', 'steelblue')
-      .attr('r', 20);
+    svg.selectAll('g.node-item').filter((d: any) => d.pathId === id).select('circle')
+      .transition().duration(300).attr('fill', 'yellow').attr('r', 25)
+      .transition().duration(300).attr('fill', 'steelblue').attr('r', 20);
   }
 }

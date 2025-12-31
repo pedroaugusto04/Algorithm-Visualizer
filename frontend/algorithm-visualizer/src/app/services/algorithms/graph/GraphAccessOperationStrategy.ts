@@ -9,7 +9,7 @@ export class GraphAccessOperationStrategy implements AlgorithmOperationStrategy 
 
     constructor(private globalRenderer: GlobalRenderer) { }
 
-    execute(structure: StructureWindow, structures: StructureWindow[],  entry: ExecutionLogEntry, skipRender: boolean): void {
+    execute(structure: StructureWindow, structures: StructureWindow[], entry: ExecutionLogEntry, skipRender: boolean): void {
 
         if (!structure.d3Data) {
             structure.d3Data = {
@@ -24,27 +24,29 @@ export class GraphAccessOperationStrategy implements AlgorithmOperationStrategy 
 
         const d3Data = structure.d3Data;
 
-        const nodeId = this.extractIdFromPath(entry.path);
-        
-        if (nodeId === null) return;
+        const nodePathId = this.extractSourcePathId(entry.path);
+
+        if (nodePathId === null) return;
 
         const { svg } = d3Data;
 
         if (skipRender) return;
 
         this.globalRenderer.renderElements(structures);
-        this.pulseNode(svg, nodeId);
+        this.pulseNode(svg, nodePathId);
     }
 
-    private extractIdFromPath(path: string): number | null {
-        const match = path.match(/\[(\d+)\]/);
-        return match ? parseInt(match[1]) : null;
+    private extractSourcePathId(path: string): string | null {
+        const lastBracketIndex = path.lastIndexOf('[');
+        if (lastBracketIndex === -1) return null;
+
+        return path.substring(0, lastBracketIndex);
     }
 
 
-    private pulseNode(svg: any, id: number) {
+    private pulseNode(svg: any, pathId: string) {
         svg.selectAll('g.node-item')
-            .filter((d: any) => d.id === id)
+            .filter((d: any) => d.pathId === pathId)
             .select('circle')
             .transition().duration(300)
             .attr('fill', '#4CAF50')

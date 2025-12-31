@@ -73,6 +73,11 @@ export class GraphRenderer implements Renderer {
                 return g;
             });
 
+
+        // sincroniza valor
+        nodeSelection.select('text.node-text').text((d: any) => d.value);
+
+        // sincroniza cor
         nodeSelection.select('circle')
             .attr('fill', (d: any) => (d.color || 'steelblue'));
 
