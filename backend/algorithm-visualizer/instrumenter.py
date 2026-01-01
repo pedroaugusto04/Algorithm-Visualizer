@@ -115,33 +115,45 @@ struct AssignmentProxy {
     std::string path;
     AssignmentProxy(T& r, std::string p) : ref(r), path(p) {}
 
-    operator T&() { return ref; }
-    operator const T&() const { return ref; }
+    // Deixamos apenas uma conversão para evitar o erro de ambiguidade
+    operator T&() const { return ref; }
+    
     bool operator<(const T& other) const { return ref < other; }
     bool operator==(const T& other) const { return ref == other; }
-
-    friend std::istream& operator>>(std::istream& is, AssignmentProxy<T> proxy) {
-        is >> proxy.ref;
-            __log("array", proxy.path, "update", __serialize(proxy.ref));
-        return is;
-    }
 
     AssignmentProxy& operator=(const T& v) {
         ref = v;
         __log("array", path, "update", __serialize(v));
         return *this;
     }
-
-    AssignmentProxy& operator=(const AssignmentProxy<T>& other) {
-        return *this = static_cast<T>(other.ref);
+    
+    // Atribuição entre proxies usando a referência direta
+    AssignmentProxy& operator=(const AssignmentProxy& other) {
+        if (this != &other) {
+            *this = (T)other.ref; 
+        }
+        return *this;
     }
 
     AssignmentProxy& operator+=(const T& v) { return *this = ref + v; }
     AssignmentProxy& operator-=(const T& v) { return *this = ref - v; }
-    
     T operator++(int) { T old = ref; *this = ref + 1; return old; }
     T& operator++() { *this = ref + 1; return ref; }
+
+    friend std::istream& operator>>(std::istream& is, AssignmentProxy<T> proxy) {
+        is >> proxy.ref;
+        __log("array", proxy.path, "update", __serialize(proxy.ref));
+        return is;
+    }
 };
+
+// Sobrecarga global de swap para AssignmentProxy (necessária para std::reverse)
+template<typename T>
+void swap(AssignmentProxy<T> a, AssignmentProxy<T> b) {
+    T temp = (T)a;
+    a = (T)b;
+    b = temp;
+}   
 
 template<typename V>
 struct MapAssignmentProxy {
@@ -161,12 +173,70 @@ struct MapAssignmentProxy {
     auto end() { return ref.end(); }
 };
 
+template<typename T> class ObservedVector;
+
+template<typename T, typename RawIter>
+struct ObservedIterator {
+    RawIter current;
+    ObservedVector<T>* container;
+    
+    // Mudança Crítica: Definimos explicitamente como Random Access
+    using iterator_category = std::random_access_iterator_tag;
+    using value_type        = T;
+    using difference_type   = typename std::iterator_traits<RawIter>::difference_type;
+    using pointer           = T*;
+    using reference         = AssignmentProxy<T>; 
+
+    ObservedIterator(RawIter it, ObservedVector<T>* c) : current(it), container(c) {}
+    
+    // Removida a duplicata do operator* que causava o erro de overload
+    reference operator*() const {
+        size_t idx = std::distance(container->begin_raw(), current);
+        return AssignmentProxy<T>(*current, container->get_path() + "[" + std::to_string(idx) + "]");
+    }
+
+    // Acesso por índice (necessário para std::sort)
+    reference operator[](difference_type n) const {
+        return *(*this + n);
+    }
+
+    // Operadores de Incremento/Decremento
+    ObservedIterator& operator++() { ++current; return *this; }
+    ObservedIterator operator++(int) { ObservedIterator tmp = *this; ++current; return tmp; }
+    ObservedIterator& operator--() { --current; return *this; }
+    ObservedIterator operator--(int) { ObservedIterator tmp = *this; --current; return tmp; }
+
+    // Aritmética de Iteradores
+    ObservedIterator& operator+=(difference_type n) { current += n; return *this; }
+    ObservedIterator& operator-=(difference_type n) { current -= n; return *this; }
+    ObservedIterator operator+(difference_type n) const { return ObservedIterator(current + n, container); }
+    ObservedIterator operator-(difference_type n) const { return ObservedIterator(current - n, container); }
+    friend ObservedIterator operator+(difference_type n, const ObservedIterator& it) { return it + n; }
+    difference_type operator-(const ObservedIterator& other) const { return current - other.current; }
+
+    // Operadores de Comparação (Essenciais para algoritmos)
+    bool operator==(const ObservedIterator& other) const { return current == other.current; }
+    bool operator!=(const ObservedIterator& other) const { return current != other.current; }
+    bool operator<(const ObservedIterator& other) const { return current < other.current; }
+    bool operator>(const ObservedIterator& other) const { return current > other.current; }
+    bool operator<=(const ObservedIterator& other) const { return current <= other.current; }
+    bool operator>=(const ObservedIterator& other) const { return current >= other.current; }
+
+    // O swap customizado via ADL
+    friend void iter_swap(ObservedIterator a, ObservedIterator b) {
+        T temp = static_cast<T>(*a); 
+        *a = static_cast<T>(*b);     
+        *b = temp;                   
+    }
+};
+
 template<typename T> class ObservedVector : public std::vector<T> {
     std::string path = "internal";
 public:
     using std::vector<T>::vector;
     
     ObservedVector() : path("internal") {}
+    ObservedVector(const ObservedVector& other) : std::vector<T>(other), path(other.path) {}
     ObservedVector(std::string p) : path(p) { __log("array", path, "init", __serialize(MIN_VALUE_INT)); }
     void override_identity(std::string parent, std::string key) { path = parent + "[" + key + "]"; }
     
@@ -174,6 +244,12 @@ public:
         path = p; 
         __log("array", path, "init", __serialize(MIN_VALUE_INT)); 
     }
+    
+    auto begin_raw() { return std::vector<T>::begin(); }
+    std::string get_path() { return path; }
+    
+    auto begin() { return ObservedIterator<T, typename std::vector<T>::iterator>(std::vector<T>::begin(), this); }
+    auto end() { return ObservedIterator<T, typename std::vector<T>::iterator>(std::vector<T>::end(), this); }
     
     void push_back(const T& v) {
         std::vector<T>::push_back(v);
@@ -193,6 +269,14 @@ public:
         } else {
             return AssignmentProxy<T>(std::vector<T>::operator[](i), p);
         }
+    }
+    
+    ObservedVector& operator=(const ObservedVector& other) {
+        if (this != &other) {
+            std::vector<T>::operator=(other);
+            this->path = other.path;
+        }
+        return *this;
     }
 
     void assign(size_t n, const T& v) {
@@ -441,25 +525,71 @@ def instrument(file_path, testcase_file, method_to_call):
     method_return_type = "auto"
 
     def walk(node):
-        nonlocal has_main, method_name
-        if node.kind == clang.cindex.CursorKind.FUNCTION_DECL:
-            if node.spelling == "main":
-                has_main = True
-        if node.kind == clang.cindex.CursorKind.CLASS_DECL and node.spelling == "Solution":
-            for c in node.get_children():
-                if c.kind == clang.cindex.CursorKind.CXX_METHOD:
-                    if c.spelling == method_to_call:
-                        method_name = c.spelling
-                        method_return_type = c.result_type.spelling
-                        for arg in c.get_arguments():
-                            if arg.spelling:
-                                method_param_types[arg.spelling] = arg.type.spelling
+        nonlocal has_main, method_name, method_return_type
+
+        # 1. Identifica a função alvo (Solution::method_to_call)
+        if node.kind == clang.cindex.CursorKind.CXX_METHOD and node.spelling == method_to_call:
+            parent = node.semantic_parent
+            if parent and parent.spelling == "Solution":
+                method_name = node.spelling
+                method_return_type = node.result_type.spelling
+
+                # --- NOVO: Substituição de tipos na assinatura da função ---
+                # Precisamos trocar std::vector por ObservedVector nos parâmetros
+                # para que o compilador aceite a chamada do .set_name()
+                sig_line_idx = node.location.line - 1
+                sig_line = lines[sig_line_idx]
+
+                new_sig_line = sig_line
+                for stl, obs in OBS_MAP.items():
+                    # Troca 'std::vector' ou 'vector' por 'ObservedVector', etc.
+                    new_sig_line = re.sub(rf'\b(std::)?{stl}\b', obs, new_sig_line)
+
+                if new_sig_line != sig_line:
+                    replacements.append({
+                        'line': sig_line_idx,
+                        'start': 0,
+                        'end': len(sig_line),
+                        'text': new_sig_line
+                    })
+
+                # Mapeia tipos para o main (usado para gerar o código de teste)
+                for arg in node.get_arguments():
+                    if arg.spelling:
+                        method_param_types[arg.spelling] = arg.type.spelling
+
+                # 2. Injeção de set_name dentro do corpo (COMPOUND_STMT)
+                for child in node.get_children():
+                    if child.kind == clang.cindex.CursorKind.COMPOUND_STMT:
+                        start_loc = child.extent.start
+
+                        injection_text = "\n"
+                        for arg in node.get_arguments():
+                            arg_tnode = parse_type(arg.type)
+                            if arg_tnode.name in OBS_MAP:
+                                injection_text += f'    {arg.spelling}.set_name("{arg.spelling}");\n'
+
+                        if injection_text.strip():
+                            replacements.append({
+                                'line': start_loc.line - 1,
+                                'start': start_loc.column, # Logo após o '{'
+                                'end': start_loc.column,
+                                'text': injection_text
+                            })
                         break
+
+        # 3. Detecta se já existe um main
+        if node.kind == clang.cindex.CursorKind.FUNCTION_DECL and node.spelling == "main":
+            has_main = True
+
+        # 4. Lógica para variáveis locais (VAR_DECL) - Mantida para variáveis dentro da função
         if node.location.file and os.path.abspath(node.location.file.name) == abs_path:
+            # PARM_DECL (parâmetros) são ignorados aqui para não duplicar a lógica da assinatura
             if node.kind == clang.cindex.CursorKind.VAR_DECL:
                 tnode = parse_type(node.type)
                 new_type = observed_typename(tnode)
-                new_line = lines[node.location.line - 1]
+                line_idx = node.location.line - 1
+                new_line = lines[line_idx]
 
                 changed = False
                 for stl, obs in OBS_MAP.items():
@@ -473,12 +603,13 @@ def instrument(file_path, testcase_file, method_to_call):
                         new_line = new_line.replace(";", f"; {node.spelling}.set_name(\"{node.spelling}\");", 1)
 
                 replacements.append({
-                    'line': node.location.line - 1,
+                    'line': line_idx,
                     'start': 0,
-                    'end': len(lines[node.location.line - 1]),
+                    'end': len(lines[line_idx]),
                     'text': new_line
                 })
 
+        # Recorre para os filhos
         for c in node.get_children():
             walk(c)
 

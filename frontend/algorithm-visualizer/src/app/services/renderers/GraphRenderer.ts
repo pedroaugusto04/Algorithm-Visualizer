@@ -13,6 +13,8 @@ export class GraphRenderer implements Renderer {
             return;
         }
 
+        this.ensureArrowMarker(d3Data.svg);
+
         const link = d3Data.svg.selectAll('.link-item')
             .data(d3Data.links, (d: any) => `${d.source.id || d.source}-${d.target.id || d.target}`);
 
@@ -135,5 +137,25 @@ export class GraphRenderer implements Renderer {
                 d.fx = null;
                 d.fy = null;
             });
+    }
+
+    private ensureArrowMarker(svg: any) {
+        const defs = svg.select('defs').empty()
+            ? svg.append('defs')
+            : svg.select('defs');
+
+        if (!defs.select('#arrowhead').empty()) return;
+
+        defs.append('marker')
+            .attr('id', 'arrowhead')
+            .attr('viewBox', '0 -5 10 10')
+            .attr('refX', 28)
+            .attr('refY', 0)
+            .attr('markerWidth', 6)
+            .attr('markerHeight', 6)
+            .attr('orient', 'auto')
+            .attr('fill', '#000')
+            .append('path')
+            .attr('d', 'M0,-5L10,0L0,5');
     }
 }

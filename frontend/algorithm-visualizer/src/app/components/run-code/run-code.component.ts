@@ -16,6 +16,7 @@ import { AlgorithmUtilsService } from 'src/app/services/utils/algorithms/algorit
 import { StructureVisualizerComponent } from '../app-structure-visualizer/app-structure-visualizer.component';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { GlobalRenderer } from 'src/app/services/renderers/GlobalRenderer';
 
 @Component({
   selector: 'app-run-code',
@@ -69,7 +70,8 @@ export class RunCodeComponent implements OnDestroy {
   constructor(
     private codeService: CodeService,
     private operationFactory: AlgorithmOperationFactory,
-    private algorithmUtilsService: AlgorithmUtilsService
+    private algorithmUtilsService: AlgorithmUtilsService,
+    private globalRenderer: GlobalRenderer
   ) { }
 
   ngOnInit() {
@@ -166,6 +168,8 @@ export class RunCodeComponent implements OnDestroy {
 
   private play(): void {
     if (this.isPlaying()) return;
+
+    this.globalRenderer.renderElements(this.structures);
 
     if (this.currentStep() >= this.totalSteps() - 1) {
       this.pause();
@@ -387,12 +391,12 @@ export class RunCodeComponent implements OnDestroy {
     if (struct.initialized) {
       const current = this.currentStep();
 
-      this.pause();
       this.resetStructures();
 
       setTimeout(() => {
         if (current >= 0) {
           this.goFrom0ToStep(current);
+          this.globalRenderer.renderElements(this.structures);
         }
       }, 0);
     }
