@@ -24,8 +24,6 @@ export class GraphUpdateOperationStrategy implements AlgorithmOperationStrategy 
       .filter((n: any) => n.pathId.startsWith(targetIdPrefix))
       .pop();
 
-    nodes.forEach(node => console.log(node.pathId));
-
     if (!nodeToUpdate) return;
 
     nodeToUpdate.value = entry.value;
