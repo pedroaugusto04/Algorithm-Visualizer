@@ -136,13 +136,13 @@ export class FullComponent implements OnInit {
                 type: 'Graph',
                 children: []
               },
-              {
+              /*{
                 id: this.IncrementAndGetNavItemId(),
                 displayName: 'Matrices',
                 iconName: 'border-all',
                 type: 'Matrix',
                 children: []
-              },
+              },*/
             ],
             type: 'DataStructure'
           },
@@ -157,12 +157,12 @@ export class FullComponent implements OnInit {
                 iconName: 'git-merge',
                 route: '/create-graph-structure',
               },
-              {
+              /*{
                 id: this.IncrementAndGetNavItemId(),
                 displayName: 'Matrix',
                 iconName: 'border-all',
                 route: '/create-matrix-structure',
-              }
+              }*/
             ]
           }
         ]
@@ -203,12 +203,12 @@ export class FullComponent implements OnInit {
                 iconName: 'git-merge',
                 route: '/create-graph-structure',
               },
-              {
+              /*{
                 id: this.IncrementAndGetNavItemId(),
                 displayName: 'Matrix',
                 iconName: 'border-all',
                 route: '/create-matrix-structure',
-              }
+              }*/
             ]
           },
           {
