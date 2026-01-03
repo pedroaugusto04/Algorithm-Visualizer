@@ -1,0 +1,45 @@
+name: Deploy Frontend Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Build Angular & Deploy via SCP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd frontend/algorithm-visualizer
+          npm install
+
+      - name: Build Angular app
+        run: |
+          cd frontend/algorithm-visualizer
+          npm run build
+
+      - name: Clean old files on VPS
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          script: |
+            cd /var/www/algorithm-visualizer || exit 1
+            rm -rf *
+
+      - name: Copy dist files to VPS
+        run: |
+          scp -i ${{ secrets.SERVER_SSH_KEY }} -r frontend/algorithm-visualizer/dist/Materialpro/* \
+          ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/algorithm-visualizer
