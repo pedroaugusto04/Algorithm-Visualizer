@@ -59,7 +59,7 @@ jobs:
             sudo docker pull ${{ env.DOCKER_IMAGE }}
             
             sudo docker run -d --name algorithm-visualizer \
-            -p 8080:8080 \
+            -p 8080:8083 \
             --env-file ~/.env \
             ${{ env.DOCKER_IMAGE }}
 
