@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { LoginUserDTO } from '../models/DTO/User/LoginUserDTO';
 import { LoginResponse } from '../models/Responses/LoginResponse';
@@ -31,10 +31,15 @@ export class CodeService {
       executeCodeUrl,
       payload,
       {
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
       }
+    ).pipe(
+      map(res => {
+        if (!res || !res.success) {
+          throw new Error('Provided code is not supported');
+        }
+        return res;
+      })
     );
   }
 

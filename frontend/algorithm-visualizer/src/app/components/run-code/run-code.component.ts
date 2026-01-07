@@ -17,6 +17,7 @@ import { StructureVisualizerComponent } from '../app-structure-visualizer/app-st
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { GlobalRenderer } from 'src/app/services/renderers/GlobalRenderer';
+import { SnackBarService } from 'src/app/services/utils/snackbar/snack-bar.service';
 
 @Component({
   selector: 'app-run-code',
@@ -71,6 +72,7 @@ export class RunCodeComponent implements OnDestroy {
     private codeService: CodeService,
     private operationFactory: AlgorithmOperationFactory,
     private algorithmUtilsService: AlgorithmUtilsService,
+    private snackBarService: SnackBarService,
     private globalRenderer: GlobalRenderer
   ) { }
 
@@ -102,12 +104,23 @@ export class RunCodeComponent implements OnDestroy {
 
     if (this.platformControl.value === 'leetcode') {
 
+      if (!this.testCaseInput()) {
+        this.executionResult.set('Error: Test Case input is required');
+        return;
+      }
+
+      if (!this.functionNameInput()) {
+        this.executionResult.set('Error: Function name input is required');
+        return;
+      }
+
       this.codeService.executeCode(payload).subscribe({
         next: (res: ExecuteCodeResponse) => {
           this.proccessResult(res);
         },
-        error: () => {
-          this.executionResult.set('Execution failed. Check your connection.');
+        error: (error) => {
+          this.executionResult.set(`Execution failed: ${error.message || "Provided code is not supported"}`);
+          this.snackBarService.showSnackBarError('The provided code is not yet supported.');
         }
       });
 
@@ -125,45 +138,41 @@ export class RunCodeComponent implements OnDestroy {
       next: (res: ExecuteCodeResponse) => {
         this.proccessResult(res);
       },
-      error: () => {
-        this.executionResult.set('Execution failed. Check your connection.');
+      error: (error) => {
+        this.executionResult.set(`Execution failed: ${error.message || "Provided code is not supported"}`);
+        this.snackBarService.showSnackBarError('The provided code is not yet supported.');
       }
     })
   }
 
   private proccessResult(res: ExecuteCodeResponse) {
-    if (res.success) {
-      this.executionResult.set(res.systemLogs || 'Success!');
+    this.executionResult.set(res.systemLogs || 'Success!');
 
-      let userLogs = '';
-      const parsedEntries: ExecutionLogEntry[] = [];
+    let userLogs = '';
+    const parsedEntries: ExecutionLogEntry[] = [];
 
-      const lines = res.executionLogs?.trim().split('\n') ?? [];
+    const lines = res.executionLogs?.trim().split('\n') ?? [];
 
-      lines.forEach(line => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return;
-        try {
-          const entry: ExecutionLogEntry = JSON.parse(trimmedLine); parsedEntries.push(entry);
-        } catch { userLogs += trimmedLine + '\n'; }
-      });
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) return;
+      try {
+        const entry: ExecutionLogEntry = JSON.parse(trimmedLine); parsedEntries.push(entry);
+      } catch { userLogs += trimmedLine + '\n'; }
+    });
 
-      this.executionResult.set((res.systemLogs || 'Success!') + '\n' + userLogs);
+    this.executionResult.set((res.systemLogs || 'Success!') + '\n' + userLogs);
 
-      this.entries = parsedEntries;
+    this.entries = parsedEntries;
 
-      const operations: ExecutionLogEntry[] = this.entries.filter(e => e.op !== 'init');
+    const operations: ExecutionLogEntry[] = this.entries.filter(e => e.op !== 'init');
 
-      this.operations = operations;
+    this.operations = operations;
 
-      this.totalSteps.set(this.operations.length);
+    this.totalSteps.set(this.operations.length);
 
-      this.resetStructures();
-      this.play();
-
-    } else {
-      this.executionResult.set(`Error: ${res.error}`);
-    }
+    this.resetStructures();
+    this.play();
   }
 
   private play(): void {
@@ -286,6 +295,7 @@ export class RunCodeComponent implements OnDestroy {
   private resetState(): void {
     this.pause();
     this.resetStructures(true);
+    this.resetView();
     this.currentStep.set(-1);
     this.totalSteps.set(0);
   }
@@ -311,6 +321,13 @@ export class RunCodeComponent implements OnDestroy {
     });
 
     this.currentStep.set(-1);
+  }
+
+  private resetView() {
+    this.entries = [];
+    this.operations = [];
+    this.initialStructures = [];
+    this.structures = [];
   }
 
   onPaste(event: ClipboardEvent): void {
