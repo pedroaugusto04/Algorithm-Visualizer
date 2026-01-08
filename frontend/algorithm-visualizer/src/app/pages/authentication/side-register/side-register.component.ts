@@ -8,10 +8,11 @@ import { MaterialModule } from 'src/app/material.module';
 import { UserService } from 'src/app/services/user.service';
 import { RegisterUserDTO } from 'src/app/models/DTO/User/RegisterUserDTO';
 import { SwalService } from 'src/app/services/utils/swal/swal.service';
+import { GoogleSigninComponent } from 'src/app/components/google-signin/google-signin.component';
 
 @Component({
   selector: 'app-side-register',
-  imports: [RouterModule, MaterialModule, FormsModule, ReactiveFormsModule],
+  imports: [RouterModule, MaterialModule, FormsModule, ReactiveFormsModule, GoogleSigninComponent],
   templateUrl: './side-register.component.html',
   styleUrl: './side-register.component.scss'
 })

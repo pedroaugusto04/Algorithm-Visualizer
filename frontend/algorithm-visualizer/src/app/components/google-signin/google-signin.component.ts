@@ -1,4 +1,4 @@
-import { Component, OnInit, NgZone } from '@angular/core';
+import { Component, OnInit, NgZone, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { CookieService } from 'ngx-cookie-service';
 import { AuthService } from 'src/app/services/auth.service';
@@ -15,6 +15,8 @@ declare const google: any;
 })
 export class GoogleSigninComponent {
 
+  @Input() mode: 'signin' | 'signup' = 'signin'; 
+  
   constructor(private authService: AuthService, private cookieService: CookieService, private router: Router, private swalService: SwalService) { }
 
   async ngAfterViewInit(): Promise<void> {
@@ -43,7 +45,7 @@ export class GoogleSigninComponent {
 
     google.accounts.id.renderButton(
       document.getElementById('google-signin-button'),
-      { theme: "outline", size: "large", shape: "pill", width: 210 }
+      { theme: "outline", size: "large", shape: "pill", width: 210, text: this.mode === 'signup' ? "signup_with" : "signin_with"  }
     );
 
     google.accounts.id.prompt();
