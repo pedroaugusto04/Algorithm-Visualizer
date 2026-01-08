@@ -11,4 +11,6 @@ import com.pedro.algorithm_visualizer.models.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
+
+    Optional<User> findByEmailAndGoogleId(String email, String googleId);
 }

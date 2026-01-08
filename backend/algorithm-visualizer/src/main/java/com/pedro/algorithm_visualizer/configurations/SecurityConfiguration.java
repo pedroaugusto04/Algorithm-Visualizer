@@ -33,6 +33,7 @@ public class SecurityConfiguration {
     public static final String[] UNAUTHORIZED_ENDPOINTS = {
             "/",
             "/users/login",
+            "/users/auth/google",
             "/users/register",
             "/graphs/**",
             "/algorithms/**",

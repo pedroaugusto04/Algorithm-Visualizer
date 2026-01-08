@@ -1,4 +1,8 @@
 import { Component, OnInit, NgZone } from '@angular/core';
+import { Router } from '@angular/router';
+import { CookieService } from 'ngx-cookie-service';
+import { AuthService } from 'src/app/services/auth.service';
+import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 declare const google: any;
 
@@ -11,7 +15,7 @@ declare const google: any;
 })
 export class GoogleSigninComponent {
 
-
+  constructor(private authService: AuthService, private cookieService: CookieService, private router: Router, private swalService: SwalService) { }
 
   async ngAfterViewInit(): Promise<void> {
     await this.waitForGoogleScript();
@@ -39,15 +43,30 @@ export class GoogleSigninComponent {
 
     google.accounts.id.renderButton(
       document.getElementById('google-signin-button'),
-      { theme: "outline", size: "large", shape: "pill", width: 210}
+      { theme: "outline", size: "large", shape: "pill", width: 210 }
     );
 
     google.accounts.id.prompt();
   }
 
   handleCredentialResponse(response: any) {
-    console.log('Encoded JWT ID token: ' + response.credential);
+    this.authService.loginGoogleUser(response.credential).subscribe({
+      next: (data) => {
+        // salva o token nos cookies
+        this.cookieService.set("token", data.token, {
+          expires: 1,
+          path: '/',
+          sameSite: "None",
+          secure: true,
+        });
+
+        this.router.navigate(['/'])
+
+        this.swalService.successNoButton("Login successful", "");
+      },
+      error: (error) => {
+        this.swalService.errorNoButton("Google Sign-in Failed", error.error.message || "An error occurred during Google login.", 4000);
+      }
+    });
   }
-
-
 }

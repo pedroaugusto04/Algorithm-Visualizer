@@ -44,13 +44,13 @@ export class SwalService {
     });
   }
 
-  errorNoButton(title: string, text: string) {
+  errorNoButton(title: string, text: string, timer?: number) {
     return this.swalWithBootstrapButtons.fire({
       title,
       text,
       icon: 'error',
       showConfirmButton: false,
-      timer: 1500,
+      timer: timer ?? 1500,
       timerProgressBar: true,
       scrollbarPadding: false,
       heightAuto: false

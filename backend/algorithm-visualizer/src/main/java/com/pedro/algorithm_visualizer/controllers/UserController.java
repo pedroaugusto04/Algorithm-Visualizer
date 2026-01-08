@@ -3,6 +3,9 @@ package com.pedro.algorithm_visualizer.controllers;
 import java.util.List;
 import java.util.UUID;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.pedro.algorithm_visualizer.models.DTO.*;
+import com.pedro.algorithm_visualizer.services.GoogleLoginService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,11 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.pedro.algorithm_visualizer.models.DTO.JwtTokenDTO;
-import com.pedro.algorithm_visualizer.models.DTO.LoginUserDTO;
-import com.pedro.algorithm_visualizer.models.DTO.ProfileDTO;
-import com.pedro.algorithm_visualizer.models.DTO.RegisterUserDTO;
-import com.pedro.algorithm_visualizer.models.DTO.UserDTO;
 import com.pedro.algorithm_visualizer.services.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,9 +29,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class UserController {
 
     private UserService userService;
+    private GoogleLoginService googleLoginService;
 
-    UserController(UserService userService){
+    UserController(UserService userService, GoogleLoginService googleLoginService){
         this.userService = userService;
+        this.googleLoginService = googleLoginService;
     }
 
     @Operation(summary = "Obter informações do usuário logado", description = "Retorna informações básicas do usuário autenticado.")
@@ -74,6 +74,26 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<JwtTokenDTO> authenticateUser(@RequestBody LoginUserDTO loginUserDTO) {
         JwtTokenDTO token = userService.authenticateUser(loginUserDTO);
+
+        return new ResponseEntity<>(token, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Registrar/Logar novo usuário via Google", description = "Registra/Cria um novo usuário no sistema via Google.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos para criação do usuário", content = @Content)
+    })
+    @PostMapping("/auth/google")
+    public ResponseEntity<JwtTokenDTO> googleLogin(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    description = "Dados para registro do usuário",
+                    content = @Content(schema = @Schema(implementation = GoogleLoginDTO.class)))
+            @RequestBody GoogleLoginDTO googleLoginDTO) {
+
+        GoogleIdToken.Payload payload = this.googleLoginService.validateToken(googleLoginDTO.token());
+
+        JwtTokenDTO token = this.googleLoginService.login(payload);
 
         return new ResponseEntity<>(token, HttpStatus.OK);
     }

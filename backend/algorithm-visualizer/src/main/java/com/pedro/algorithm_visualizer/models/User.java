@@ -34,6 +34,9 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @Column(name = "google_id", unique = true)
+    private String googleId;
+
     private String password;
 
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
@@ -50,10 +53,11 @@ public class User {
     public User() {
     }
 
-    public User(String name, String email, String password, Set<Role> roles) {
+    public User(String name, String email, String password, String googleId, Set<Role> roles) {
         this.name = name;
         this.email = email;
         this.password = password;
+        this.googleId = googleId;
         this.roles = roles;
     }
 
@@ -119,5 +123,13 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getGoogleId() {
+        return googleId;
+    }
+
+    public void setGoogleId(String googleId) {
+        this.googleId = googleId;
     }
 }

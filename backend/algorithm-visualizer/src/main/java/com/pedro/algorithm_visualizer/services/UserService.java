@@ -1,6 +1,7 @@
 package com.pedro.algorithm_visualizer.services;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -8,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.pedro.algorithm_visualizer.configurations.SecurityConfiguration;
@@ -59,12 +61,32 @@ public class UserService {
         return new JwtTokenDTO(jwtTokenService.generateToken(userDetails));
     }
 
+    public JwtTokenDTO authenticateGoogleUser(User user) {
+        UserDetailsImpl userDetails = new UserDetailsImpl(user);
+        Authentication authentication =
+                new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        return new JwtTokenDTO(jwtTokenService.generateToken(userDetails));
+    }
+
     public UserDTO getUserInfo() {
         User user = this.userDetailsService.getLoggedUser();
 
-        UserDTO userDTO = new UserDTO(user.getName(), user.getPhoto());
+        return new UserDTO(user.getName(), user.getPhoto());
+    }
 
-        return userDTO;
+    public Optional<User> getUserByEmailAndGoogleId(String email, String googleId) {
+        return this.userRepository.findByEmailAndGoogleId(email,googleId);
+    }
+
+    public Optional<User> getUserByEmail(String email) {
+        return this.userRepository.findByEmail(email);
     }
 
     @Transactional
@@ -73,10 +95,8 @@ public class UserService {
 
         User user = this.userRepository.findById(loggedUser.getId()).orElseThrow(() -> new EntityNotFoundException());
 
-        ProfileDTO profileDTO = new ProfileDTO(user.getName(), user.getEmail(), user.getPhoto(), user.getCreatedAt(),
+        return new ProfileDTO(user.getName(), user.getEmail(), user.getPhoto(), user.getCreatedAt(),
                 user.getGraphs().size(), 0);
-
-        return profileDTO;
     }
 
     public void createUser(RegisterUserDTO registerUserDTO) {
@@ -84,10 +104,15 @@ public class UserService {
         Role userRole = new Role();
         userRole.setName(RoleName.ROLE_USER);
 
+        String encodedPassword = registerUserDTO.password() != null
+                ? securityConfiguration.passwordEncoder().encode(registerUserDTO.password())
+                : null;
+
         User newUser = new User(
                 registerUserDTO.name(),
                 registerUserDTO.email(),
-                securityConfiguration.passwordEncoder().encode(registerUserDTO.password()),
+                encodedPassword,
+                registerUserDTO.googleId(),
                 Set.of(userRole));
 
         userRepository.save(newUser);

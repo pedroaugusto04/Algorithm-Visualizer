@@ -4,6 +4,7 @@ export const environment = {
     apiUserLogin: 'users/login',
     apiUserRegister: 'users/register',
     apiUserInfo: 'users/info',
+    apiUserGoogleLogin: 'users/auth/google',
     apiProfileInfo: 'users/profile',
     apiGetUserGraphIdsData: 'users/graphs/id',
     apiGetGraphById: 'graphs/',

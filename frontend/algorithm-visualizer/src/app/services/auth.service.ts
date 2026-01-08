@@ -22,7 +22,17 @@ export class AuthService {
 
     const requestBody: string = JSON.stringify(loginUserDTO);
 
-    return this.httpClient.post<LoginResponse>(userLoginUrl,requestBody, {headers: this.headers});
+    return this.httpClient.post<LoginResponse>(userLoginUrl, requestBody, { headers: this.headers });
+  }
+
+  loginGoogleUser(token: string): Observable<LoginResponse> {
+    const googleLoginUrl = new URL(environment.apiUserGoogleLogin, environment.baseUrl).toString();
+
+    const requestBody = {
+      token: token
+    };
+
+    return this.httpClient.post<LoginResponse>(googleLoginUrl, JSON.stringify(requestBody), { headers: this.headers });
   }
 
   logoutUser() {

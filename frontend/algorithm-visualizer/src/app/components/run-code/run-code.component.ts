@@ -18,6 +18,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { GlobalRenderer } from 'src/app/services/renderers/GlobalRenderer';
 import { SnackBarService } from 'src/app/services/utils/snackbar/snack-bar.service';
+import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 @Component({
   selector: 'app-run-code',
@@ -72,7 +73,7 @@ export class RunCodeComponent implements OnDestroy {
     private codeService: CodeService,
     private operationFactory: AlgorithmOperationFactory,
     private algorithmUtilsService: AlgorithmUtilsService,
-    private snackBarService: SnackBarService,
+    private swalService: SwalService,
     private globalRenderer: GlobalRenderer
   ) { }
 
@@ -120,7 +121,7 @@ export class RunCodeComponent implements OnDestroy {
         },
         error: (error) => {
           this.executionResult.set(`Execution failed: ${error.message || "Provided code is not supported"}`);
-          this.snackBarService.showSnackBarError('The provided code is not yet supported.');
+          this.swalService.errorNoButton("Execution Failed","The provided code is not yet supported.");
         }
       });
 
@@ -140,7 +141,7 @@ export class RunCodeComponent implements OnDestroy {
       },
       error: (error) => {
         this.executionResult.set(`Execution failed: ${error.message || "Provided code is not supported"}`);
-        this.snackBarService.showSnackBarError('The provided code is not yet supported.');
+        this.swalService.errorNoButton("Execution Failed","The provided code is not yet supported.");
       }
     })
   }
