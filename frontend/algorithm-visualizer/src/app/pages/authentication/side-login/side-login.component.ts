@@ -62,8 +62,6 @@ export class AppSideLoginComponent {
         });
 
         this.router.navigate(['/'])
-
-        this.swalService.successNoButton("Login successful", "");
       },
       error: () => {
         this.swalService.errorNoButton("Invalid credentials", "Please, try again");

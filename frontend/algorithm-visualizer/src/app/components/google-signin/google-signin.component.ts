@@ -63,8 +63,6 @@ export class GoogleSigninComponent {
         });
 
         this.router.navigate(['/'])
-
-        this.swalService.successNoButton("Login successful", "");
       },
       error: (error) => {
         this.swalService.errorNoButton("Google Sign-in Failed", error.error.message || "An error occurred during Google login.", 4000);
