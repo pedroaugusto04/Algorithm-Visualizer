@@ -31,9 +31,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-        
           cd backend/algorithm-visualizer
-
           docker build -t ${{ env.DOCKER_IMAGE }} .
 
       - name: Push Docker image
@@ -42,24 +40,55 @@ jobs:
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.7
+        env:
+          APPLICATION_NAME: ${{ secrets.APPLICATION_NAME }}
+          DB_URL: ${{ secrets.DB_URL }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DDL_MODE: ${{ secrets.DDL_MODE }}
+          GEMINI_API_URL: ${{ secrets.GEMINI_API_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
+          envs: APPLICATION_NAME,DB_URL,DB_USER,DB_PASSWORD,DDL_MODE,GEMINI_API_URL,GEMINI_API_KEY,JWT_SECRET,JWT_ISSUER,GOOGLE_CLIENT_ID,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,DOCKER_IMAGE
           script: |
-          
+
+            mkdir -p ~/algorithm-visualizer
             cd ~/algorithm-visualizer || exit 1
+
+            cat <<EOF > .env
+
+            APPLICATION_NAME=$APPLICATION_NAME
+            DB_URL=$DB_URL
+            DB_USER=$DB_USER
+            DB_PASSWORD=$DB_PASSWORD
+            DDL_MODE=$DDL_MODE
+            GEMINI_API_URL=$GEMINI_API_URL
+            GEMINI_API_KEY=$GEMINI_API_KEY
+            JWT_SECRET=$JWT_SECRET
+            JWT_ISSUER=$JWT_ISSUER
+            GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+            EOF
+            
+            chmod 600 .env
 
             sudo docker stop algorithm-visualizer || true
             sudo docker rm algorithm-visualizer || true
 
-            sudo docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
+            echo $DOCKERHUB_TOKEN | sudo docker login -u $DOCKERHUB_USERNAME --password-stdin
             
-            sudo docker pull ${{ env.DOCKER_IMAGE }}
+            sudo docker pull $DOCKER_IMAGE
             
             sudo docker run -d --name algorithm-visualizer \
             -p 8080:8083 \
-            --env-file ~/.env \
-            ${{ env.DOCKER_IMAGE }}
-
+            --env-file .env \
+            $DOCKER_IMAGE
