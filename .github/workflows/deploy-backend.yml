@@ -91,4 +91,4 @@ jobs:
             sudo docker run -d --name algorithm-visualizer \
             -p 8080:8083 \
             --env-file .env \
-            $DOCKER_IMAGE
+            $DOCKER_IMAGE 
