@@ -1,3 +1,14 @@
 .google-signup {
     margin-top: 2rem;
 }
+
+.logo-title {
+    font-size: 20px;
+}
+
+
+@media (min-width: 768px) {
+    .logo-title {
+        font-size: 25px;
+    }
+}

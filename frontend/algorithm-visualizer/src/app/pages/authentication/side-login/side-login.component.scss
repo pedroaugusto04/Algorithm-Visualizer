@@ -13,14 +13,23 @@
 }
 
 .google-button-container {
-    width: 100%; 
+    width: 100%;
     max-width: 25rem;
+}
+
+.logo-title {
+    font-size: 20px;
 }
 
 
 @media (min-width: 768px) {
     .google-button-container {
         width: 12.5rem;
-        max-width: 12.5rem; 
+        max-width: 12.5rem;
+    }
+
+
+    .logo-title {
+        font-size: 25px;
     }
 }
