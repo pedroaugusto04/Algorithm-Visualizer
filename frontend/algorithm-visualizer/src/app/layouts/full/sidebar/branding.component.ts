@@ -6,13 +6,51 @@ import { CoreService } from 'src/app/services/core.service';
   selector: 'app-branding',
   imports: [],
   template: `
-  <div class="branding d-none d-lg-flex align-items-center"
-   (click)="goToHomePage()" 
-       style="cursor: pointer;">
-    <img src="assets/favicon.ico" alt="Logo" width="50" height="50" style="margin-right: 7px;">
-    <h1 style="color: white">Algorithm Visualizer</h1>
-  </div>
-`,
+    <div class="branding-desktop"
+         (click)="goToHomePage()"
+         style="cursor:pointer;">
+      <img src="assets/favicon.ico" width="50" />
+      <h1>Algorithm Visualizer</h1>
+    </div>
+
+    <div class="branding-mobile"
+         (click)="goToHomePage()"
+         style="cursor:pointer;">
+      <img src="assets/favicon.ico" width="40" />
+    </div>
+  `,
+  styles: [`
+
+    .branding-desktop,
+    .branding-mobile {
+      align-items: center;
+      color: white;
+    }
+
+    .branding-desktop {
+      display: none;
+    }
+
+    .branding-mobile {
+      display: flex;
+    }
+
+    @media (min-width: 576px) {
+      .branding-desktop {
+        display: flex;
+      }
+
+      .branding-mobile {
+        display: none;
+      }
+    }
+
+    h1 {
+      margin: 0 0 0 8px;
+      font-size: 1.5rem;
+      white-space: nowrap;
+    }
+  `]
 })
 export class BrandingComponent {
   options = this.settings.getOptions();
