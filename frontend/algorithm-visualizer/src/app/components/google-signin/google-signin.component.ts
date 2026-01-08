@@ -45,7 +45,7 @@ export class GoogleSigninComponent {
 
     google.accounts.id.renderButton(
       document.getElementById('google-signin-button'),
-      { theme: "outline", size: "large", shape: "pill", width: 210, text: this.mode === 'signup' ? "signup_with" : "signin_with"  }
+      { theme: "outline", size: "large", shape: "pill", width: 210, text: this.mode === 'signup' ? "signup_with" : "signin_with" }
     );
 
     google.accounts.id.prompt();
