@@ -1,13 +1,16 @@
 package com.pedro.algorithm_visualizer.services;
 
-import com.pedro.algorithm_visualizer.models.DTO.CodeRequestDTO;
-import com.pedro.algorithm_visualizer.models.DTO.ExecutionResponseDTO;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
+import com.pedro.algorithm_visualizer.models.DTO.ExecutionResponseDTO;
 
 @Service
 public class CodeService {
