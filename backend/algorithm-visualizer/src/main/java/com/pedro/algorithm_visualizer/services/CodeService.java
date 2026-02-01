@@ -82,7 +82,7 @@ public class CodeService {
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
                 "-v", workspace.toAbsolutePath() + ":/work",
-                "algo-runner",
+                "pedroaug4/algo-runner:latest",
                 "sh", "-c", shellCommand
         );
 
