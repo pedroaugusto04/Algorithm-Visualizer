@@ -7,7 +7,8 @@ on:
 
 env:
   APP_NAME: algorithm-visualizer-backend
-  DOCKER_IMAGE: pedroaug4/algorithm-visualizer:latest  
+  DOCKER_IMAGE: pedroaug4/algorithm-visualizer:latest
+  RUNNER_IMAGE: pedroaug4/algo-runner:latest
 
 jobs:
   deploy:
@@ -29,14 +30,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build Backend Docker image
         run: |
           cd backend/algorithm-visualizer
           docker build -t ${{ env.DOCKER_IMAGE }} .
 
-      - name: Push Docker image
+      - name: Build Runner Docker image
         run: |
-          docker push ${{ env.DOCKER_IMAGE }}
+          cd backend/algorithm-visualizer
+          docker build -f Dockerfile-Instrumenter -t ${{ env.RUNNER_IMAGE }} .
+
+      - name: Push Backend Image
+        run: docker push ${{ env.DOCKER_IMAGE }}
+
+      - name: Push Runner Image
+        run: docker push ${{ env.RUNNER_IMAGE }}
 
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.7
@@ -54,19 +62,18 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
+          RUNNER_IMAGE: ${{ env.RUNNER_IMAGE }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
-          envs: APPLICATION_NAME,DB_URL,DB_USER,DB_PASSWORD,DDL_MODE,GEMINI_API_URL,GEMINI_API_KEY,JWT_SECRET,JWT_ISSUER,GOOGLE_CLIENT_ID,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,DOCKER_IMAGE
+          envs: APPLICATION_NAME,DB_URL,DB_USER,DB_PASSWORD,DDL_MODE,GEMINI_API_URL,GEMINI_API_KEY,JWT_SECRET,JWT_ISSUER,GOOGLE_CLIENT_ID,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,DOCKER_IMAGE,RUNNER_IMAGE
           script: |
-
             mkdir -p ~/algorithm-visualizer
             cd ~/algorithm-visualizer || exit 1
 
             cat <<EOF > .env
-
             APPLICATION_NAME=$APPLICATION_NAME
             DB_URL=$DB_URL
             DB_USER=$DB_USER
@@ -87,8 +94,11 @@ jobs:
             echo $DOCKERHUB_TOKEN | sudo docker login -u $DOCKERHUB_USERNAME --password-stdin
             
             sudo docker pull $DOCKER_IMAGE
+            sudo docker pull $RUNNER_IMAGE
             
             sudo docker run -d --name algorithm-visualizer \
             -p 8080:8083 \
             --env-file .env \
-            $DOCKER_IMAGE 
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v /tmp:/tmp \
+            $DOCKER_IMAGE
