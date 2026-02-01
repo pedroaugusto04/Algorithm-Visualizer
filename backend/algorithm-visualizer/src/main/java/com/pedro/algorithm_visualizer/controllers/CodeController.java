@@ -1,6 +1,5 @@
 package com.pedro.algorithm_visualizer.controllers;
 
-
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
