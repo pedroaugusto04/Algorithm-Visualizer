@@ -4,6 +4,7 @@ COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 RUN ./mvnw dependency:go-offline
 COPY src ./src
+COPY instrumenter.py ./instrumenter.py
 
 EXPOSE 8081
 
