@@ -46,11 +46,14 @@ public class CodeService {
                     StandardCharsets.UTF_8
             );
 
-            Files.copy(Paths.get("instrumenter.py"),
+            Path instrumenterSource = resolveSourcePath("instrumenter.py");
+            Path instrumentationSource = resolveSourcePath("instrumentation");
+
+            Files.copy(instrumenterSource,
                     workspace.resolve("instrumenter.py"),
                     StandardCopyOption.REPLACE_EXISTING);
             copyRecursively(
-                    Paths.get("instrumentation"),
+                    instrumentationSource,
                     workspace.resolve("instrumentation")
             );
 
@@ -214,6 +217,22 @@ public class CodeService {
             return "''";
         }
         return "'" + raw.replace("'", "'\"'\"'") + "'";
+    }
+
+    private Path resolveSourcePath(String relativePath) throws IOException {
+        Path direct = Paths.get(relativePath);
+        if (Files.exists(direct)) {
+            return direct;
+        }
+
+        Path monorepo = Paths.get("backend", "algorithm-visualizer", relativePath);
+        if (Files.exists(monorepo)) {
+            return monorepo;
+        }
+
+        throw new IOException(
+                "Recurso nao encontrado: " + relativePath + " (cwd: " + Paths.get("").toAbsolutePath() + ")"
+        );
     }
 
     private void copyRecursively(Path source, Path target) throws IOException {
