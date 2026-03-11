@@ -3,4 +3,5 @@ export interface ExecuteCodeResponse {
   executionLogs: string; 
   systemLogs: string;
   error: string | null;
+  instrumentationStatus?: 'INSTRUMENTED' | 'FALLBACK' | 'FAILED';
 }

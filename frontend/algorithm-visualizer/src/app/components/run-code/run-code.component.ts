@@ -147,7 +147,11 @@ export class RunCodeComponent implements OnDestroy {
   }
 
   private proccessResult(res: ExecuteCodeResponse) {
-    this.executionResult.set(res.systemLogs || 'Success!');
+    const fallbackPrefix = res.instrumentationStatus === 'FALLBACK'
+      ? 'Visualization fallback active: instrumentation failed.\n'
+      : '';
+
+    this.executionResult.set(fallbackPrefix + (res.systemLogs || 'Success!'));
 
     let userLogs = '';
     const parsedEntries: ExecutionLogEntry[] = [];
@@ -162,7 +166,7 @@ export class RunCodeComponent implements OnDestroy {
       } catch { userLogs += trimmedLine + '\n'; }
     });
 
-    this.executionResult.set((res.systemLogs || 'Success!') + '\n' + userLogs);
+    this.executionResult.set(fallbackPrefix + (res.systemLogs || 'Success!') + '\n' + userLogs);
 
     this.entries = parsedEntries;
 

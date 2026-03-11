@@ -33,6 +33,88 @@ def _normalize_std_flag(clang_std: Optional[str]) -> str:
     return "-std=gnu++17"
 
 
+def _cursor_key(node) -> Tuple[int, int, int, int]:
+    start = node.extent.start
+    end = node.extent.end
+    return (
+        getattr(start, "line", -1),
+        getattr(start, "column", -1),
+        getattr(end, "line", -1),
+        getattr(end, "column", -1),
+    )
+
+
+def _same_cursor(a, b) -> bool:
+    return (
+        a.kind == b.kind
+        and a.spelling == b.spelling
+        and _cursor_key(a) == _cursor_key(b)
+    )
+
+
+def _collect_solution_methods(root, abs_path: str, method_name: str):
+    methods = []
+
+    def walk(node):
+        if (
+            node.kind == clang.cindex.CursorKind.CXX_METHOD
+            and node.spelling == method_name
+            and _is_from_target_file(node, abs_path)
+        ):
+            parent = node.semantic_parent
+            if parent and parent.spelling == "Solution":
+                methods.append(node)
+        for child in node.get_children():
+            walk(child)
+
+    walk(root)
+    methods.sort(key=_cursor_key)
+    return methods
+
+
+def _has_main_function(root, abs_path: str) -> bool:
+    found = False
+
+    def walk(node):
+        nonlocal found
+        if found:
+            return
+        if (
+            node.kind == clang.cindex.CursorKind.FUNCTION_DECL
+            and node.spelling == "main"
+            and _is_from_target_file(node, abs_path)
+        ):
+            found = True
+            return
+        for child in node.get_children():
+            walk(child)
+
+    walk(root)
+    return found
+
+
+def _validate_translation_unit(tu, abs_path: str) -> None:
+    errors: List[str] = []
+    for diagnostic in tu.diagnostics:
+        if diagnostic.severity < clang.cindex.Diagnostic.Error:
+            continue
+        if diagnostic.location is not None and diagnostic.location.file is not None:
+            if os.path.abspath(diagnostic.location.file.name) != abs_path:
+                continue
+        file_name = (
+            diagnostic.location.file.name
+            if diagnostic.location is not None and diagnostic.location.file is not None
+            else abs_path
+        )
+        line = diagnostic.location.line if diagnostic.location is not None else 0
+        column = diagnostic.location.column if diagnostic.location is not None else 0
+        errors.append(f"{file_name}:{line}:{column}: {diagnostic.spelling}")
+
+    if errors:
+        details = "\n".join(f"- {entry}" for entry in errors[:8])
+        raise Exception("Falha ao parsear C++ para instrumentacao:\n" + details)
+
+
 def instrument(
     file_path: str,
     testcase_file: str,
@@ -42,6 +124,7 @@ def instrument(
     index = clang.cindex.Index.create()
     abs_path = os.path.abspath(file_path)
     tu = index.parse(abs_path, args=[_normalize_std_flag(clang_std)])
+    _validate_translation_unit(tu, abs_path)
 
     with open(abs_path, "r", encoding="utf-8") as source_file:
         source = source_file.read()
@@ -53,52 +136,73 @@ def instrument(
     structs: Dict[str, List[str]] = {}
     struct_fields: Dict[str, List[Tuple[str, str]]] = {}
 
-    has_main = False
-    method_name: Optional[str] = None
+    has_main = _has_main_function(tu.cursor, abs_path)
+    selected_method = None
+    selected_method_name: Optional[str] = None
     method_return_type = "auto"
 
+    method_name_clean = (method_to_call or "").strip()
+    if not has_main:
+        if not method_name_clean:
+            raise Exception("Metodo alvo obrigatorio quando o codigo nao define main()")
+
+        candidates = _collect_solution_methods(tu.cursor, abs_path, method_name_clean)
+        if not candidates:
+            raise Exception(
+                f"Metodo '{method_name_clean}' nao encontrado em class Solution no arquivo alvo"
+            )
+        if len(candidates) > 1:
+            signatures = []
+            for cursor in candidates:
+                args_text = ", ".join(arg.type.spelling for arg in cursor.get_arguments())
+                signatures.append(
+                    f"{cursor.spelling}({args_text}) at line {cursor.extent.start.line}"
+                )
+            raise Exception(
+                "Sobrecarga ambigua para metodo alvo. Forneca codigo sem overload para a visualizacao:\n- "
+                + "\n- ".join(signatures)
+            )
+
+        selected_method = candidates[0]
+        selected_method_name = selected_method.spelling
+        method_return_type = selected_method.result_type.spelling
+
     def walk(node):
-        nonlocal has_main, method_name, method_return_type
+        if (
+            selected_method is not None
+            and node.kind == clang.cindex.CursorKind.CXX_METHOD
+            and _same_cursor(node, selected_method)
+        ):
+            observable_args: List[str] = []
+            for arg in node.get_arguments():
+                if not arg.spelling:
+                    continue
 
-        if node.kind == clang.cindex.CursorKind.CXX_METHOD and node.spelling == method_to_call:
-            parent = node.semantic_parent
-            if parent and parent.spelling == "Solution":
-                method_name = node.spelling
-                method_return_type = node.result_type.spelling
+                arg_tnode = parse_type(arg.type)
+                method_param_nodes[arg.spelling] = arg_tnode
+                method_param_order.append(arg.spelling)
 
-                observable_args: List[str] = []
-                for arg in node.get_arguments():
-                    if not arg.spelling:
-                        continue
+                arg_start = editor.to_offset(arg.extent.start)
+                arg_end = editor.to_offset(arg.extent.end)
+                if arg_start is not None and arg_end is not None and arg_end >= arg_start:
+                    arg_text = source[arg_start:arg_end]
+                    rewritten_arg = replace_stl_types(arg_text)
+                    if rewritten_arg != arg_text:
+                        editor.add_replacement(arg_start, arg_end, rewritten_arg)
 
-                    arg_tnode = parse_type(arg.type)
-                    method_param_nodes[arg.spelling] = arg_tnode
-                    method_param_order.append(arg.spelling)
+                if is_observed_candidate(arg_tnode):
+                    observable_args.append(arg.spelling)
 
-                    arg_start = editor.to_offset(arg.extent.start)
-                    arg_end = editor.to_offset(arg.extent.end)
-                    if arg_start is not None and arg_end is not None and arg_end >= arg_start:
-                        arg_text = source[arg_start:arg_end]
-                        rewritten_arg = replace_stl_types(arg_text)
-                        if rewritten_arg != arg_text:
-                            editor.add_replacement(arg_start, arg_end, rewritten_arg)
-
-                    if is_observed_candidate(arg_tnode):
-                        observable_args.append(arg.spelling)
-
-                for child in node.get_children():
-                    if child.kind == clang.cindex.CursorKind.COMPOUND_STMT and observable_args:
-                        brace_offset = editor.to_offset(child.extent.start)
-                        if brace_offset is not None:
-                            injection = "\n" + "".join(
-                                f'    {arg_name}.set_name("{arg_name}");\n'
-                                for arg_name in observable_args
-                            )
-                            editor.add_replacement(brace_offset + 1, brace_offset + 1, injection)
-                        break
-
-        if node.kind == clang.cindex.CursorKind.FUNCTION_DECL and node.spelling == "main":
-            has_main = True
+            for child in node.get_children():
+                if child.kind == clang.cindex.CursorKind.COMPOUND_STMT and observable_args:
+                    brace_offset = editor.to_offset(child.extent.start)
+                    if brace_offset is not None:
+                        injection = "\n" + "".join(
+                            f'    {arg_name}.set_name("{arg_name}");\n'
+                            for arg_name in observable_args
+                        )
+                        editor.add_replacement(brace_offset + 1, brace_offset + 1, injection)
+                    break
 
         if _is_from_target_file(node, abs_path):
             if node.kind == clang.cindex.CursorKind.VAR_DECL and node.spelling:
@@ -134,7 +238,7 @@ def instrument(
     print(CPP_LIBRARY)
     print(rewritten_source)
 
-    if not has_main and method_name and os.path.exists(testcase_file):
+    if not has_main and selected_method_name and os.path.exists(testcase_file):
         with open(testcase_file, "r", encoding="utf-8") as testcase_handle:
             testcase = testcase_handle.read().strip()
 
@@ -168,12 +272,12 @@ def instrument(
 
         if method_return_type.strip() == "void":
             invocation_code = (
-                f"sol.{method_name}({args_list});\n"
+                f"sol.{selected_method_name}({args_list});\n"
                 "    std::cout << \"SystemLog: null\" << std::endl;"
             )
         else:
             invocation_code = (
-                f"{method_return_type} result = sol.{method_name}({args_list});\n"
+                f"{method_return_type} result = sol.{selected_method_name}({args_list});\n"
                 "    std::cout << \"SystemLog: \";\n"
                 "    __print(result);\n"
                 "    std::cout << std::endl;"

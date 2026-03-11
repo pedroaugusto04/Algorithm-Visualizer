@@ -73,7 +73,9 @@ std::string __to_str(const T& val) {
 
 void __log(std::string type, std::string path, std::string op, std::string val) {
     std::cout
-        << "{\"time\":" << __step++
+        << "__AV_EVENT__"
+        << "{\"schema\":\"av.v1\""
+        << ",\"time\":" << __step++
         << ",\"type\":" << __json_string(type)
         << ",\"path\":" << __json_string(path)
         << ",\"op\":" << __json_string(op)
@@ -168,12 +170,17 @@ std::string __serialize(const std::multiset<T>& s) {
 
 template<typename T>
 std::string __serialize(const std::unordered_set<T>& s) {
-    std::string out = "[";
-    bool first = true;
+    std::vector<std::string> items;
+    items.reserve(s.size());
     for (const auto& value : s) {
-        if (!first) out += ", ";
-        first = false;
-        out += __serialize(value);
+        items.push_back(__serialize(value));
+    }
+    std::sort(items.begin(), items.end());
+
+    std::string out = "[";
+    for (size_t i = 0; i < items.size(); ++i) {
+        if (i > 0) out += ", ";
+        out += items[i];
     }
     out += "]";
     return out;
@@ -194,12 +201,26 @@ std::string __serialize(const std::map<K, V>& m) {
 
 template<typename K, typename V>
 std::string __serialize(const std::unordered_map<K, V>& m) {
-    std::string out = "{";
-    bool first = true;
+    std::vector<std::pair<std::string, std::string>> items;
+    items.reserve(m.size());
     for (const auto& kv : m) {
-        if (!first) out += ", ";
-        first = false;
-        out += __json_string(__to_str(kv.first)) + ": " + __serialize(kv.second);
+        items.push_back({__to_str(kv.first), __serialize(kv.second)});
+    }
+    std::sort(
+        items.begin(),
+        items.end(),
+        [](const auto& a, const auto& b) {
+            if (a.first != b.first) {
+                return a.first < b.first;
+            }
+            return a.second < b.second;
+        }
+    );
+
+    std::string out = "{";
+    for (size_t i = 0; i < items.size(); ++i) {
+        if (i > 0) out += ", ";
+        out += __json_string(items[i].first) + ": " + items[i].second;
     }
     out += "}";
     return out;
@@ -729,8 +750,23 @@ public:
     }
 
     void clear() {
+        std::vector<std::pair<std::string, std::string>> snapshot;
+        snapshot.reserve(this->size());
         for (const auto& kv : *this) {
-            __log("map", path + "[" + __to_str(kv.first) + "]", "remove", __serialize(kv.second));
+            snapshot.push_back({__to_str(kv.first), __serialize(kv.second)});
+        }
+        std::sort(
+            snapshot.begin(),
+            snapshot.end(),
+            [](const auto& a, const auto& b) {
+                if (a.first != b.first) {
+                    return a.first < b.first;
+                }
+                return a.second < b.second;
+            }
+        );
+        for (const auto& item : snapshot) {
+            __log("map", path + "[" + item.first + "]", "remove", item.second);
         }
         std::unordered_map<K, V>::clear();
     }
@@ -859,8 +895,14 @@ public:
     }
 
     void clear() {
+        std::vector<std::string> snapshot;
+        snapshot.reserve(this->size());
         for (const auto& value : *this) {
-            __log("array", path, "remove", __serialize(value));
+            snapshot.push_back(__serialize(value));
+        }
+        std::sort(snapshot.begin(), snapshot.end());
+        for (const auto& serialized : snapshot) {
+            __log("array", path, "remove", serialized);
         }
         std::unordered_set<T>::clear();
     }
