@@ -164,7 +164,10 @@ def parse_testcase(raw: str) -> Tuple["OrderedDict[str, Any]", List[Any]]:
         parsed_root = json.loads(text)
         if isinstance(parsed_root, dict):
             for key, value in parsed_root.items():
-                named[str(key)] = value
+                key_name = str(key)
+                if key_name in named:
+                    raise Exception(f"Parametro duplicado no testcase: '{key_name}'")
+                named[key_name] = value
             return named, positional
         if isinstance(parsed_root, list):
             return named, [parsed_root]
@@ -175,7 +178,10 @@ def parse_testcase(raw: str) -> Tuple["OrderedDict[str, Any]", List[Any]]:
         parsed_object = _parse_value_token(text)
         if isinstance(parsed_object, dict):
             for key, value in parsed_object.items():
-                named[str(key)] = value
+                key_name = str(key)
+                if key_name in named:
+                    raise Exception(f"Parametro duplicado no testcase: '{key_name}'")
+                named[key_name] = value
             return named, positional
 
     for part in _split_top_level(text, {",", "\n"}):
@@ -195,6 +201,8 @@ def parse_testcase(raw: str) -> Tuple["OrderedDict[str, Any]", List[Any]]:
             name = token[:eq_idx].strip()
             value_text = token[eq_idx + 1 :].strip()
             if re.fullmatch(r"[A-Za-z_]\w*", name):
+                if name in named:
+                    raise Exception(f"Parametro duplicado no testcase: '{name}'")
                 named[name] = _parse_value_token(value_text)
             else:
                 positional.append(_parse_value_token(token))
@@ -220,6 +228,11 @@ def resolve_argument_values(
     resolved: Dict[str, Any] = {}
     positional_idx = 0
 
+    if named and positional:
+        raise Exception(
+            "Formato de testcase ambiguo: use apenas parametros nomeados ou apenas posicionais"
+        )
+
     for param_name in param_order:
         if param_name in named:
             resolved[param_name] = named[param_name]
@@ -228,5 +241,15 @@ def resolve_argument_values(
             positional_idx += 1
         else:
             raise Exception(f"Parametro '{param_name}' ausente no testcase")
+
+    if positional_idx < len(positional):
+        raise Exception("Testcase contem parametros posicionais excedentes")
+
+    unknown_named = [key for key in named.keys() if key not in param_order]
+    if unknown_named:
+        raise Exception(
+            "Testcase contem parametros nomeados desconhecidos: "
+            + ", ".join(unknown_named)
+        )
 
     return resolved

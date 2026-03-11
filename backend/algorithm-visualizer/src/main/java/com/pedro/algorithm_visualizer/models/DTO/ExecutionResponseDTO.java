@@ -4,5 +4,6 @@ public record ExecutionResponseDTO(
         boolean success,
         String executionLogs,
         String systemLogs,
-        String error
+        String error,
+        String instrumentationStatus
 ) {}

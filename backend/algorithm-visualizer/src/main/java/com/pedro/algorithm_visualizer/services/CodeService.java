@@ -1,6 +1,7 @@
 package com.pedro.algorithm_visualizer.services;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,6 +10,11 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.StringJoiner;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
@@ -18,8 +24,14 @@ import com.pedro.algorithm_visualizer.models.DTO.ExecutionResponseDTO;
 
 @Service
 public class CodeService {
+    private static final String EVENT_PREFIX = "__AV_EVENT__";
+    private static final long STEP_TIMEOUT_SECONDS = 20L;
 
     private record CompileProfile(String compiler, List<String> flags) {
+    }
+    private record StepResult(String stdout, String stderr) {
+    }
+    private record OutputSplit(String executionLogs, String userLogs) {
     }
 
     public ExecutionResponseDTO execute(
@@ -29,8 +41,9 @@ public class CodeService {
             String functionName,
             MultipartFile inputFile
     ) {
+        Path workspace = null;
         try {
-            Path workspace = Files.createTempDirectory("algo-run-");
+            workspace = Files.createTempDirectory("algo-run-");
 
             // formata o codigo pra evitar problemas com quebras de linha e caracteres indesejados
             String normalizedCode = code.replace("\\n\"", "___PROTECTED_N_QUOTE___");
@@ -46,11 +59,14 @@ public class CodeService {
                     StandardCharsets.UTF_8
             );
 
-            Files.copy(Paths.get("instrumenter.py"),
+            Path instrumenterSource = resolveSourcePath("instrumenter.py");
+            Path instrumentationSource = resolveSourcePath("instrumentation");
+
+            Files.copy(instrumenterSource,
                     workspace.resolve("instrumenter.py"),
                     StandardCopyOption.REPLACE_EXISTING);
             copyRecursively(
-                    Paths.get("instrumentation"),
+                    instrumentationSource,
                     workspace.resolve("instrumentation")
             );
 
@@ -67,63 +83,115 @@ public class CodeService {
             }
 
             try {
-                String instrumented = runStep(
+                StepResult instrumentationResult = runStep(
                         workspace,
                         buildInstrumentationCommand(language, testcasePath, functionName)
                 );
 
-                Files.writeString(workspace.resolve("instrumented.cpp"), instrumented);
+                Files.writeString(workspace.resolve("instrumented.cpp"), instrumentationResult.stdout());
 
-                String output = runStep(
+                StepResult executionResult = runStep(
                         workspace,
                         buildCompileAndRunCommand(language, "instrumented.cpp", testcasePath, inputFile)
                 );
 
-                return new ExecutionResponseDTO(true, output, "Code executed successfully!", null);
+                OutputSplit split = splitExecutionOutput(executionResult);
+                String userLogs = split.userLogs().isBlank() ? "Code executed successfully!" : split.userLogs();
+
+                return new ExecutionResponseDTO(
+                        true,
+                        split.executionLogs(),
+                        userLogs,
+                        null,
+                        "INSTRUMENTED"
+                );
             } catch (Exception instrumentationError) {
                 try {
-                    String fallbackOutput = runStep(
+                    StepResult fallbackOutput = runStep(
                             workspace,
                             buildCompileAndRunCommand(language, "main.cpp", testcasePath, inputFile)
                     );
+                    String fallbackLogs = mergeUserLogs(fallbackOutput.stdout(), fallbackOutput.stderr());
+                    String fallbackMessage = "Code executed without visualization (instrumentation fallback).";
+                    if (!fallbackLogs.isBlank()) {
+                        fallbackMessage = fallbackMessage + "\n" + fallbackLogs;
+                    }
 
                     return new ExecutionResponseDTO(
                             true,
-                            fallbackOutput,
-                            "Code executed without visualization (instrumentation fallback).",
-                            null
+                            "",
+                            fallbackMessage,
+                            "Instrumentation failed: " + instrumentationError.getMessage(),
+                            "FALLBACK"
                     );
                 } catch (Exception fallbackError) {
                     String message = "Erro na instrumentacao: "
                             + instrumentationError.getMessage()
                             + " | Erro no fallback: "
                             + fallbackError.getMessage();
-                    return new ExecutionResponseDTO(false, null, "Erro: " + message, null);
+                    return new ExecutionResponseDTO(false, "", "Erro: " + message, message, "FAILED");
                 }
             }
 
         } catch (Exception e) {
-            return new ExecutionResponseDTO(false, null, "Erro: " + e.getMessage(), null);
+            return new ExecutionResponseDTO(false, "", "Erro: " + e.getMessage(), e.getMessage(), "FAILED");
+        } finally {
+            if (workspace != null) {
+                try {
+                    deleteRecursively(workspace);
+                } catch (IOException ignored) {
+                    // best effort cleanup
+                }
+            }
         }
     }
 
-    private String runStep(Path workspace, String shellCommand) throws IOException, InterruptedException {
+    private StepResult runStep(Path workspace, String shellCommand) throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder(
                 "docker", "run", "--rm",
+                "--network", "none",
+                "--cpus", "1",
+                "--memory", "256m",
+                "--pids-limit", "256",
+                "--security-opt", "no-new-privileges",
+                "--cap-drop", "ALL",
                 "-v", workspace.toAbsolutePath() + ":/work",
                 "pedroaug4/algo-runner:latest",
                 "sh", "-c", shellCommand
         );
 
         Process p = pb.start();
-        String stdout = new String(p.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-        String stderr = new String(p.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+        String stdout;
+        String stderr;
 
-        int exitCode = p.waitFor();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor();
+             InputStream stdoutStream = p.getInputStream();
+             InputStream stderrStream = p.getErrorStream()
+        ) {
+            Future<String> stdoutFuture = executor.submit(() -> readAll(stdoutStream));
+            Future<String> stderrFuture = executor.submit(() -> readAll(stderrStream));
+
+            boolean finished = p.waitFor(STEP_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!finished) {
+                p.destroyForcibly();
+                throw new RuntimeException("Tempo limite excedido (" + STEP_TIMEOUT_SECONDS + "s)");
+            }
+
+            try {
+                stdout = stdoutFuture.get();
+                stderr = stderrFuture.get();
+            } catch (ExecutionException e) {
+                throw new RuntimeException("Falha ao ler saida do processo: " + e.getCause().getMessage(), e);
+            } catch (Exception e) {
+                throw new RuntimeException("Falha ao coletar saida do processo: " + e.getMessage(), e);
+            }
+        }
+
+        int exitCode = p.exitValue();
         if (exitCode != 0) {
             throw new RuntimeException("Erro no processo (Exit " + exitCode + "): " + stderr);
         }
-        return stdout;
+        return new StepResult(stdout, stderr);
     }
 
     private String buildCompileAndRunCommand(
@@ -216,6 +284,60 @@ public class CodeService {
         return "'" + raw.replace("'", "'\"'\"'") + "'";
     }
 
+    private OutputSplit splitExecutionOutput(StepResult result) {
+        StringJoiner events = new StringJoiner("\n");
+        StringJoiner userLogs = new StringJoiner("\n");
+
+        for (String line : result.stdout().split("\\R")) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            if (trimmed.startsWith(EVENT_PREFIX)) {
+                events.add(trimmed.substring(EVENT_PREFIX.length()));
+            } else {
+                userLogs.add(line);
+            }
+        }
+
+        if (!result.stderr().isBlank()) {
+            userLogs.add(result.stderr().stripTrailing());
+        }
+
+        return new OutputSplit(events.toString(), userLogs.toString());
+    }
+
+    private String mergeUserLogs(String stdout, String stderr) {
+        StringJoiner out = new StringJoiner("\n");
+        if (stdout != null && !stdout.isBlank()) {
+            out.add(stdout.stripTrailing());
+        }
+        if (stderr != null && !stderr.isBlank()) {
+            out.add(stderr.stripTrailing());
+        }
+        return out.toString();
+    }
+
+    private String readAll(InputStream stream) throws IOException {
+        return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    private Path resolveSourcePath(String relativePath) throws IOException {
+        Path direct = Paths.get(relativePath);
+        if (Files.exists(direct)) {
+            return direct;
+        }
+
+        Path monorepo = Paths.get("backend", "algorithm-visualizer", relativePath);
+        if (Files.exists(monorepo)) {
+            return monorepo;
+        }
+
+        throw new IOException(
+                "Recurso nao encontrado: " + relativePath + " (cwd: " + Paths.get("").toAbsolutePath() + ")"
+        );
+    }
+
     private void copyRecursively(Path source, Path target) throws IOException {
         try (Stream<Path> paths = Files.walk(source)) {
             for (Path path : paths.toList()) {
@@ -231,6 +353,18 @@ public class CodeService {
                     }
                     Files.copy(path, destination, StandardCopyOption.REPLACE_EXISTING);
                 }
+            }
+        }
+    }
+
+    private void deleteRecursively(Path root) throws IOException {
+        if (!Files.exists(root)) {
+            return;
+        }
+
+        try (Stream<Path> walk = Files.walk(root)) {
+            for (Path current : walk.sorted((a, b) -> b.compareTo(a)).toList()) {
+                Files.deleteIfExists(current);
             }
         }
     }
