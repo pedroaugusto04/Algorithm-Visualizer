@@ -110,6 +110,10 @@ jobs:
           envs: VPS_GITHUB_REPO_TOKEN,VPS_APP_DIR
           script: |
             set -euo pipefail
+            REPO_URL="https://x-access-token:${VPS_GITHUB_REPO_TOKEN}@github.com/${{ github.repository }}.git"
+            if [ ! -d "$VPS_APP_DIR/.git" ]; then
+              git clone "$REPO_URL" "$VPS_APP_DIR"
+            fi
             cd "$VPS_APP_DIR"
             chmod 600 backend.env
             cp backend.env .env.prod
