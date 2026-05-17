@@ -28,7 +28,7 @@ export const routes: Routes = [
       },
       {
         path: 'create-graph-structure',
-        component: CreateGraphStructureComponent,
+        component: CreateGraphStructureComponent, 
       },
       {
         path: 'run-code',

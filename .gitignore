@@ -26,3 +26,9 @@ replay_pid*
 # IDE files
 *.idea
 *.vscode
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+EOF
