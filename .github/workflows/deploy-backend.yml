@@ -4,101 +4,119 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
+      - 'scripts/deploy/**'
+      - 'docker-compose.prod.yml'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
 
-env:
-  APP_NAME: algorithm-visualizer-backend
-  DOCKER_IMAGE: pedroaug4/algorithm-visualizer:latest
-  RUNNER_IMAGE: pedroaug4/algo-runner:latest
+concurrency:
+  group: deploy-backend-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Build Docker & Deploy to VPS 
+    name: Build & Deploy Backend to VPS
     runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build Backend Docker image
-        run: |
-          cd backend/algorithm-visualizer
-          docker build -t ${{ env.DOCKER_IMAGE }} .
-
-      - name: Build Runner Docker image
-        run: |
-          cd backend/algorithm-visualizer
-          docker build -f Dockerfile-Instrumenter -t ${{ env.RUNNER_IMAGE }} .
-
-      - name: Push Backend Image
-        run: docker push ${{ env.DOCKER_IMAGE }}
-
-      - name: Push Runner Image
-        run: docker push ${{ env.RUNNER_IMAGE }}
-
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v0.1.7
+      - name: Generate backend env file
         env:
           APPLICATION_NAME: ${{ secrets.APPLICATION_NAME }}
-          DB_URL: ${{ secrets.DB_URL }}
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DDL_MODE: ${{ secrets.DDL_MODE }}
+          DB_URL: jdbc:mysql://mysql:3306/${{ vars.AV_MYSQL_DATABASE || 'db_algorithm_visualizer' }}?useSSL=false&allowPublicKeyRetrieval=true
+          DB_USER: ${{ secrets.AV_MYSQL_USER }}
+          DB_PASSWORD: ${{ secrets.AV_MYSQL_PASSWORD }}
+          DDL_MODE: ${{ vars.DDL_MODE || 'update' }}
           GEMINI_API_URL: ${{ secrets.GEMINI_API_URL }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+          JWT_ISSUER: ${{ vars.JWT_ISSUER || 'algorithm_visualizer_api' }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
-          RUNNER_IMAGE: ${{ env.RUNNER_IMAGE }}
+          AV_MYSQL_DATABASE: ${{ vars.AV_MYSQL_DATABASE || 'db_algorithm_visualizer' }}
+          AV_MYSQL_ROOT_PASSWORD: ${{ secrets.AV_MYSQL_ROOT_PASSWORD }}
+          AV_MYSQL_USER: ${{ secrets.AV_MYSQL_USER }}
+          AV_MYSQL_PASSWORD: ${{ secrets.AV_MYSQL_PASSWORD }}
+          AV_MYSQL_PORT: ${{ vars.AV_MYSQL_PORT || '3306' }}
+          AV_API_PORT: ${{ vars.AV_API_PORT || '8083' }}
+        run: bash scripts/deploy/generate-backend-env.sh .deploy/backend.env
+
+      - name: Validate production environment config
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_PORT: ${{ secrets.VPS_SSH_PORT || '22' }}
+          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_GITHUB_REPO_TOKEN: ${{ secrets.VPS_GITHUB_REPO_TOKEN }}
+          VPS_APP_DIR: ${{ vars.VPS_APP_DIR }}
+        run: |
+          set -euo pipefail
+          test -n "$VPS_HOST" || { echo "Missing secret: VPS_HOST"; exit 1; }
+          test -n "$VPS_USER" || { echo "Missing secret: VPS_USER"; exit 1; }
+          test -n "$VPS_SSH_PORT" || { echo "Missing secret/variable: VPS_SSH_PORT"; exit 1; }
+          test -n "$VPS_SSH_PRIVATE_KEY" || { echo "Missing secret: VPS_SSH_PRIVATE_KEY"; exit 1; }
+          test -n "$VPS_GITHUB_REPO_TOKEN" || { echo "Missing secret: VPS_GITHUB_REPO_TOKEN"; exit 1; }
+          test -n "$VPS_APP_DIR" || { echo "Missing variable: VPS_APP_DIR"; exit 1; }
+
+      - name: Ensure rsync is available on GitHub runner
+        run: |
+          if ! command -v rsync >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y rsync
+          fi
+
+      - name: Prepare SSH for VPS sync
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          SERVER_HOST: ${{ secrets.VPS_HOST }}
+          SERVER_USER: ${{ secrets.VPS_USER }}
+          SERVER_PORT: ${{ secrets.VPS_SSH_PORT || '22' }}
+          VPS_APP_DIR: ${{ vars.VPS_APP_DIR }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%b\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$SERVER_PORT" -H "$SERVER_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -p "$SERVER_PORT" -o StrictHostKeyChecking=yes "$SERVER_USER@$SERVER_HOST" \
+            "command -v rsync >/dev/null 2>&1 || { echo 'rsync nao encontrado no servidor remoto'; exit 1; }; mkdir -p \"$VPS_APP_DIR\""
+
+      - name: Sync backend env to VPS
+        env:
+          SERVER_HOST: ${{ secrets.VPS_HOST }}
+          SERVER_USER: ${{ secrets.VPS_USER }}
+          SERVER_PORT: ${{ secrets.VPS_SSH_PORT || '22' }}
+          VPS_APP_DIR: ${{ vars.VPS_APP_DIR }}
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -p $SERVER_PORT -o StrictHostKeyChecking=yes" \
+            .deploy/backend.env "$SERVER_USER@$SERVER_HOST:$VPS_APP_DIR/backend.env"
+
+      - name: Deploy backend on VPS
+        uses: appleboy/ssh-action@v1.2.4
+        env:
+          VPS_GITHUB_REPO_TOKEN: ${{ secrets.VPS_GITHUB_REPO_TOKEN }}
+          VPS_APP_DIR: ${{ vars.VPS_APP_DIR }}
         with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: 22
-          envs: APPLICATION_NAME,DB_URL,DB_USER,DB_PASSWORD,DDL_MODE,GEMINI_API_URL,GEMINI_API_KEY,JWT_SECRET,JWT_ISSUER,GOOGLE_CLIENT_ID,DOCKERHUB_USERNAME,DOCKERHUB_TOKEN,DOCKER_IMAGE,RUNNER_IMAGE
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_SSH_PORT || '22' }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          envs: VPS_GITHUB_REPO_TOKEN,VPS_APP_DIR
           script: |
-            mkdir -p ~/algorithm-visualizer
-            cd ~/algorithm-visualizer || exit 1
-
-            cat <<EOF > .env
-            APPLICATION_NAME=$APPLICATION_NAME
-            DB_URL=$DB_URL
-            DB_USER=$DB_USER
-            DB_PASSWORD=$DB_PASSWORD
-            DDL_MODE=$DDL_MODE
-            GEMINI_API_URL=$GEMINI_API_URL
-            GEMINI_API_KEY=$GEMINI_API_KEY
-            JWT_SECRET=$JWT_SECRET
-            JWT_ISSUER=$JWT_ISSUER
-            GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
-            EOF
-            
-            chmod 600 .env
-
-            sudo docker stop algorithm-visualizer || true
-            sudo docker rm algorithm-visualizer || true
-
-            echo $DOCKERHUB_TOKEN | sudo docker login -u $DOCKERHUB_USERNAME --password-stdin
-            
-            sudo docker pull $DOCKER_IMAGE
-            sudo docker pull $RUNNER_IMAGE
-            
-            sudo docker run -d --name algorithm-visualizer \
-            -p 8083:8083 \
-            --env-file .env \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            -v /tmp:/tmp \
-            $DOCKER_IMAGE
+            set -euo pipefail
+            cd "$VPS_APP_DIR"
+            chmod 600 backend.env
+            cp backend.env .env.prod
+            GITHUB_AUTH_HEADER="$(printf 'x-access-token:%s' "$VPS_GITHUB_REPO_TOKEN" | base64 | tr -d '\n')"
+            git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $GITHUB_AUTH_HEADER" fetch --all --prune
+            git checkout main
+            git reset --hard origin/main
+            cp backend.env .env.prod
+            sudo docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build --remove-orphans mysql api
+            sudo docker image prune -f

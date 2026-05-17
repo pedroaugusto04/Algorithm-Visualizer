@@ -1,0 +1,61 @@
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${AV_MYSQL_DATABASE:-db_algorithm_visualizer}
+      MYSQL_ROOT_PASSWORD: ${AV_MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_USER: ${AV_MYSQL_USER:-avuser}
+      MYSQL_PASSWORD: ${AV_MYSQL_PASSWORD:-avpassword}
+    ports:
+      - "${AV_MYSQL_PORT:-3306}:3306"
+    volumes:
+      - av_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -u root -p"$${MYSQL_ROOT_PASSWORD}" --silent
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  api:
+    build:
+      context: ./backend/algorithm-visualizer
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.prod
+    environment:
+      APPLICATION_NAME: algorithm-visualizer
+      DB_URL: jdbc:mysql://mysql:3306/${AV_MYSQL_DATABASE:-db_algorithm_visualizer}?useSSL=false&allowPublicKeyRetrieval=true
+      DB_USER: ${AV_MYSQL_USER:-avuser}
+      DB_PASSWORD: ${AV_MYSQL_PASSWORD:-avpassword}
+    ports:
+      - "${AV_API_PORT:-8083}:8083"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp:/tmp
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -qO- "http://127.0.0.1:8083/algorithm-visualizer/api/api-docs" >/dev/null 2>&1 || curl -sf "http://127.0.0.1:8083/algorithm-visualizer/api/api-docs" >/dev/null 2>&1
+      interval: 15s
+      timeout: 10s
+      retries: 12
+      start_period: 60s
+
+  runner:
+    build:
+      context: ./backend/algorithm-visualizer
+      dockerfile: Dockerfile-Instrumenter
+    restart: "no"
+    profiles:
+      - tools
+
+volumes:
+  av_mysql_data:
