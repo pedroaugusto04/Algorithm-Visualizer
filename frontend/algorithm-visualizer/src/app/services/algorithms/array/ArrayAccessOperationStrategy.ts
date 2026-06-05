@@ -22,23 +22,29 @@ export class ArrayAccessOperationStrategy implements AlgorithmOperationStrategy 
       };
     }
 
-    const index = this.extractIndex(entry.path);
-    if (index === null) return;
+    const indices = this.extractIndices(entry.path);
+    if (indices.length === 0) return;
 
     if (skipRender) return;
 
     this.globalRenderer.renderElements(structures);
-    this.pulseNode(structure.d3Data.svg, index);
+    this.pulseNode(structure.d3Data.svg, indices);
   }
 
-  private extractIndex(path: string): number | null {
-    const match = path.match(/\[(\d+)\]/);
-    return match ? parseInt(match[1]) : null;
+  private extractIndices(path: string): number[] {
+    const regex = /\[(\d+)\]/g;
+    const indices: number[] = [];
+    let match;
+    while ((match = regex.exec(path)) !== null) {
+      indices.push(parseInt(match[1]));
+    }
+    return indices;
   }
 
-  private pulseNode(svg: any, index: number) {
+  private pulseNode(svg: any, indices: number[]) {
+    const key = indices.join('-');
     svg.selectAll('g.array-cell')
-      .filter((d: any, i: number) => i === index)
+      .filter((d: any) => d.key === key)
       .select('rect')
       .transition().duration(200)
       .attr('fill', '#4CAF50')

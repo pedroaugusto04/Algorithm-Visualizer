@@ -21,18 +21,35 @@ export class ArrayRemoveOperationStrategy implements AlgorithmOperationStrategy 
       };
     }
 
-    const index = this.extractIndex(entry.path);
-    if (index !== null && index < (structure.d3Data.arrayData ?? []).length) {
-      (structure.d3Data.arrayData ?? []).splice(index, 1);
-
-      if (skipRender) return;
-
-      this.globalRenderer.renderElements(structures);
+    const indices = this.extractIndices(entry.path);
+    if (indices.length > 0) {
+      if (!structure.d3Data.arrayData) structure.d3Data.arrayData = [];
+      let curr = structure.d3Data.arrayData;
+      for (let i = 0; i < indices.length - 1; i++) {
+        const idx = indices[i];
+        if (!curr[idx]) {
+          curr[idx] = [];
+        }
+        curr = curr[idx];
+      }
+      const lastIdx = indices[indices.length - 1];
+      if (curr && lastIdx < curr.length) {
+        curr.splice(lastIdx, 1);
+      }
     }
+
+    if (skipRender) return;
+
+    this.globalRenderer.renderElements(structures);
   }
 
-  private extractIndex(path: string): number | null {
-    const match = path.match(/\[(\d+)\]/);
-    return match ? parseInt(match[1]) : null;
+  private extractIndices(path: string): number[] {
+    const regex = /\[(\d+)\]/g;
+    const indices: number[] = [];
+    let match;
+    while ((match = regex.exec(path)) !== null) {
+      indices.push(parseInt(match[1]));
+    }
+    return indices;
   }
 }

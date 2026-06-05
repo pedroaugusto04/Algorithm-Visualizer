@@ -24,11 +24,21 @@ export class ArrayAddOperationStrategy implements AlgorithmOperationStrategy {
 
     if (!structure.d3Data.arrayData) structure.d3Data.arrayData = [];
 
-    const index = this.extractIndex(entry.path);
+    const indices = this.extractIndices(entry.path);
 
-    if (index !== null) {
-      structure.d3Data.arrayData[index] = entry.value;
+    if (indices.length > 0) {
+      if (!structure.d3Data.arrayData) structure.d3Data.arrayData = [];
+      let curr = structure.d3Data.arrayData;
+      for (let i = 0; i < indices.length - 1; i++) {
+        const idx = indices[i];
+        if (!curr[idx]) {
+          curr[idx] = [];
+        }
+        curr = curr[idx];
+      }
+      curr[indices[indices.length - 1]] = entry.value;
     } else {
+      if (!structure.d3Data.arrayData) structure.d3Data.arrayData = [];
       structure.d3Data.arrayData.push(entry.value);
     }
 
@@ -38,9 +48,14 @@ export class ArrayAddOperationStrategy implements AlgorithmOperationStrategy {
   }
 
 
-  private extractIndex(path: string): number | null {
-    const match = path.match(/\[(\d+)\]/);
-    return match ? parseInt(match[1]) : null;
+  private extractIndices(path: string): number[] {
+    const regex = /\[(\d+)\]/g;
+    const indices: number[] = [];
+    let match;
+    while ((match = regex.exec(path)) !== null) {
+      indices.push(parseInt(match[1]));
+    }
+    return indices;
   }
 
 }

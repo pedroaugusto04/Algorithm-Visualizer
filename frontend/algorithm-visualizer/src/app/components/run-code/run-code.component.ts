@@ -322,7 +322,18 @@ export class RunCodeComponent implements OnDestroy {
     });
 
     this.entries.filter(e => e.op === 'init').forEach(entry => {
-      this.algorithmUtilsService.getOrCreateStructure(this.structures, entry.path, entry.type);
+      const struct = this.algorithmUtilsService.getOrCreateStructure(this.structures, entry.path, entry.type);
+      if (struct && struct.d3Data) {
+        if (struct.type === 'array') {
+          if (typeof entry.value === 'string' && entry.value.startsWith('<')) {
+            struct.d3Data.arrayData = [];
+          } else if (Array.isArray(entry.value)) {
+            struct.d3Data.arrayData = JSON.parse(JSON.stringify(entry.value));
+          } else {
+            struct.d3Data.arrayData = entry.value !== undefined ? [entry.value] : [];
+          }
+        }
+      }
     });
 
     this.currentStep.set(-1);
