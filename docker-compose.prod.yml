@@ -50,6 +50,7 @@ services:
       start_period: 60s
 
   runner:
+    image: pedroaug4/algo-runner:latest
     build:
       context: ./backend/algorithm-visualizer
       dockerfile: Dockerfile-Instrumenter

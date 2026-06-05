@@ -123,5 +123,6 @@ jobs:
             git checkout -B main origin/main
             git reset --hard origin/main
             cp backend.env .env.prod
+            sudo docker compose --env-file .env.prod -f docker-compose.prod.yml build runner
             sudo docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build --remove-orphans mysql api
             sudo docker image prune -f
