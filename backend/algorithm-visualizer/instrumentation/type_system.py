@@ -102,7 +102,19 @@ def parse_type(clang_type) -> TypeNode:
 
 def observed_typename(node: TypeNode) -> str:
     base_name = REV_OBS_MAP.get(node.name, node.name)
-    name = OBS_MAP.get(base_name, base_name)
+    std_map = {
+        "vector": "std::vector",
+        "deque": "std::deque",
+        "map": "std::map",
+        "unordered_map": "std::unordered_map",
+        "set": "std::set",
+        "multiset": "std::multiset",
+        "unordered_set": "std::unordered_set",
+        "queue": "std::queue",
+        "stack": "std::stack",
+        "priority_queue": "std::priority_queue"
+    }
+    name = std_map.get(base_name, base_name)
     if not node.args:
         return name + ("*" * node.pointer_depth)
     inner = ", ".join(observed_typename(arg) for arg in node.args)
