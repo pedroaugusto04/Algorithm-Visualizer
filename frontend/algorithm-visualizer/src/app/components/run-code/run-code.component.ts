@@ -324,22 +324,23 @@ export class RunCodeComponent implements OnDestroy {
     this.entries.filter(e => e.op === 'init').forEach(entry => {
       const struct = this.algorithmUtilsService.getOrCreateStructure(this.structures, entry.path, entry.type);
       if (struct && struct.d3Data) {
+        const d3Data = struct.d3Data;
         if (struct.type === 'array') {
           if (typeof entry.value === 'string' && entry.value.startsWith('<')) {
-            struct.d3Data.arrayData = [];
+            d3Data.arrayData = [];
           } else if (Array.isArray(entry.value)) {
-            struct.d3Data.arrayData = JSON.parse(JSON.stringify(entry.value));
+            d3Data.arrayData = JSON.parse(JSON.stringify(entry.value));
           } else {
-            struct.d3Data.arrayData = entry.value !== undefined ? [entry.value] : [];
+            d3Data.arrayData = entry.value !== undefined ? [entry.value] : [];
           }
         } else if (struct.type === 'map') {
-          struct.d3Data.nodes = [];
-          struct.d3Data.links = [];
-          const width = struct.d3Data.width || 800;
-          const height = struct.d3Data.height || 600;
+          d3Data.nodes = [];
+          d3Data.links = [];
+          const width = d3Data.width || 800;
+          const height = d3Data.height || 600;
 
           // Ensure root node for the map
-          struct.d3Data.nodes.push({
+          d3Data.nodes.push({
             id: entry.path,
             value: entry.path,
             color: "orange",
@@ -347,7 +348,7 @@ export class RunCodeComponent implements OnDestroy {
             y: height / 2
           });
 
-          const rootNode = struct.d3Data.nodes[0];
+          const rootNode = d3Data.nodes[0];
 
           if (entry.value && typeof entry.value === 'object' && !Array.isArray(entry.value)) {
             Object.entries(entry.value).forEach(([k, v]) => {
@@ -359,21 +360,21 @@ export class RunCodeComponent implements OnDestroy {
                 x: width / 2,
                 y: height / 2
               };
-              struct.d3Data.nodes.push(targetNode);
-              struct.d3Data.links.push({
+              d3Data.nodes.push(targetNode);
+              d3Data.links.push({
                 source: rootNode,
                 target: targetNode
               });
             });
           }
         } else if (struct.type === 'set') {
-          struct.d3Data.nodes = [];
-          struct.d3Data.links = [];
-          const width = struct.d3Data.width || 800;
-          const height = struct.d3Data.height || 600;
+          d3Data.nodes = [];
+          d3Data.links = [];
+          const width = d3Data.width || 800;
+          const height = d3Data.height || 600;
 
           // Ensure root node for the set
-          struct.d3Data.nodes.push({
+          d3Data.nodes.push({
             id: entry.path,
             value: entry.path,
             color: "orange",
@@ -381,7 +382,7 @@ export class RunCodeComponent implements OnDestroy {
             y: height / 2
           });
 
-          const rootNode = struct.d3Data.nodes[0];
+          const rootNode = d3Data.nodes[0];
 
           if (Array.isArray(entry.value)) {
             entry.value.forEach((v) => {
@@ -393,8 +394,8 @@ export class RunCodeComponent implements OnDestroy {
                 x: width / 2,
                 y: height / 2
               };
-              struct.d3Data.nodes.push(targetNode);
-              struct.d3Data.links.push({
+              d3Data.nodes.push(targetNode);
+              d3Data.links.push({
                 source: rootNode,
                 target: targetNode
               });
