@@ -332,6 +332,74 @@ export class RunCodeComponent implements OnDestroy {
           } else {
             struct.d3Data.arrayData = entry.value !== undefined ? [entry.value] : [];
           }
+        } else if (struct.type === 'map') {
+          struct.d3Data.nodes = [];
+          struct.d3Data.links = [];
+          const width = struct.d3Data.width || 800;
+          const height = struct.d3Data.height || 600;
+
+          // Ensure root node for the map
+          struct.d3Data.nodes.push({
+            id: entry.path,
+            value: entry.path,
+            color: "orange",
+            x: width / 2,
+            y: height / 2
+          });
+
+          const rootNode = struct.d3Data.nodes[0];
+
+          if (entry.value && typeof entry.value === 'object' && !Array.isArray(entry.value)) {
+            Object.entries(entry.value).forEach(([k, v]) => {
+              const targetId = `${entry.path}[${k}]`;
+              const targetNode = {
+                id: targetId,
+                value: v,
+                color: "steelblue",
+                x: width / 2,
+                y: height / 2
+              };
+              struct.d3Data.nodes.push(targetNode);
+              struct.d3Data.links.push({
+                source: rootNode,
+                target: targetNode
+              });
+            });
+          }
+        } else if (struct.type === 'set') {
+          struct.d3Data.nodes = [];
+          struct.d3Data.links = [];
+          const width = struct.d3Data.width || 800;
+          const height = struct.d3Data.height || 600;
+
+          // Ensure root node for the set
+          struct.d3Data.nodes.push({
+            id: entry.path,
+            value: entry.path,
+            color: "orange",
+            x: width / 2,
+            y: height / 2
+          });
+
+          const rootNode = struct.d3Data.nodes[0];
+
+          if (Array.isArray(entry.value)) {
+            entry.value.forEach((v) => {
+              const targetId = `${entry.path}[${v}]`;
+              const targetNode = {
+                id: targetId,
+                value: v,
+                color: "steelblue",
+                x: width / 2,
+                y: height / 2
+              };
+              struct.d3Data.nodes.push(targetNode);
+              struct.d3Data.links.push({
+                source: rootNode,
+                target: targetNode
+              });
+            });
+          }
         }
       }
     });
