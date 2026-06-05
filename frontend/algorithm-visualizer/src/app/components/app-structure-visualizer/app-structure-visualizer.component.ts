@@ -5,10 +5,12 @@ import {
   AfterViewInit,
   ViewChild,
   SimpleChanges,
-  OnChanges
+  OnChanges,
+  inject
 } from '@angular/core';
 import * as d3 from 'd3';
 import { StructureWindow } from 'src/app/models/StructureWindow';
+import { GlobalRenderer } from '../../services/renderers/GlobalRenderer';
 
 @Component({
   selector: 'app-structure-visualizer',
@@ -21,6 +23,8 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
   @ViewChild('graphContainer', { static: true }) graphContainer!: ElementRef<HTMLDivElement>;
   svg: any;
   @Input() struct!: StructureWindow;
+
+  private globalRenderer = inject(GlobalRenderer);
 
   ngAfterViewInit() {
     setTimeout(() => {
@@ -58,6 +62,7 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
       .force('center', d3.forceCenter(width / 2, height / 2));
       
     this.struct.d3Data = {
+      ...this.struct.d3Data,
       nodes: nodes || [],
       links: links || [],
       simulation: simulation,
@@ -65,6 +70,9 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
       width: width,
       height: height
     };
+
+    // Trigger immediate render of elements
+    this.globalRenderer.renderElements([this.struct]);
   }
 
   private destroy() {
