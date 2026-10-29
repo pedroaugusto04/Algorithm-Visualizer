@@ -175,7 +175,11 @@ app-structure-visualizer {
     scrollbar-color: #94a3b8 #f1f5f9;
     scrollbar-width: thin;
 
-    > mat-form-field { flex: 0 0 auto; }
+    > mat-form-field {
+        flex: 0 0 auto;
+        min-height: 56px;
+        overflow: visible;
+    }
 }
 
 .source-editor-field {
