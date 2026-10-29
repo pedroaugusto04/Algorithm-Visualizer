@@ -1,17 +1,41 @@
-FROM ubuntu:24.04
+FROM ubuntu:24.04 AS build
 
-RUN apt-get update && apt-get install -y \
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cmake \
+    make \
     python3 \
-    python3-pip \
-    libclang-18-dev \
-    clang-18 \
     g++ \
+    clang-18 \
+    llvm-18-dev \
+    libclang-18-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Cria o link simbólico para a biblioteca do sistema
-RUN ln -s /usr/lib/llvm-18/lib/libclang.so.1 /usr/lib/libclang.so
+WORKDIR /src
+COPY instrumentation/native ./instrumentation/native
+COPY instrumentation/runtime_cpp.hpp ./instrumentation/runtime_cpp.hpp
+COPY instrumentation/runtime ./instrumentation/runtime
+COPY instrumentation/native/tests ./instrumentation/native/tests
+RUN cmake -S instrumentation/native -B build -DCMAKE_BUILD_TYPE=Release \
+    && cmake --build build --parallel 2 \
+    && cmake --install build --prefix /opt/av \
+    && AV_INSTRUMENTER=/opt/av/bin/av-instrumenter python3 -m unittest discover -s instrumentation/native/tests
 
-# Instala a versão 18.1.8 (que aparece na sua lista de versões disponíveis)
-RUN pip3 install clang==18.1.8 --break-system-packages
+FROM ubuntu:24.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    g++ \
+    libclang-common-18-dev \
+    libclang-cpp18 \
+    libllvm18 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /opt/av/bin/av-instrumenter /usr/local/bin/av-instrumenter
+COPY --from=build /opt/av/include/algorithm-visualizer/runtime_cpp.hpp /usr/local/include/algorithm-visualizer/runtime_cpp.hpp
+COPY --from=build /opt/av/include/algorithm-visualizer/runtime /usr/local/include/algorithm-visualizer/runtime
+COPY instrumentation/runner-entrypoint.sh /usr/local/bin/av-runner
+RUN chmod 0755 /usr/local/bin/av-runner
+ENV AV_EVENT_FILE=/work/events.jsonl
 WORKDIR /work
+ENTRYPOINT ["/usr/local/bin/av-runner"]

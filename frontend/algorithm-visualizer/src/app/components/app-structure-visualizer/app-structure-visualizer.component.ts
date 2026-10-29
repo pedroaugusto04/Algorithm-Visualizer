@@ -6,15 +6,20 @@ import {
   ViewChild,
   SimpleChanges,
   OnChanges,
-  inject
+  inject,
+  NgZone
 } from '@angular/core';
 import * as d3 from 'd3';
 import { StructureWindow } from 'src/app/models/StructureWindow';
 import { GlobalRenderer } from '../../services/renderers/GlobalRenderer';
+import { JsonValueTreeComponent } from '../json-value-tree/json-value-tree.component';
+import { JsonValueTreeNode, projectJsonValueTree } from '../../services/renderers/json-value-tree';
+import { StructuredValueSelection } from '../../models/StructuredValueSelection';
 
 @Component({
   selector: 'app-structure-visualizer',
   standalone: true,
+  imports: [JsonValueTreeComponent],
   templateUrl: './app-structure-visualizer.component.html',
   styleUrls: ['./app-structure-visualizer.component.scss']
 })
@@ -25,6 +30,8 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
   @Input() struct!: StructureWindow;
 
   private globalRenderer = inject(GlobalRenderer);
+  private zone = inject(NgZone);
+  selectedValueTree: JsonValueTreeNode | null = null;
 
   ngAfterViewInit() {
     setTimeout(() => {
@@ -63,6 +70,10 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
       
     this.struct.d3Data = {
       ...this.struct.d3Data,
+      ownerPath: this.struct.path,
+      onStructuredValueSelected: (selection: StructuredValueSelection | null) => {
+        this.zone.run(() => this.updateSelectedValue(selection));
+      },
       nodes: nodes || [],
       links: links || [],
       simulation: simulation,
@@ -73,6 +84,30 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
 
     // Trigger immediate render of elements
     this.globalRenderer.renderElements([this.struct]);
+  }
+
+  closeSelectedValue(): void {
+    if (this.struct.d3Data) {
+      this.struct.d3Data.selectedValuePath = undefined;
+      this.struct.d3Data.selectedValueSnapshot = undefined;
+      this.struct.d3Data.onStructuredValueSelected?.(null);
+    }
+    this.globalRenderer.renderElements([this.struct]);
+  }
+
+  private updateSelectedValue(selection: StructuredValueSelection | null): void {
+    if (!selection) {
+      this.selectedValueTree = null;
+      return;
+    }
+
+    this.selectedValueTree = projectJsonValueTree(
+      selection.path,
+      selection.path,
+      selection.value,
+      selection.previousValue,
+      selection.hasPrevious
+    );
   }
 
   private destroy() {

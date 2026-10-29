@@ -1,15 +1,10 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { map } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { LoginUserDTO } from '../models/DTO/User/LoginUserDTO';
-import { LoginResponse } from '../models/Responses/LoginResponse';
-import { CookieService } from 'ngx-cookie-service';
-import { Router } from '@angular/router';
-import { UserService } from './user.service';
-
-import { ExecuteCode } from '../models/ExecuteCode';
 import { ExecuteCodeResponse } from '../models/Responses/ExecuteCodeResponse';
+import { parseExecutionResponse } from '../models/Responses/ExecutionResponseParser';
+import { ExecuteCode } from '../models/ExecuteCode';
 
 @Injectable({
   providedIn: 'root'
@@ -18,49 +13,11 @@ export class CodeService {
 
   constructor(private httpClient: HttpClient) { }
 
-  executeCode(payload: {
-    language: string;
-    code: string;
-    testcase?: string;
-    functionName?: string;
-  }) {
+  executeCode(payload: ExecuteCode) {
 
     const executeCodeUrl = new URL(environment.apiExecuteCode, environment.baseUrl).toString();
 
-    return this.httpClient.post<ExecuteCodeResponse>(
-      executeCodeUrl,
-      payload,
-      {
-        headers: { 'Content-Type': 'application/json' }
-      }
-    ).pipe(
-      map(res => {
-        if (!res || !res.success) {
-          throw new Error('Provided code is not supported');
-        }
-        return res;
-      })
-    );
+    return this.httpClient.post<unknown>(executeCodeUrl, payload).pipe(map(parseExecutionResponse));
   }
 
-  executeCodeMultipart(payload: any, file: File) {
-
-    const formData = new FormData();
-
-    formData.append(
-      'payload',
-      new Blob([JSON.stringify(payload)], { type: 'application/json' })
-    );
-
-    if (file) {
-      formData.append('inputFile', file);
-    }
-
-    const url = new URL(
-      environment.apiExecuteCodeMultipart,
-      environment.baseUrl
-    ).toString();
-
-    return this.httpClient.post<ExecuteCodeResponse>(url, formData);
-  }
 }

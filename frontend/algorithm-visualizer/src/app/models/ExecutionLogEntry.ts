@@ -1,7 +1,11 @@
 export interface ExecutionLogEntry {
+  schema: 'av.event.v1';
   time: number;
-  type: 'map' | 'vector' | 'queue' | 'stack' | string;
+  type: 'map' | 'array';
   path: string;
-  op: 'init' | 'add' | 'update' | 'remove' | string;
-  value?: any;
+  op: 'init' | 'snapshot';
+  line: number;
+  value: JsonValue;
 }
+
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };

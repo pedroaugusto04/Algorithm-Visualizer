@@ -1,0 +1,27 @@
+@if (node.kind === 'value' || node.removed) {
+  <div class="tree-leaf" [class.changed-value]="node.changed" [class.removed-value]="node.removed">
+    <span class="tree-label">{{ node.label }}</span>
+    <code>{{ node.displayValue }}</code>
+    @if (node.changed && !node.removed) {
+      <span class="change-badge">changed</span>
+    }
+  </div>
+} @else {
+  <details [open]="expanded" [class.changed-container]="node.changed" (toggle)="updateExpandedState($event)">
+    <summary>
+      <span class="tree-label">{{ node.label }}</span>
+      <span class="container-summary">{{ node.summary }}</span>
+      @if (node.changed) {
+        <span class="change-badge">changed</span>
+      }
+    </summary>
+    <div class="tree-children">
+      @for (child of node.children; track child.path) {
+        <app-json-value-tree [node]="child"></app-json-value-tree>
+      }
+      @if (node.children.length === 0) {
+        <span class="empty-container">empty</span>
+      }
+    </div>
+  </details>
+}

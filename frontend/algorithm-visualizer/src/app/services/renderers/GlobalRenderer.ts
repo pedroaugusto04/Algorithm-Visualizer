@@ -13,10 +13,11 @@ export class GlobalRenderer implements Renderer {
         structures: StructureWindow[]
     ) {
         structures.forEach((structure: StructureWindow) => {
-            if (structure.d3Data && structure.d3Data.svg) {
-                this.graphRenderer.renderElements(structure.d3Data);
-                this.arrayRenderer.renderElements(structure.d3Data);
-            }
+            const data = structure.d3Data;
+            if (!data?.svg) return;
+
+            if (structure.type === 'array') this.arrayRenderer.renderElements(data);
+            else if (structure.type === 'map') this.graphRenderer.renderElements(data);
         });
     }
 }

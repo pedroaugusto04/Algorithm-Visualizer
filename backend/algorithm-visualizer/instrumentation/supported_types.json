@@ -1,0 +1,23 @@
+[
+  {"template": "vector", "visual_type": "array", "label": "std::vector"},
+  {"template": "deque", "visual_type": "array", "label": "std::deque"},
+  {"template": "list", "visual_type": "array", "label": "std::list"},
+  {"template": "forward_list", "visual_type": "array", "label": "std::forward_list"},
+  {"template": "array", "visual_type": "array", "label": "std::array"},
+  {"template": "set", "visual_type": "array", "label": "std::set"},
+  {"template": "multiset", "visual_type": "array", "label": "std::multiset"},
+  {"template": "unordered_set", "visual_type": "array", "label": "std::unordered_set"},
+  {"template": "unordered_multiset", "visual_type": "array", "label": "std::unordered_multiset"},
+  {"template": "stack", "visual_type": "array", "label": "std::stack"},
+  {"template": "queue", "visual_type": "array", "label": "std::queue"},
+  {"template": "priority_queue", "visual_type": "array", "label": "std::priority_queue"},
+  {"template": "bitset", "visual_type": "array", "label": "std::bitset"},
+  {"template": "pair", "visual_type": "array", "label": "std::pair"},
+  {"template": "tuple", "visual_type": "array", "label": "std::tuple"},
+  {"template": "map", "visual_type": "map", "label": "std::map"},
+  {"template": "multimap", "visual_type": "map", "label": "std::multimap"},
+  {"template": "unordered_map", "visual_type": "map", "label": "std::unordered_map"},
+  {"template": "unordered_multimap", "visual_type": "map", "label": "std::unordered_multimap"},
+  {"template": "basic_string<char>", "visual_type": "array", "label": "std::string mutável"},
+  {"template": "C array", "visual_type": "array", "label": "arrays C de tamanho fixo"}
+]

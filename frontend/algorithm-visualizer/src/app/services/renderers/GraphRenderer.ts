@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Renderer } from "./Renderer";
 import * as d3 from "d3";
+import { isStructuredValue, refreshStructuredSelection, toggleStructuredSelection } from './structured-value-selection';
 
 @Injectable({ providedIn: 'root' })
 export class GraphRenderer implements Renderer {
@@ -75,13 +76,29 @@ export class GraphRenderer implements Renderer {
                 return g;
             });
 
+        refreshStructuredSelection(d3Data, d3Data.nodes
+            .filter((node: any) => node.structuredValuePath)
+            .map((node: any) => ({ path: node.structuredValuePath, value: node.structuredValue })));
+
+        nodeSelection
+            .style('cursor', (d: any) => isStructuredValue(d.structuredValue) ? 'pointer' : 'grab')
+            .on('click.structured-value', (_event: unknown, d: any) => {
+                if (!isStructuredValue(d.structuredValue)) return;
+                toggleStructuredSelection(d3Data, { path: d.structuredValuePath, value: d.structuredValue });
+                nodeSelection.select('circle')
+                    .attr('stroke', (node: any) => node.structuredValuePath === d3Data.selectedValuePath ? '#ff9800' : '#fff')
+                    .attr('stroke-width', (node: any) => node.structuredValuePath === d3Data.selectedValuePath ? 3 : 1.5);
+            });
+
 
         // sincroniza valor
         nodeSelection.select('text.node-text').text((d: any) => d.value);
 
         // sincroniza cor
         nodeSelection.select('circle')
-            .attr('fill', (d: any) => (d.color || 'steelblue'));
+            .attr('fill', (d: any) => (d.color || 'steelblue'))
+            .attr('stroke', (d: any) => d.structuredValuePath === d3Data.selectedValuePath ? '#ff9800' : '#fff')
+            .attr('stroke-width', (d: any) => d.structuredValuePath === d3Data.selectedValuePath ? 3 : 1.5);
 
         d3Data.simulation.nodes(d3Data.nodes);
         d3Data.simulation.force('link').links(d3Data.links);

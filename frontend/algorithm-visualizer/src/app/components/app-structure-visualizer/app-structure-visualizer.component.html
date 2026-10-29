@@ -1,2 +1,19 @@
-<div class="graph-draw" #graphContainer>
+<div class="visualizer-layout">
+  <div class="graph-draw" #graphContainer>
+  </div>
+
+  @if (selectedValueTree; as selectedTree) {
+    <aside class="structured-inspector" aria-label="Structured value details">
+      <header class="inspector-header">
+        <div>
+          <strong>Value details</strong>
+          <code>{{ selectedTree.path }}</code>
+        </div>
+        <button type="button" aria-label="Close value details" (click)="closeSelectedValue()">×</button>
+      </header>
+      <div class="inspector-tree">
+        <app-json-value-tree [node]="selectedTree"></app-json-value-tree>
+      </div>
+    </aside>
+  }
 </div>

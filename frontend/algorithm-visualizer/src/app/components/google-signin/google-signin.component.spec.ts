@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { GoogleSigninComponent } from './google-signin.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('GoogleSigninComponent', () => {
   let component: GoogleSigninComponent;
@@ -8,7 +10,7 @@ describe('GoogleSigninComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GoogleSigninComponent]
+      imports: [GoogleSigninComponent, HttpClientTestingModule, RouterTestingModule]
     })
     .compileComponents();
 

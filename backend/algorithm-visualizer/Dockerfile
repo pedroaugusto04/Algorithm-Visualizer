@@ -7,8 +7,6 @@ COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw dependency:go-offline
 
 COPY src ./src
-COPY instrumenter.py ./instrumenter.py
-COPY instrumentation ./instrumentation
 
 EXPOSE 8081
 

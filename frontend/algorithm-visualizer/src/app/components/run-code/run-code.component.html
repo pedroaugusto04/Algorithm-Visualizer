@@ -10,14 +10,8 @@
                     <mat-label>Language</mat-label>
                     <mat-select [formControl]="languageControl">
                         <mat-option value="cpp17">C++ 17</mat-option>
-                    </mat-select>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-100">
-                    <mat-label>Platform</mat-label>
-                    <mat-select [formControl]="platformControl">
-                        <mat-option value="leetcode">LeetCode</mat-option>
-                        <mat-option value="codeforces">Codeforces</mat-option>
+                        <mat-option value="cpp20">C++ 20</mat-option>
+                        <mat-option value="cpp23">C++ 23</mat-option>
                     </mat-select>
                 </mat-form-field>
             </div>
@@ -32,39 +26,11 @@
             </div>
 
             <div class="col-sm-12 m-t-16">
-                @if (platformControl.value === 'leetcode') {
                 <mat-form-field appearance="outline" class="w-100">
-                    <mat-label>LeetCode Test Case</mat-label>
-                    <textarea matInput placeholder="e.g. nums = [1,2,3], k = 3, target = 5" [ngModel]="testCaseInput()"
-                        (ngModelChange)="testCaseInput.set($event)">
-                    </textarea>
+                    <mat-label>Standard input</mat-label>
+                    <textarea matInput rows="5" placeholder="Paste the input that would be read from stdin"
+                        [ngModel]="testCaseInput()" (ngModelChange)="testCaseInput.set($event)"></textarea>
                 </mat-form-field>
-                <mat-form-field appearance="outline" class="w-100">
-                    <mat-label>LeetCode method</mat-label>
-                    <input matInput placeholder="Type LeetCode method name (ex: twoSum)" [ngModel]="functionNameInput()"
-                        (ngModelChange)="functionNameInput.set($event)">
-                </mat-form-field>
-                }
-                @else if (platformControl.value === 'codeforces') {
-                <div class="w-100">
-                    <mat-label class="f-s-12 f-w-600 d-block m-b-8">
-                        Codeforces Input File
-                    </mat-label>
-
-                    <input hidden type="file" #fileInput accept=".txt" (change)="onFileSelected($event)" />
-
-                    <button mat-stroked-button color="primary" type="button" class="w-100" (click)="fileInput.click()">
-                        <mat-icon>upload_file</mat-icon>
-                        Choose input file
-                    </button>
-
-                    @if (selectedInputFile) {
-                    <div class="f-s-12 m-t-4" style="color: #666;">
-                        Selected: <strong>{{ selectedInputFile.name }}</strong>
-                    </div>
-                    }
-                </div>
-                }
             </div>
 
             <div class="col-sm-12 m-t-24">

@@ -1,5 +1,5 @@
 export interface ExecuteCode {
-    language: string;
+    language: 'cpp17' | 'cpp20' | 'cpp23';
     code: string;
-    testcase?: string;
+    testcase: string;
 }

@@ -1,13 +1,10 @@
 package com.pedro.algorithm_visualizer.controllers;
 
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.pedro.algorithm_visualizer.models.DTO.CodeRequestDTO;
 import com.pedro.algorithm_visualizer.models.DTO.ExecutionResponseDTO;
@@ -21,7 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Code Controller", description = "Endpoints para execução e verificação do código do usuário")
 public class CodeController {
 
-    private CodeService codeService;
+    private final CodeService codeService;
 
     CodeController(CodeService codeService) {
         this.codeService = codeService;
@@ -38,33 +35,8 @@ public class CodeController {
         ExecutionResponseDTO responseDTO = codeService.execute(
                 dto.language(),
                 dto.code(),
-                dto.testcase(),
-                dto.functionName(),
-                null
+                dto.testcase()
         );
         return ResponseEntity.ok(responseDTO);
     }
-
-    @Operation(
-            summary = "Executa o código inserido pelo usuário para análise das estruturas.",
-            description = "Executa o código inserido pelo usuário para análise das estruturas. Testcase via arquivo"
-    )
-    @PostMapping(
-            value = "/execute-file",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public ResponseEntity<ExecutionResponseDTO> executeCodeFile(
-            @RequestPart("payload") CodeRequestDTO dto,
-            @RequestPart(value = "inputFile", required = false) MultipartFile inputFile
-    ) {
-        ExecutionResponseDTO responseDTO = codeService.execute(
-                dto.language(),
-                dto.code(),
-                dto.testcase(),
-                dto.functionName(),
-                inputFile
-        );
-        return ResponseEntity.ok(responseDTO);
-    }
-
 }

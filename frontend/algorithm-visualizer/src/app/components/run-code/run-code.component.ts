@@ -1,4 +1,4 @@
-import { Component, signal, OnDestroy, ViewChild } from '@angular/core';
+import { Component, signal, OnDestroy } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,6 +7,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { CodeService } from 'src/app/services/code.service';
 import { ExecuteCodeResponse } from 'src/app/models/Responses/ExecuteCodeResponse';
 import { ExecutionLogEntry } from 'src/app/models/ExecutionLogEntry';
@@ -15,9 +16,8 @@ import { AlgorithmOperationFactory } from 'src/app/services/algorithms/Algorithm
 import { AlgorithmUtilsService } from 'src/app/services/utils/algorithms/algorithm-utils.service';
 import { StructureVisualizerComponent } from '../app-structure-visualizer/app-structure-visualizer.component';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { GlobalRenderer } from 'src/app/services/renderers/GlobalRenderer';
-import { SnackBarService } from 'src/app/services/utils/snackbar/snack-bar.service';
+import { buildMapSnapshot } from 'src/app/services/renderers/map-snapshot';
 import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 @Component({
@@ -33,21 +33,19 @@ import { SwalService } from 'src/app/services/utils/swal/swal.service';
     MatButtonModule,
     MatIconModule,
     MatTabsModule,
+    MatButtonToggleModule,
     StructureVisualizerComponent,
     MatSlideToggleModule,
-    MatButtonToggleModule
   ],
   templateUrl: './run-code.component.html',
   styleUrls: ['./run-code.component.scss']
 })
 export class RunCodeComponent implements OnDestroy {
-  languageControl = new FormControl('cpp17');
-  platformControl = new FormControl('leetcode');
+  languageControl = new FormControl<'cpp17' | 'cpp20' | 'cpp23'>('cpp17', { nonNullable: true });
 
   sourceCode = signal<string>('');
   testCaseInput = signal<string>('');
   executionResult = signal<string>('');
-  functionNameInput = signal<string>('');
 
   entries: ExecutionLogEntry[] = [];
   operations: ExecutionLogEntry[] = [];
@@ -66,9 +64,6 @@ export class RunCodeComponent implements OnDestroy {
   selectedTabIndex = signal<number>(0);
   autoSwitchTabs = signal<boolean>(true);
 
-  // file
-  selectedInputFile: File | null = null;
-
   constructor(
     private codeService: CodeService,
     private operationFactory: AlgorithmOperationFactory,
@@ -76,14 +71,6 @@ export class RunCodeComponent implements OnDestroy {
     private swalService: SwalService,
     private globalRenderer: GlobalRenderer
   ) { }
-
-  ngOnInit() {
-    this.platformControl.valueChanges.subscribe(value => {
-      if (value !== 'codeforces') {
-        this.selectedInputFile = null;
-      }
-    });
-  }
 
   onRunCode(): void {
     if (!this.sourceCode() || !this.languageControl.value) {
@@ -97,47 +84,13 @@ export class RunCodeComponent implements OnDestroy {
     const payload = {
       language: this.languageControl.value,
       code: this.sourceCode(),
-      testcase: this.testCaseInput().trim(),
-      functionName: this.functionNameInput().trim()
+      testcase: this.testCaseInput()
     };
 
-    // LEETCODE (JSON)
-
-    if (this.platformControl.value === 'leetcode') {
-
-      if (!this.testCaseInput()) {
-        this.executionResult.set('Error: Test Case input is required');
-        return;
-      }
-
-      if (!this.functionNameInput()) {
-        this.executionResult.set('Error: Function name input is required');
-        return;
-      }
-
-      this.codeService.executeCode(payload).subscribe({
-        next: (res: ExecuteCodeResponse) => {
-          this.proccessResult(res);
-        },
-        error: (error) => {
-          this.executionResult.set(`Execution failed: ${error.message || "Provided code is not supported"}`);
-          this.swalService.errorNoButton("Execution Failed","The provided code is not yet supported.");
-        }
-      });
-
-      return;
-    }
-
-    // CODEFORCES (MULTIPART)
-
-    if (!this.selectedInputFile) {
-      this.executionResult.set('Error: Input file is required');
-      return;
-    }
-
-    this.codeService.executeCodeMultipart(payload, this.selectedInputFile!).subscribe({
+    // Competitive programming programs consume stdin through their own main().
+    this.codeService.executeCode(payload).subscribe({
       next: (res: ExecuteCodeResponse) => {
-        this.proccessResult(res);
+        this.processResult(res);
       },
       error: (error) => {
         this.executionResult.set(`Execution failed: ${error.message || "Provided code is not supported"}`);
@@ -146,29 +99,24 @@ export class RunCodeComponent implements OnDestroy {
     })
   }
 
-  private proccessResult(res: ExecuteCodeResponse) {
-    const fallbackPrefix = res.instrumentationStatus === 'FALLBACK'
-      ? 'Visualization fallback active: instrumentation failed.\n'
-      : '';
+  private processResult(res: ExecuteCodeResponse) {
+    if (!res.success) {
+      this.resetState();
+      const message = [
+        res.error?.message || 'The program could not be instrumented or executed.',
+        res.stdout ? `[stdout]\n${res.stdout}` : '',
+        res.stderr ? `[stderr]\n${res.stderr}` : ''
+      ].filter(Boolean).join('\n');
+      this.executionResult.set(message);
+      this.swalService.errorNoButton('Execution Failed', message);
+      return;
+    }
 
-    this.executionResult.set(fallbackPrefix + (res.systemLogs || 'Success!'));
-
-    let userLogs = '';
-    const parsedEntries: ExecutionLogEntry[] = [];
-
-    const lines = res.executionLogs?.trim().split('\n') ?? [];
-
-    lines.forEach(line => {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) return;
-      try {
-        const entry: ExecutionLogEntry = JSON.parse(trimmedLine); parsedEntries.push(entry);
-      } catch { userLogs += trimmedLine + '\n'; }
-    });
-
-    this.executionResult.set(fallbackPrefix + (res.systemLogs || 'Success!') + '\n' + userLogs);
-
-    this.entries = parsedEntries;
+    const output = [res.stdout, res.stderr ? `[stderr]\n${res.stderr}` : '']
+      .filter(part => part.length > 0)
+      .join('\n');
+    this.executionResult.set(output || 'Code executed successfully!');
+    this.entries = res.events;
 
     const operations: ExecutionLogEntry[] = this.entries.filter(e => e.op !== 'init');
 
@@ -299,6 +247,8 @@ export class RunCodeComponent implements OnDestroy {
 
   private resetState(): void {
     this.pause();
+    this.entries = [];
+    this.operations = [];
     this.resetStructures(true);
     this.resetView();
     this.currentStep.set(-1);
@@ -326,81 +276,17 @@ export class RunCodeComponent implements OnDestroy {
       if (struct && struct.d3Data) {
         const d3Data = struct.d3Data;
         if (struct.type === 'array') {
-          if (typeof entry.value === 'string' && entry.value.startsWith('<')) {
-            d3Data.arrayData = [];
-          } else if (Array.isArray(entry.value)) {
+          if (Array.isArray(entry.value)) {
             d3Data.arrayData = JSON.parse(JSON.stringify(entry.value));
           } else {
             d3Data.arrayData = entry.value !== undefined ? [entry.value] : [];
           }
         } else if (struct.type === 'map') {
-          d3Data.nodes = [];
-          d3Data.links = [];
           const width = d3Data.width || 800;
           const height = d3Data.height || 600;
-
-          // Ensure root node for the map
-          d3Data.nodes.push({
-            id: entry.path,
-            value: entry.path,
-            color: "orange",
-            x: width / 2,
-            y: height / 2
-          });
-
-          const rootNode = d3Data.nodes[0];
-
-          if (entry.value && typeof entry.value === 'object' && !Array.isArray(entry.value)) {
-            Object.entries(entry.value).forEach(([k, v]) => {
-              const targetId = `${entry.path}[${k}]`;
-              const targetNode = {
-                id: targetId,
-                value: v,
-                color: "steelblue",
-                x: width / 2,
-                y: height / 2
-              };
-              d3Data.nodes.push(targetNode);
-              d3Data.links.push({
-                source: rootNode,
-                target: targetNode
-              });
-            });
-          }
-        } else if (struct.type === 'set') {
-          d3Data.nodes = [];
-          d3Data.links = [];
-          const width = d3Data.width || 800;
-          const height = d3Data.height || 600;
-
-          // Ensure root node for the set
-          d3Data.nodes.push({
-            id: entry.path,
-            value: entry.path,
-            color: "orange",
-            x: width / 2,
-            y: height / 2
-          });
-
-          const rootNode = d3Data.nodes[0];
-
-          if (Array.isArray(entry.value)) {
-            entry.value.forEach((v) => {
-              const targetId = `${entry.path}[${v}]`;
-              const targetNode = {
-                id: targetId,
-                value: v,
-                color: "steelblue",
-                x: width / 2,
-                y: height / 2
-              };
-              d3Data.nodes.push(targetNode);
-              d3Data.links.push({
-                source: rootNode,
-                target: targetNode
-              });
-            });
-          }
+          const snapshot = buildMapSnapshot(entry.path, entry.value, width, height);
+          d3Data.nodes = snapshot.nodes;
+          d3Data.links = snapshot.links;
         }
       }
     });
@@ -468,16 +354,6 @@ export class RunCodeComponent implements OnDestroy {
   setTabManully(event: any) {
     if (this.autoSwitchTabs()) {
       this.autoSwitchTabs.set(false);
-    }
-  }
-
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-
-    if (input.files && input.files.length > 0) {
-      this.selectedInputFile = input.files[0];
-    } else {
-      this.selectedInputFile = null;
     }
   }
 

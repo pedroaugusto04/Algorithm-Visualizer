@@ -20,6 +20,5 @@ export const environment = {
     apiUpdateUndirectedUnweightedGraph: 'graphs/undirected/unweighted',
     apiUpdateUndirectedWeightedGraph: 'graphs/undirected/weighted',
     apiExecuteCode: 'code/execute',
-    apiExecuteCodeMultipart: 'code/execute-file',
     apiCallGemini: 'gemini/explain'
-};  
+};

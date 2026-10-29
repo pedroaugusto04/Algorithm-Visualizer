@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:av:contracts:code-execution:v1",
+  "title": "Code execution API contract v1",
+  "oneOf": [
+    { "$ref": "#/$defs/request" },
+    { "$ref": "#/$defs/response" }
+  ],
+  "$defs": {
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "code", "testcase"],
+      "properties": {
+        "language": { "type": "string", "enum": ["cpp17", "gnu++17", "c++17", "cpp20", "gnu++20", "c++20", "cpp23", "gnu++23", "c++23"] },
+        "code": { "type": "string", "maxLength": 200000, "x-maxBytes": 200000 },
+        "testcase": { "type": "string", "maxLength": 1048576, "x-maxBytes": 1048576 }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "time", "type", "path", "op", "line", "value"],
+      "properties": {
+        "schema": { "const": "av.event.v1" },
+        "time": { "type": "integer", "minimum": 1 },
+        "type": { "type": "string", "enum": ["array", "map"] },
+        "path": { "type": "string", "minLength": 1 },
+        "op": { "type": "string", "enum": ["init", "snapshot"] },
+        "line": { "type": "integer", "minimum": 1 },
+        "value": {}
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["validation_error", "instrumentation_error", "compilation_error", "execution_error", "timeout", "telemetry_error", "internal_error"]
+        },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "success", "stage", "stdout", "stderr", "exitCode", "durationMs", "events", "error"],
+      "properties": {
+        "schema": { "const": "av.execution.v1" },
+        "success": { "type": "boolean" },
+        "stage": { "type": "string", "enum": ["completed", "validation", "instrumentation", "compilation", "execution", "telemetry", "internal"] },
+        "stdout": { "type": "string" },
+        "stderr": { "type": "string" },
+        "exitCode": { "type": ["integer", "null"] },
+        "durationMs": { "type": "integer", "minimum": 0 },
+        "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
+        "error": { "oneOf": [{ "$ref": "#/$defs/error" }, { "type": "null" }] }
+      },
+      "allOf": [
+        { "if": { "properties": { "success": { "const": true } }, "required": ["success"] }, "then": { "properties": { "stage": { "const": "completed" }, "error": { "type": "null" } } } },
+        { "if": { "properties": { "success": { "const": false } }, "required": ["success"] }, "then": { "properties": { "error": { "$ref": "#/$defs/error" } } } }
+      ]
+    }
+  }
+}
