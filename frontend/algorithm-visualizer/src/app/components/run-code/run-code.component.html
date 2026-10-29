@@ -77,6 +77,15 @@
         </div>
         }
         @if (totalSteps() > 0) {
+        @if (isTraceTruncated()) {
+        <div class="trace-truncated-banner">
+            <mat-icon>warning_amber</mat-icon>
+            <span>Partial trace — program stopped before the end.</span>
+            @for (w of executionWarnings(); track w) {
+            <span class="trace-truncated-detail">{{ w }}</span>
+            }
+        </div>
+        }
         <div class="animation-player">
             <div class="controls-row">
                 <button mat-icon-button (click)="prevStep()" [disabled]="currentStep() === 0">

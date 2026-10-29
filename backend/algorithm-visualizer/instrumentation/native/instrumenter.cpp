@@ -146,7 +146,7 @@ private:
         std::string code;
         for (const TrackedVariable* info : globals) {
             const unsigned line = context.getSourceManager().getSpellingLineNumber(info->declaration->getBeginLoc());
-            code += "\n__av_snapshot_if_changed(\"" + info->type + "\", \"" + info->path
+            code += " __av_snapshot_if_changed(\"" + info->type + "\", \"" + info->path
                     + "\", " + info->expression + ", " + std::to_string(line) + ");";
         }
 
@@ -182,7 +182,8 @@ public:
 
         SourceManager& sourceManager = compiler.getSourceManager();
         const FileID mainFile = sourceManager.getMainFileID();
-        std::cout << "#include <algorithm-visualizer/runtime_cpp.hpp>\n";
+        // Generated code never adds lines, so #line maps diagnostics back to the user's file.
+        std::cout << "#include <algorithm-visualizer/runtime_cpp.hpp>\n#line 1 \"main.cpp\"\n";
         if (const RewriteBuffer* buffer = rewriter_.getRewriteBufferFor(mainFile)) {
             std::copy(buffer->begin(), buffer->end(), std::ostreambuf_iterator<char>(std::cout));
         } else {

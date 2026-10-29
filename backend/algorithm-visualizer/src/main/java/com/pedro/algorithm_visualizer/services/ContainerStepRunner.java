@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -43,6 +44,24 @@ class ContainerStepRunner {
         String stderr() { return stderr; }
     }
 
+    /** Raised when a step exceeds its time limit; keeps the output produced until the container was killed. */
+    static final class StepTimeout extends IllegalStateException {
+        private final String mode;
+        private final String stdout;
+        private final String stderr;
+
+        StepTimeout(String mode, long seconds, String stdout, String stderr) {
+            super("TIMEOUT: Tempo limite excedido (" + seconds + "s)");
+            this.mode = mode;
+            this.stdout = stdout;
+            this.stderr = stderr;
+        }
+
+        String mode() { return mode; }
+        String stdout() { return stdout; }
+        String stderr() { return stderr; }
+    }
+
     StepResult run(Path workspace, String mode, String standard) throws IOException, InterruptedException {
         if (!mode.equals("instrument") && !mode.equals("compile") && !mode.equals("execute")) {
             throw new IllegalArgumentException("Etapa do runner inválida: " + mode);
@@ -52,8 +71,11 @@ class ContainerStepRunner {
             case "compile" -> "1g";
             default -> "256m";
         };
+        // Named so a timeout can kill the container itself: killing the docker CLI with SIGKILL is not
+        // forwarded to the container, which would otherwise keep running (and consuming CPU) orphaned.
+        String containerName = "av-" + mode + "-" + UUID.randomUUID();
         Process process = new ProcessBuilder(
-                "docker", "run", "--rm", "--network", "none", "--cpus", "1",
+                "docker", "run", "--rm", "--name", containerName, "--network", "none", "--cpus", "1",
                 "--memory", memoryLimit, "--pids-limit", "256",
                 "--security-opt", "no-new-privileges", "--cap-drop", "ALL",
                 "-v", workspace.toAbsolutePath() + ":/work",
@@ -69,8 +91,10 @@ class ContainerStepRunner {
             Future<String> stderr = executor.submit(() -> readAll(stderrStream));
             long stepTimeout = mode.equals("execute") ? timeoutSeconds : PREPARATION_TIMEOUT_SECONDS;
             if (!process.waitFor(stepTimeout, TimeUnit.SECONDS)) {
+                killContainer(containerName);
                 process.destroyForcibly();
-                throw new IllegalStateException("TIMEOUT: Tempo limite excedido (" + stepTimeout + "s)");
+                process.waitFor(5, TimeUnit.SECONDS);
+                throw new StepTimeout(mode, stepTimeout, partialOutput(stdout), partialOutput(stderr));
             }
             try {
                 StepResult result = new StepResult(stdout.get(), stderr.get());
@@ -81,6 +105,27 @@ class ContainerStepRunner {
             } catch (ExecutionException e) {
                 throw new IOException("Falha ao coletar saída do processo", e.getCause());
             }
+        }
+    }
+
+    private void killContainer(String containerName) throws InterruptedException {
+        try {
+            Process kill = new ProcessBuilder("docker", "kill", containerName)
+                    .redirectErrorStream(true)
+                    .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+                    .start();
+            if (!kill.waitFor(10, TimeUnit.SECONDS)) kill.destroyForcibly();
+        } catch (IOException ignored) {
+            // best effort: the container may have already exited
+        }
+    }
+
+    private String partialOutput(Future<String> output) {
+        try {
+            return output.get(2, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            return "";
         }
     }
 

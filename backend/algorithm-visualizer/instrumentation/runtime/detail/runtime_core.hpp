@@ -25,9 +25,14 @@
 #include <unordered_map>
 
 static constexpr size_t MAX_EVENT_BYTES = 2 * 1024 * 1024;
+// Upper bound for serialization work (bytes produced while checking for changes). Without it,
+// statements that read a large container in a loop cost O(n) each and the run degrades to O(n^2).
+static constexpr size_t MAX_SERIALIZATION_WORK_BYTES = 64 * 1024 * 1024;
 
 static int __step = 1;
 static size_t __event_bytes = 0;
+static size_t __av_serialization_work = 0;
+static bool __av_tracing_enabled = true;
 static bool __visualization_incomplete = false;
 static std::unordered_map<std::string, std::string> __av_last_snapshots;
 static std::ofstream __event_file([] {
@@ -35,7 +40,10 @@ static std::ofstream __event_file([] {
     return std::ofstream(path ? path : "/work/events.jsonl", std::ios::out | std::ios::app);
 }());
 
+// Stops tracing for the rest of the run: snapshots become a single branch, so the program
+// finishes at native speed and the events recorded so far are returned as a partial trace.
 inline void __mark_visualization_incomplete(const std::string& reason) {
+    __av_tracing_enabled = false;
     if (__visualization_incomplete) return;
     __visualization_incomplete = true;
     const char* path = std::getenv("AV_STATUS_FILE");
@@ -101,7 +109,7 @@ inline void __log(std::string type, std::string path, std::string op, std::strin
         return;
     }
     if (__event_bytes >= MAX_EVENT_BYTES) {
-        __mark_visualization_incomplete("Limite de tamanho dos eventos de visualização atingido.");
+        __mark_visualization_incomplete("Limite de tamanho dos eventos de visualização atingido; o programa continuou sem registrar novos passos.");
         return;
     }
 
@@ -114,7 +122,7 @@ inline void __log(std::string type, std::string path, std::string op, std::strin
         + ",\"line\":" + std::to_string(line)
         + ",\"value\":" + val + "}";
     if (__event_bytes + event.size() + 1 > MAX_EVENT_BYTES) {
-        __mark_visualization_incomplete("Limite de tamanho dos eventos de visualização atingido.");
+        __mark_visualization_incomplete("Limite de tamanho dos eventos de visualização atingido; o programa continuou sem registrar novos passos.");
         return;
     }
     __event_file << event << std::endl;

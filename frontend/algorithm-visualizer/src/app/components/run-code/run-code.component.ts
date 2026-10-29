@@ -53,6 +53,8 @@ export class RunCodeComponent implements OnDestroy {
   sourceLineList = computed(() => this.sourceCode().split('\n'));
   testCaseInput = signal<string>('');
   executionResult = signal<string>('');
+  executionWarnings = signal<string[]>([]);
+  isTraceTruncated = signal<boolean>(false);
 
   entries: ExecutionLogEntry[] = [];
   private initialEntries: ExecutionLogEntry[] = [];
@@ -96,6 +98,8 @@ export class RunCodeComponent implements OnDestroy {
     this.executionSettingsVisible.set(false);
     this.resetState();
     this.executionResult.set('Compiling and running...');
+    this.executionWarnings.set([]);
+    this.isTraceTruncated.set(false);
 
     const payload = {
       language: this.languageControl.value,
@@ -116,15 +120,27 @@ export class RunCodeComponent implements OnDestroy {
   }
 
   private processResult(res: ExecuteCodeResponse) {
+    const warnings = res.warnings ?? [];
+    const truncated = res.truncated ?? false;
+
     if (!res.success) {
-      this.resetState();
+      // On crash/timeout we may have a partial trace — show it before surfacing the error.
+      if (truncated && res.events.length > 0) {
+        this.isTraceTruncated.set(true);
+        this.executionWarnings.set(warnings);
+        this.loadEvents(res.events);
+      } else {
+        this.resetState();
+      }
       const message = [
         res.error?.message || 'The program could not be instrumented or executed.',
         res.stdout ? `[stdout]\n${res.stdout}` : '',
         res.stderr ? `[stderr]\n${res.stderr}` : ''
       ].filter(Boolean).join('\n');
       this.executionResult.set(message);
-      this.swalService.errorNoButton('Execution Failed', message);
+      if (!truncated || res.events.length === 0) {
+        this.swalService.errorNoButton('Execution Failed', message);
+      }
       return;
     }
 
@@ -132,12 +148,15 @@ export class RunCodeComponent implements OnDestroy {
       .filter(part => part.length > 0)
       .join('\n');
     this.executionResult.set(output || 'Code executed successfully!');
-    this.entries = res.events;
-    this.initialEntries = this.entries.filter(entry => entry.op === 'init');
+    this.isTraceTruncated.set(truncated);
+    this.executionWarnings.set(warnings);
+    this.loadEvents(res.events);
+  }
 
-    const operations: ExecutionLogEntry[] = this.entries.filter(e => e.op !== 'init');
-
-    this.operations = operations;
+  private loadEvents(allEvents: ExecutionLogEntry[]): void {
+    this.entries = allEvents;
+    this.initialEntries = allEvents.filter(e => e.op === 'init');
+    this.operations = allEvents.filter(e => e.op !== 'init');
     this.operationIndicesByPath.clear();
     this.operations.forEach((entry, index) => {
       const rootPath = entry.path.split('[')[0];
@@ -145,13 +164,11 @@ export class RunCodeComponent implements OnDestroy {
       indices.push(index);
       this.operationIndicesByPath.set(rootPath, indices);
     });
-
     this.totalSteps.set(this.operations.length);
 
     this.resetStructures();
-    const firstOperation = this.operations[0];
-    const firstRootPath = firstOperation?.path.split('[')[0];
-    const firstStructureIndex = this.structures.findIndex(structure => structure.path === firstRootPath);
+    const firstRootPath = this.operations[0]?.path.split('[')[0];
+    const firstStructureIndex = this.structures.findIndex(s => s.path === firstRootPath);
     if (firstStructureIndex >= 0) this.selectStructureTab(firstStructureIndex);
     else if (this.autoSwitchTabs()) this.showOutputConsole();
     this.play();
@@ -284,11 +301,7 @@ export class RunCodeComponent implements OnDestroy {
       const rootStructure = this.structures.find(s => s.path === rootPath);
 
       if (rootStructure) {
-
         rootStructure.initialized = true;
-
-        console.log(entry.op, entry.path, entry.time, entry.type, entry.value, rootStructure.path);
-
         this.highlightStructure(rootStructure, structIndex);
 
         const strategy = this.operationFactory.getStrategy(rootStructure.type, rootStructure.viewMode || "", entry.op);
@@ -421,6 +434,8 @@ export class RunCodeComponent implements OnDestroy {
     this.autoSwitchTargetIndex = null;
     this.tabSelectionVersion++;
     this.selectedTabIndex.set(0);
+    this.executionWarnings.set([]);
+    this.isTraceTruncated.set(false);
   }
 
   showExecutionSettings(): void {

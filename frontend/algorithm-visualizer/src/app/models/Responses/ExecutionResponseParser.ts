@@ -17,7 +17,9 @@ export function parseExecutionResponse(value: unknown): ExecuteCodeResponse {
       || value['durationMs'] < 0
       || !Array.isArray(value['events'])
       || !value['events'].every(isExecutionEvent)
-      || !isExecutionError(value['error'])) {
+      || !isExecutionError(value['error'])
+      || (value['truncated'] !== undefined && typeof value['truncated'] !== 'boolean')
+      || (value['warnings'] !== undefined && (!Array.isArray(value['warnings']) || !value['warnings'].every(w => typeof w === 'string')))) {
     throw new Error('The execution response does not match av.execution.v1.');
   }
 

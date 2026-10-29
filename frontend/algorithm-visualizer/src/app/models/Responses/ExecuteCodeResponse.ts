@@ -21,4 +21,8 @@ export interface ExecuteCodeResponse {
   durationMs: number;
   events: ExecutionLogEntry[];
   error: { code: ExecutionErrorCode; message: string } | null;
+  /** True when events is a partial trace (budget reached, crash or timeout). */
+  truncated?: boolean;
+  /** Non-fatal visualization warnings from the runtime. */
+  warnings?: string[];
 }

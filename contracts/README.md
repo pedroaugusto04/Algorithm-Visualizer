@@ -20,6 +20,16 @@ The Java records, runtime event writer, and Angular interfaces must agree with i
 container snapshots may be arrays, maps, scalars, or nested combinations. The
 event envelope and its metadata remain strictly typed.
 
+### v1.1 additions (optional, backward compatible)
+
+- `truncated` (boolean): the runtime stopped tracing early (event/serialization budget,
+  crash or timeout). `events` is then a prefix of the run, not the full history.
+- `warnings` (string[]): non-fatal, user-facing reasons (e.g. which budget was reached).
+- Failed responses with `stage = "execution"` (crash or timeout) may carry the partial
+  `events` recorded until the failure. Other failure stages always return `events: []`.
+
+Clients must treat missing `truncated`/`warnings` as `false`/`[]`.
+
 The runner exposes separate instrumentation, compilation, and execution stages.
 `durationMs` is total wall-clock time for the full request. Failure responses
 retain captured stdout/stderr and the process exit code when the process exited.

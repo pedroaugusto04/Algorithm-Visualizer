@@ -111,7 +111,8 @@ public:
             for (const VarDecl* variable : orderedVariables(annotation.variables)) {
                 const auto& info = variables_.at(variable);
                 const unsigned line = context_.getSourceManager().getSpellingLineNumber(statement->getBeginLoc());
-                code += "\n__av_snapshot_if_changed(\"" + info.type + "\", \"" + info.path
+                // Keep generated code on the original line so compiler diagnostics match the user's source.
+                code += " __av_snapshot_if_changed(\"" + info.type + "\", \"" + info.path
                         + "\", " + info.expression + ", " + std::to_string(line) + ");";
             }
             if (code.empty()) continue;
@@ -127,7 +128,7 @@ public:
                     reportUnsupported("não foi possível abrir o bloco instrumentado");
                     return false;
                 }
-                if (rewriter_.InsertText(afterStatement, code + "\n}", false, true)) {
+                if (rewriter_.InsertText(afterStatement, code + " }", false, true)) {
                     reportUnsupported("não foi possível fechar o bloco instrumentado");
                     return false;
                 }

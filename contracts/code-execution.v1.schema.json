@@ -56,7 +56,9 @@
         "exitCode": { "type": ["integer", "null"] },
         "durationMs": { "type": "integer", "minimum": 0 },
         "events": { "type": "array", "items": { "$ref": "#/$defs/event" } },
-        "error": { "oneOf": [{ "$ref": "#/$defs/error" }, { "type": "null" }] }
+        "error": { "oneOf": [{ "$ref": "#/$defs/error" }, { "type": "null" }] },
+        "truncated": { "type": "boolean", "description": "Optional (added in v1.1). True when events is a partial trace." },
+        "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Optional (added in v1.1). Non-fatal, user-facing visualization messages." }
       },
       "allOf": [
         { "if": { "properties": { "success": { "const": true } }, "required": ["success"] }, "then": { "properties": { "stage": { "const": "completed" }, "error": { "type": "null" } } } },

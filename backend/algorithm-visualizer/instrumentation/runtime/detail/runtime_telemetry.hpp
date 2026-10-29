@@ -23,7 +23,13 @@ inline void __av_snapshot_if_changed(
     const T& value,
     int line
 ) {
+    if (!__av_tracing_enabled) return;
     const std::string serialized = type == "array" ? __serialize_sequence(value) : __serialize(value);
+    __av_serialization_work += serialized.size();
+    if (__av_serialization_work > MAX_SERIALIZATION_WORK_BYTES) {
+        __mark_visualization_incomplete("Limite de processamento da visualização atingido; o programa continuou sem registrar novos passos.");
+        return;
+    }
     const auto previous = __av_last_snapshots.find(path);
     if (previous == __av_last_snapshots.end()) {
         __av_last_snapshots.emplace(path, serialized);

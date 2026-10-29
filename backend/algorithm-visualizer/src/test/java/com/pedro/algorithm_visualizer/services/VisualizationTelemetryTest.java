@@ -1,10 +1,10 @@
 package com.pedro.algorithm_visualizer.services;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -14,26 +14,60 @@ class VisualizationTelemetryTest {
 
     @Test
     void rejectsMissingEventLog() {
-        IllegalStateException error = assertThrows(
-                IllegalStateException.class,
-                () -> VisualizationTelemetry.readCompleteEvents(workspace));
-        assertEquals("Arquivo de eventos de visualização não foi criado.", error.getMessage());
+        var ex = assertThrows(IllegalStateException.class, () -> VisualizationTelemetry.readEvents(workspace));
+        assertEquals("Arquivo de eventos de visualização não foi criado.", ex.getMessage());
     }
 
     @Test
-    void rejectsTruncatedTelemetryStatusEvenWhenPartialEventsExist() throws Exception {
-        Files.writeString(workspace.resolve("events.jsonl"), "partial event\n");
-        Files.writeString(workspace.resolve("visualization.status"), "event limit reached");
+    void returnsPartialTraceWhenRuntimeBudgetWasReached() throws Exception {
+        String event = """
+                {"schema":"av.event.v1","time":1,"type":"array","path":"v","op":"init","line":2,"value":[1,2,3]}
+                """.strip();
+        Files.writeString(workspace.resolve("events.jsonl"), event + "\n");
+        Files.writeString(workspace.resolve("visualization.status"), "budget reached");
 
-        IllegalStateException error = assertThrows(
-                IllegalStateException.class,
-                () -> VisualizationTelemetry.readCompleteEvents(workspace));
-        assertEquals("event limit reached", error.getMessage());
+        var result = VisualizationTelemetry.readEvents(workspace);
+        assertTrue(result.truncated());
+        assertEquals("budget reached", result.warning());
+        assertEquals(1, result.events().size());
     }
 
     @Test
-    void acceptsAnEmptyLogWhenNoTrackedVariablesWereEmitted() throws Exception {
+    void acceptsEmptyLogWhenNothingWasTracked() throws Exception {
         Files.createFile(workspace.resolve("events.jsonl"));
-        assertEquals(java.util.List.of(), VisualizationTelemetry.readCompleteEvents(workspace));
+        var result = VisualizationTelemetry.readEvents(workspace);
+        assertEquals(List.of(), result.events());
+        assertFalse(result.truncated());
+        assertNull(result.warning());
+    }
+
+    @Test
+    void readPartialEventsReturnEmptyOnMissingFile() {
+        var result = VisualizationTelemetry.readPartialEvents(workspace);
+        assertEquals(List.of(), result.events());
+        assertFalse(result.truncated());
+    }
+
+    @Test
+    void readPartialEventsDropsCutLastLineInsteadOfDiscardingEverything() throws Exception {
+        String good = """
+                {"schema":"av.event.v1","time":1,"type":"array","path":"v","op":"init","line":2,"value":[1]}
+                {"schema":"av.event.v1","time":2,"type":"array","path":"v","op":"snapshot","line":3,"value":[2]}
+                """.strip();
+        Files.writeString(workspace.resolve("events.jsonl"), good + "\n{\"cut");
+
+        var result = VisualizationTelemetry.readPartialEvents(workspace);
+        assertEquals(2, result.events().size());
+        assertTrue(result.truncated());
+    }
+
+    @Test
+    void rejectsEventWithOutOfOrderTime() throws Exception {
+        String bad = """
+                {"schema":"av.event.v1","time":5,"type":"array","path":"v","op":"init","line":2,"value":[]}
+                {"schema":"av.event.v1","time":3,"type":"array","path":"v","op":"snapshot","line":3,"value":[1]}
+                """.strip();
+        Files.writeString(workspace.resolve("events.jsonl"), bad);
+        assertThrows(Exception.class, () -> VisualizationTelemetry.readEvents(workspace));
     }
 }

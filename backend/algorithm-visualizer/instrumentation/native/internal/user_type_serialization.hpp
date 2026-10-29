@@ -176,7 +176,7 @@ private:
     }
 
     std::string declarationFor(const CXXRecordDecl* record) const {
-        return "inline std::string __serialize(const " + qualifiedType(record) + "& value);\n";
+        return "inline std::string __serialize(const " + qualifiedType(record) + "& value); ";
     }
 
     std::string definitionFor(const CXXRecordDecl* record) const {
@@ -189,7 +189,7 @@ private:
                     + "\") + \":\" + " + serializeField(field) + ";";
             first = false;
         }
-        code += " return out + \"}\"; }\n";
+        code += " return out + \"}\"; } ";
         return code;
     }
 
@@ -239,7 +239,7 @@ private:
         for (const std::string& name : namespaces) wrapped += "namespace " + name + " { ";
         wrapped += code;
         for (size_t index = 0; index < namespaces.size(); ++index) wrapped += "} ";
-        return wrapped + "\n";
+        return wrapped + " ";
     }
 };
 
