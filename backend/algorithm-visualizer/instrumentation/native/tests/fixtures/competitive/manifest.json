@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "cases": [
+    {
+      "name": "frequency map",
+      "source": "frequency_map.cpp",
+      "stdin": "5\n1 2 1 3 2\n",
+      "expected_stdout": "2 2 1\n",
+      "expected_values": {
+        "frequency": {
+          "1": 2,
+          "2": 2,
+          "3": 1
+        }
+      }
+    },
+    {
+      "name": "sort and binary search",
+      "source": "sort_binary_search.cpp",
+      "expected_stdout": "1 1\n",
+      "expected_values": {
+        "values": [1, 2, 3, 4]
+      }
+    },
+    {
+      "name": "breadth first search",
+      "source": "breadth_first_search.cpp",
+      "expected_stdout": "0 1 1 2 \n",
+      "expected_values": {
+        "graph": [[1, 2], [3], [3], []],
+        "distance": [0, 1, 1, 2],
+        "pending": []
+      }
+    },
+    {
+      "name": "grid dynamic programming",
+      "source": "grid_dynamic_programming.cpp",
+      "expected_stdout": "6\n",
+      "expected_values": {
+        "ways": [[1, 1, 1], [1, 2, 3], [1, 3, 6]]
+      }
+    },
+    {
+      "name": "string transformation",
+      "source": "string_transformation.cpp",
+      "expected_stdout": "evititepmoc\n",
+      "expected_values": {
+        "word": ["e", "v", "i", "t", "i", "t", "e", "p", "m", "o", "c"]
+      }
+    }
+  ]
+}

@@ -14,7 +14,7 @@ class CodeServiceDockerIntegrationTest {
                 "#include <iostream>\n#include <vector>\nint main(){ int n; std::cin >> n; std::vector<int> v{n}; std::cout << v[0] * 2 << '\\n'; }",
                 "21\n");
 
-        assertTrue(response.success(), response.error());
+        assertTrue(response.success(), () -> response.error().message());
         assertTrue(response.stdout().contains("42"));
         assertTrue(response.events().stream().anyMatch(event -> event.op().value().equals("init")));
     }

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 class ContainerStepRunner {
     private static final int MAX_OUTPUT_BYTES = 2 * 1024 * 1024;
+    private static final long PREPARATION_TIMEOUT_SECONDS = 60;
     private final long timeoutSeconds;
 
     ContainerStepRunner() { this(20); }
@@ -29,7 +30,7 @@ class ContainerStepRunner {
         private final String stderr;
 
         StepFailure(String mode, int exitCode, String stdout, String stderr) {
-            super("Process terminated with exit code " + exitCode);
+            super("Process terminated during " + mode + " with exit code " + exitCode);
             this.mode = mode;
             this.exitCode = exitCode;
             this.stdout = stdout;
@@ -46,9 +47,14 @@ class ContainerStepRunner {
         if (!mode.equals("instrument") && !mode.equals("compile") && !mode.equals("execute")) {
             throw new IllegalArgumentException("Etapa do runner inválida: " + mode);
         }
+        String memoryLimit = switch (mode) {
+            case "instrument" -> "2g";
+            case "compile" -> "1g";
+            default -> "256m";
+        };
         Process process = new ProcessBuilder(
                 "docker", "run", "--rm", "--network", "none", "--cpus", "1",
-                "--memory", "256m", "--pids-limit", "256",
+                "--memory", memoryLimit, "--pids-limit", "256",
                 "--security-opt", "no-new-privileges", "--cap-drop", "ALL",
                 "-v", workspace.toAbsolutePath() + ":/work",
                 "-e", "AV_EVENT_FILE=/work/events.jsonl",
@@ -61,9 +67,10 @@ class ContainerStepRunner {
              InputStream stderrStream = process.getErrorStream()) {
             Future<String> stdout = executor.submit(() -> readAll(stdoutStream));
             Future<String> stderr = executor.submit(() -> readAll(stderrStream));
-            if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+            long stepTimeout = mode.equals("execute") ? timeoutSeconds : PREPARATION_TIMEOUT_SECONDS;
+            if (!process.waitFor(stepTimeout, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
-                throw new IllegalStateException("TIMEOUT: Tempo limite excedido (" + timeoutSeconds + "s)");
+                throw new IllegalStateException("TIMEOUT: Tempo limite excedido (" + stepTimeout + "s)");
             }
             try {
                 StepResult result = new StepResult(stdout.get(), stderr.get());

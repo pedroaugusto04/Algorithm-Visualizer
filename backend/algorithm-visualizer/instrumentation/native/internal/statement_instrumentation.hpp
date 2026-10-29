@@ -167,7 +167,9 @@ private:
 
     SourceLocation endOfStatement(const Stmt* statement) const {
         SourceLocation end = statement->getEndLoc();
-        if (isa<Expr>(statement) || isa<DoStmt>(statement)) {
+        if (isa<Expr>(statement) || isa<DoStmt>(statement)
+                || isa<BreakStmt>(statement) || isa<ContinueStmt>(statement)
+                || isa<ReturnStmt>(statement)) {
             return Lexer::findLocationAfterToken(
                 end,
                 tok::semi,
@@ -214,12 +216,15 @@ private:
         }
         if (references.empty()) return;
         const Stmt* target = statement;
+        bool wrapInBraces = false;
         if (const Stmt* body = controlBody(statement); body && !isa<CompoundStmt>(body)) {
             target = body;
+            wrapInBraces = true;
         }
         Annotation& annotation = annotations_[target];
         annotation.statement = target;
         annotation.variables.insert(references.begin(), references.end());
+        annotation.wrapInBraces = annotation.wrapInBraces || wrapInBraces;
     }
 
     bool headerMayMutateObservedValue(const Stmt* expression) const {

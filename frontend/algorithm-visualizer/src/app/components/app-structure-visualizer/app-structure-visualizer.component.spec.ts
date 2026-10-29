@@ -48,8 +48,10 @@ describe('StructureVisualizerComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.structured-inspector')).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('nodes[0].edge');
-    expect(fixture.nativeElement.textContent).toContain('weight');
+    const labels = Array.from(fixture.nativeElement.querySelectorAll('.tree-label'))
+      .map((label: any) => label.textContent.trim());
+    expect(labels).toContain('edge');
+    expect(labels).toContain('weight');
 
     struct.d3Data!.arrayData = [{ name: 'a', edge: { to: 2, weight: 9 } }];
     TestBed.inject(GlobalRenderer).renderElements([struct]);

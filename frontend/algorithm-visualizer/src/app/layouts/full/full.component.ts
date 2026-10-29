@@ -59,6 +59,7 @@ export class FullComponent implements OnInit {
   private navItemId: number = 0;
 
   navItems: NavItem[] = [];
+  isRunCodePage = false;
 
 
   get isOver(): boolean {
@@ -74,6 +75,7 @@ export class FullComponent implements OnInit {
     private dialog: MatDialog
   ) {
     this.htmlElement = document.querySelector('html')!;
+    this.isRunCodePage = this.router.url.split('?')[0].replace(/\/$/, '') === '/run-code';
     this.layoutChangesSubscription = this.breakpointObserver
       .observe([MOBILE_VIEW, TABLET_VIEW])
       .subscribe((state) => {
@@ -91,6 +93,7 @@ export class FullComponent implements OnInit {
     this.router.events
       .pipe(filter((event) => event instanceof NavigationEnd))
       .subscribe((e) => {
+        this.isRunCodePage = this.router.url.split('?')[0].replace(/\/$/, '') === '/run-code';
         this.content.scrollTo({ top: 0 });
       });
   }

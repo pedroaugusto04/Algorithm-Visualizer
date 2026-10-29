@@ -1,5 +1,11 @@
 <div class="visualizer-layout">
   <div class="graph-draw" #graphContainer>
+    @if (hoveredNodeTooltip; as tooltip) {
+      <aside class="graph-node-tooltip" [style.left.px]="tooltip.left" [style.top.px]="tooltip.top">
+        <strong>{{ tooltip.title }}</strong>
+        <pre>{{ tooltip.content }}</pre>
+      </aside>
+    }
   </div>
 
   @if (selectedValueTree; as selectedTree) {

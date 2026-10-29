@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { ExecutionLogEntry } from "src/app/models/ExecutionLogEntry";
 import { StructureWindow } from "src/app/models/StructureWindow";
 import { GlobalRenderer } from "../renderers/GlobalRenderer";
-import { buildMapSnapshot } from '../renderers/map-snapshot';
+import { buildMapGraphSnapshot, buildMapSnapshot } from '../renderers/map-snapshot';
 import { AlgorithmOperationStrategy } from "./AlgorithmOperationStrategy";
 
 @Injectable({ providedIn: 'root' })
@@ -20,9 +20,12 @@ export class SnapshotOperationStrategy implements AlgorithmOperationStrategy {
       const data = structure.d3Data;
       const width = data.width || 800;
       const height = data.height || 600;
-      const snapshot = buildMapSnapshot(entry.path, entry.value, width, height);
+      const snapshot = structure.viewMode === 'graph'
+        ? buildMapGraphSnapshot(entry.path, entry.value, width, height)
+        : buildMapSnapshot(entry.path, entry.value, width, height);
       data.nodes = snapshot.nodes;
       data.links = snapshot.links;
+      data.mapEntries = snapshot.entries;
     } else {
       return;
     }

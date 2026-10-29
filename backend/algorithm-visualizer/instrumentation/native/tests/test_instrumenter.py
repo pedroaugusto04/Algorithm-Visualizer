@@ -10,6 +10,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[3]
 INSTRUMENTER = os.environ.get("AV_INSTRUMENTER", "av-instrumenter")
 RUNTIME_HEADER = ROOT / "instrumentation" / "runtime_cpp.hpp"
+COMPETITIVE_FIXTURES = Path(__file__).parent / "fixtures" / "competitive"
 
 
 class InstrumenterIntegrationTests(unittest.TestCase):
@@ -129,6 +130,24 @@ int main() {
         self.assertEqual(stdout, "3 2\n")
         states = [event["value"] for event in events if event["path"] == "rows"]
         self.assertEqual(states, [[[1], [2]], [[1, 3], [2]], [[1, 3, 4], [2]]])
+
+    def test_unbraced_continue_with_observed_container_compiles(self):
+        stdout, events = self.run_program(r"""
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> distance{0, -1, 2};
+    for (int i = 0; i < static_cast<int>(distance.size()); ++i) {
+        if (distance[i] >= 0) continue;
+        distance[i] = i;
+    }
+    for (int value : distance) std::cout << value << ' ';
+    std::cout << '\n';
+}
+""")
+        self.assertEqual(stdout, "0 1 2 \n")
+        states = [event["value"] for event in events if event["path"] == "distance"]
+        self.assertEqual(states[-1], [0, 1, 2])
 
     def test_nested_pairs_are_serialized_as_json_values(self):
         stdout, events = self.run_program(r"""
@@ -315,110 +334,21 @@ int main() {
         self.assertEqual(values, expected)
 
     def test_competitive_solution_corpus_preserves_output_and_final_states(self):
-        cases = [
-            (
-                "frequency map",
-                r"""
-#include <iostream>
-#include <unordered_map>
-int main() {
-    int n; std::cin >> n;
-    std::unordered_map<int, int> frequency;
-    for (int i = 0, value; i < n; ++i) { std::cin >> value; ++frequency[value]; }
-    std::cout << frequency[1] << ' ' << frequency[2] << ' ' << frequency[3] << '\n';
-}
-""",
-                "5\n1 2 1 3 2\n",
-                "2 2 1\n",
-                {"frequency": {"1": 2, "2": 2, "3": 1}},
-            ),
-            (
-                "sort and binary search",
-                r"""
-#include <algorithm>
-#include <iostream>
-#include <vector>
-int main() {
-    std::vector<int> values{4, 1, 3, 2};
-    std::sort(values.begin(), values.end());
-    std::cout << values[0] << ' ' << std::binary_search(values.begin(), values.end(), 3) << '\n';
-}
-""",
-                "",
-                "1 1\n",
-                {"values": [1, 2, 3, 4]},
-            ),
-            (
-                "breadth first search",
-                r"""
-#include <iostream>
-#include <queue>
-#include <vector>
-int main() {
-    std::vector<std::vector<int>> graph{{1, 2}, {3}, {3}, {}};
-    std::vector<int> distance(4, -1);
-    std::queue<int> pending;
-    distance[0] = 0; pending.push(0);
-    while (!pending.empty()) {
-        int node = pending.front(); pending.pop();
-        for (int next : graph[node]) if (distance[next] == -1) {
-            distance[next] = distance[node] + 1;
-            pending.push(next);
-        }
-    }
-    for (int value : distance) std::cout << value << ' ';
-    std::cout << '\n';
-}
-""",
-                "",
-                "0 1 1 2 \n",
-                {"graph": [[1, 2], [3], [3], []], "distance": [0, 1, 1, 2], "pending": []},
-            ),
-            (
-                "grid dynamic programming",
-                r"""
-#include <iostream>
-#include <vector>
-int main() {
-    std::vector<std::vector<int>> ways(3, std::vector<int>(3, 0));
-    ways[0][0] = 1;
-    for (int row = 0; row < 3; ++row) for (int col = 0; col < 3; ++col) {
-        if (row + 1 < 3) ways[row + 1][col] += ways[row][col];
-        if (col + 1 < 3) ways[row][col + 1] += ways[row][col];
-    }
-    std::cout << ways[2][2] << '\n';
-}
-""",
-                "",
-                "6\n",
-                {"ways": [[1, 1, 1], [1, 2, 3], [1, 3, 6]]},
-            ),
-            (
-                "string transformation",
-                r"""
-#include <algorithm>
-#include <iostream>
-#include <string>
-int main() {
-    std::string word{"competitive"};
-    std::reverse(word.begin(), word.end());
-    std::cout << word << '\n';
-}
-""",
-                "",
-                "evititepmoc\n",
-                {"word": list("evititepmoc")},
-            ),
-        ]
+        manifest = json.loads((COMPETITIVE_FIXTURES / "manifest.json").read_text())
 
-        for name, source, stdin, expected_stdout, expected_values in cases:
-            with self.subTest(program=name):
-                stdout, events = self.run_program(source, stdin=stdin)
-                self.assertEqual(stdout, expected_stdout)
+        for case in manifest["cases"]:
+            source_path = COMPETITIVE_FIXTURES / case["source"]
+            with self.subTest(program=case["name"]):
+                stdout, events = self.run_program(
+                    source_path.read_text(),
+                    stdin=case.get("stdin", ""),
+                )
+                self.assertEqual(stdout, case["expected_stdout"])
                 final_values = {}
                 for event in events:
                     final_values[event["path"]] = event["value"]
-                for path, expected in expected_values.items():
+                for path, expected in case["expected_values"].items():
+                    self.assertIn(path, final_values)
                     self.assertEqual(final_values[path], expected)
 
     def test_common_competitive_structures_have_stable_visual_states(self):

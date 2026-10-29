@@ -1,4 +1,5 @@
 <div class="content">
+    @if (executionSettingsVisible()) {
     <div class="form-container">
         <div class="row">
             <div class="col-sm-12">
@@ -40,8 +41,41 @@
             </div>
         </div>
     </div>
+    }
+
+    <div class="execution-workspace">
+    @if (executionStarted() && !executionSettingsVisible()) {
+    <section class="source-preview" aria-label="Source code synchronized with execution">
+        <div class="source-preview-header">
+            <strong>Source code</strong>
+            @if (activeLine(); as line) { <span>Line {{ line }}</span> }
+        </div>
+        <div class="source-lines" #sourceLinesContainer>
+            @for (line of sourceLineList(); track $index) {
+            <div class="source-line" [attr.data-source-line]="$index + 1"
+                [class.active-source-line]="activeLine() === $index + 1">
+                <span class="source-line-number">{{ $index + 1 }}</span>
+                <span class="source-line-pointer">{{ activeLine() === $index + 1 ? '▶' : '' }}</span>
+                <code>{{ line || ' ' }}</code>
+            </div>
+            }
+            @if (!sourceCode()) {
+            <div class="source-empty">Paste code in the editor to see it here during execution.</div>
+            }
+        </div>
+    </section>
+    }
 
     <div class="visualization-container">
+        @if (executionStarted() && !executionSettingsVisible()) {
+        <div class="visualization-toolbar">
+            <span>Visualization</span>
+            <button mat-icon-button type="button" (click)="showExecutionSettings()"
+                aria-label="Open execution settings" title="Open execution settings">
+                <mat-icon>tune</mat-icon>
+            </button>
+        </div>
+        }
         @if (totalSteps() > 0) {
         <div class="animation-player">
             <div class="controls-row">
@@ -67,6 +101,7 @@
 
             <div class="slider-row">
                 <span class="step-label">Step {{ currentStep() + 1 }} of {{ totalSteps() }}</span>
+                <span class="change-summary">{{ currentChangeSummary() }}</span>
                 <input type="range" class="custom-slider" [min]="0" [max]="totalSteps() - 1" [value]="currentStep()"
                     (input)="onSliderInput($any($event.target).valueAsNumber)" (change)="onSliderChange()">
             </div>
@@ -74,7 +109,7 @@
         }
 
         <mat-tab-group animationDuration="0ms" [selectedIndex]="selectedTabIndex()"
-            (selectedIndexChange)="selectedTabIndex.set($event)" (click)="setTabManully($event)">
+            (selectedIndexChange)="onSelectedTabChange($event)">
             @for (struct of structures; track struct.path) {
             <mat-tab [labelClass]="struct.isHighlighting ? 'glow-active' : ''">
                 <ng-template mat-tab-label>
@@ -103,6 +138,18 @@
                     </div>
                     }
 
+                    @if (struct.type === 'array') {
+                    <div class="map-mode-selector m-b-8">
+                        <span class="view-as-label">View as</span>
+                        <mat-button-toggle-group [value]="struct.viewMode || 'array'"
+                            (change)="changeStructureViewMode(struct, $any($event.value))" exclusive appearance="legacy">
+                            <mat-button-toggle value="array">Array</mat-button-toggle>
+                            <mat-button-toggle value="queue">Queue</mat-button-toggle>
+                            <mat-button-toggle value="stack">Stack</mat-button-toggle>
+                        </mat-button-toggle-group>
+                    </div>
+                    }
+
                     @if (hasData(struct)) {
                     <app-structure-visualizer [struct]="struct"></app-structure-visualizer>
                     } @else {
@@ -122,5 +169,6 @@
                 </div>
             </mat-tab>
         </mat-tab-group>
+    </div>
     </div>
 </div>

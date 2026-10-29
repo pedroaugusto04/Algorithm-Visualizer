@@ -58,7 +58,11 @@ public:
     bool TraverseStmt(Stmt* statement) {
         if (!statement) return true;
         const Stmt* old = currentStatement_;
-        if (old) parents_[statement] = old;
+        if (old
+                && sourceManager_.isWrittenInMainFile(old->getBeginLoc())
+                && sourceManager_.isWrittenInMainFile(statement->getBeginLoc())) {
+            parents_[statement] = old;
+        }
         currentStatement_ = statement;
         const bool result = RecursiveASTVisitor<DeclarationCollector>::TraverseStmt(statement);
         currentStatement_ = old;

@@ -44,6 +44,7 @@ export class AlgorithmUtilsService {
     return {
       path: name,
       type: type,
+      viewMode: type === 'map' ? 'map' : 'array',
       children: [],
       d3Data: {
         arrayData: [],

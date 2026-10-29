@@ -7,13 +7,16 @@ export interface StructureWindow {
   initialized?: boolean;
   isHighlighting?: boolean;
   children: StructureWindow[];
-  viewMode?: 'map' | 'graph' | 'array';
+  viewMode?: 'map' | 'graph' | 'array' | 'queue' | 'stack';
   d3Data?: {
     arrayData?: any[],
+    viewMode?: 'map' | 'graph' | 'array' | 'queue' | 'stack',
+    mapEntries?: Array<{ key: string; value: any; path: string }>,
     ownerPath?: string,
     selectedValuePath?: string,
     selectedValueSnapshot?: JsonValue,
     onStructuredValueSelected?: (selection: StructuredValueSelection | null) => void,
+    onNodeHover?: (node: any, event: MouseEvent | null) => void,
     nodes: any[],
     links: any[],
     simulation: any,

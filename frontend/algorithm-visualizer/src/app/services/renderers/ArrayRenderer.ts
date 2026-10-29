@@ -107,9 +107,16 @@ export class ArrayRenderer implements Renderer {
           .attr('stroke-width', (cell: any) => cell.valuePath === d3Data.selectedValuePath ? 3 : 2);
       });
 
+    const isStack = d3Data.viewMode === 'stack' && !is2D;
     allCells.transition()
       .duration(300)
-      .attr('transform', (d: any) => `translate(${d.c * (cellWidth + padding) + 40}, ${d.r * (cellHeight + padding) + 50})`);
+      .attr('transform', (d: any) => {
+        const x = isStack ? 80 : d.c * (cellWidth + padding) + 40;
+        const y = isStack
+          ? 50 + (flatData.length - d.c - 1) * (cellHeight + padding)
+          : d.r * (cellHeight + padding) + 50;
+        return `translate(${x}, ${y})`;
+      });
 
     allCells.select('text.cell-text')
       .text((d: any) => formatArrayCellValue(d.value))
@@ -122,6 +129,25 @@ export class ArrayRenderer implements Renderer {
       .text((d: any) => d.label)
       .style('font-size', is2D ? '9px' : '12px')
       .attr('y', is2D ? cellHeight + 13 : cellHeight + 20);
+
+    if (!is2D && (d3Data.viewMode === 'queue' || isStack)) {
+      const markers = [
+        { label: isStack ? 'TOP' : 'FRONT', index: isStack ? flatData.length - 1 : 0 },
+        { label: isStack ? 'BOTTOM' : 'REAR', index: isStack ? 0 : flatData.length - 1 }
+      ];
+      const markerSelection = svg.selectAll('text.array-end-marker').data(markers, (marker: any) => marker.label);
+      markerSelection.exit().remove();
+      markerSelection.join('text').attr('class', 'array-end-marker')
+        .attr('x', (marker: any) => isStack ? 80 + cellWidth + 16 : marker.index * (cellWidth + padding) + 40 + cellWidth / 2)
+        .attr('y', (marker: any) => isStack
+          ? 50 + (flatData.length - marker.index - 1) * (cellHeight + padding) + cellHeight / 2 + 4
+          : 50 + cellHeight + 42)
+        .attr('text-anchor', isStack ? 'start' : 'middle')
+        .attr('fill', '#64748b').style('font-size', '10px').style('font-weight', 700)
+        .text((marker: any) => marker.label);
+    } else {
+      svg.selectAll('text.array-end-marker').remove();
+    }
   }
 
 }

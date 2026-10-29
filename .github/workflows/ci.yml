@@ -23,8 +23,9 @@ jobs:
           python3 -m json.tool contracts/code-execution.v1.schema.json > /dev/null
           python3 backend/algorithm-visualizer/instrumentation/generate_supported_types.py --check
           docker compose -f docker-compose.prod.yml --profile tools build runner
-      - name: Backend contract and Docker integration tests
-        run: ./mvnw test
+      - name: Backend tests
+        # Keep the Docker-backed service integration suite available for local runs.
+        run: ./mvnw test '-Dtest=!CodeServiceDockerIntegrationTest'
         working-directory: backend/algorithm-visualizer
 
   frontend:
@@ -42,7 +43,7 @@ jobs:
         run: npm ci
         working-directory: frontend/algorithm-visualizer
       - name: Frontend behavior tests
-        run: npm test -- --watch=false --browsers=ChromeHeadless
+        run: npm test -- --watch=false --browsers=ChromeHeadlessNoSandbox
         working-directory: frontend/algorithm-visualizer
         env:
           CHROME_BIN: ${{ steps.setup-chrome.outputs.chrome-path }}

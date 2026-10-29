@@ -14,11 +14,13 @@ export interface MapVisualNode {
 export interface MapVisualLink {
   source: MapVisualNode;
   target: MapVisualNode;
+  label?: string;
 }
 
 export interface MapSnapshot {
   nodes: MapVisualNode[];
   links: MapVisualLink[];
+  entries: Array<{ key: string; value: JsonValue; path: string }>;
 }
 
 export function buildMapSnapshot(path: string, value: JsonValue, width: number, height: number): MapSnapshot {
@@ -31,6 +33,7 @@ export function buildMapSnapshot(path: string, value: JsonValue, width: number, 
   };
   const nodes = [root];
   const links: MapVisualLink[] = [];
+  const mapEntries: MapSnapshot['entries'] = [];
   const entries = Array.isArray(value)
     ? value as JsonValue[][]
     : isStructuredValue(value)
@@ -55,7 +58,55 @@ export function buildMapSnapshot(path: string, value: JsonValue, width: number, 
     }
     nodes.push(node);
     links.push({ source: root, target: node });
+    mapEntries.push({ key: String(key), value: entryValue, path: targetId });
   });
 
-  return { nodes, links };
+  return { nodes, links, entries: mapEntries };
+}
+
+/** Treat map keys as graph vertices and collection values as outgoing neighbors. */
+export function buildMapGraphSnapshot(path: string, value: JsonValue, width: number, height: number): MapSnapshot {
+  const map = buildMapSnapshot(path, value, width, height);
+  const rawEntries = Array.isArray(value)
+    ? value.filter((entry): entry is JsonValue[] => Array.isArray(entry) && entry.length >= 2)
+    : isStructuredValue(value) ? Object.entries(value) : [];
+  const nodeById = new Map<string, MapVisualNode>();
+  const links: MapVisualLink[] = [];
+  const getNode = (value: unknown): MapVisualNode => {
+    const id = String(value);
+    let node = nodeById.get(id);
+    if (!node) {
+      node = { id, value: id, color: '#2563eb', x: width / 2, y: height / 2 };
+      nodeById.set(id, node);
+    }
+    return node;
+  };
+
+  rawEntries.forEach((raw: any) => {
+    if (!Array.isArray(raw) || raw.length < 2) return;
+    const [sourceValue, neighbors] = raw;
+    const source = getNode(sourceValue);
+    source.structuredValuePath = `${path}[${sourceValue}]`;
+    source.structuredValue = neighbors as JsonValue;
+    if (Array.isArray(neighbors)) {
+      neighbors.forEach(neighbor => {
+        if (Array.isArray(neighbor) && neighbor.length >= 2) {
+          links.push({ source, target: getNode(neighbor[0]), label: String(neighbor[1]) });
+        } else {
+          links.push({ source, target: getNode(neighbor) });
+        }
+      });
+    } else if (isStructuredValue(neighbors)) {
+      Object.entries(neighbors).forEach(([neighbor, weight]) => links.push({
+        source,
+        target: getNode(neighbor),
+        label: String(weight)
+      }));
+    }
+  });
+
+  if (nodeById.size === 0) {
+    return { ...map, nodes: [{ id: path, value: path, color: 'orange', x: width / 2, y: height / 2 }], links: [] };
+  }
+  return { ...map, nodes: [...nodeById.values()], links };
 }

@@ -106,3 +106,20 @@ jobs:
             else
               echo "Nginx nao instalado; pulando reload."
             fi
+
+      - name: Verify the deployed frontend is served publicly
+        env:
+          FRONTEND_PUBLIC_URL: https://pedro-duarte.ddns.net/algorithm-visualizer/
+        run: |
+          set -euo pipefail
+          MAIN_BUNDLE="$(find frontend/algorithm-visualizer/dist/Materialpro -maxdepth 1 -type f -name 'main.*.js' -printf '%f\n' | head -n 1)"
+          test -n "$MAIN_BUNDLE" || { echo "Angular main bundle was not found."; exit 1; }
+          DEPLOYED_INDEX="$(curl --fail --silent --show-error --retry 5 --retry-delay 2 "$FRONTEND_PUBLIC_URL?deploy=$GITHUB_SHA")"
+          case "$DEPLOYED_INDEX" in
+            *"$MAIN_BUNDLE"*) ;;
+            *)
+              echo "The public site is not serving the frontend bundle from this deployment."
+              exit 1
+              ;;
+          esac
+          curl --fail --silent --show-error --retry 5 --retry-delay 2 "$FRONTEND_PUBLIC_URL$MAIN_BUNDLE" -o /dev/null

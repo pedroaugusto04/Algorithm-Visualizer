@@ -32,6 +32,7 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
   private globalRenderer = inject(GlobalRenderer);
   private zone = inject(NgZone);
   selectedValueTree: JsonValueTreeNode | null = null;
+  hoveredNodeTooltip: { title: string; content: string; left: number; top: number } | null = null;
 
   ngAfterViewInit() {
     setTimeout(() => {
@@ -74,8 +75,30 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
       onStructuredValueSelected: (selection: StructuredValueSelection | null) => {
         this.zone.run(() => this.updateSelectedValue(selection));
       },
+      onNodeHover: (node: any, event: MouseEvent | null) => {
+        if (!node || !event) {
+          this.zone.run(() => this.hoveredNodeTooltip = null);
+          return;
+        }
+        const bounds = container.getBoundingClientRect();
+        const width = Math.min(360, Math.max(180, bounds.width - 24));
+        const height = Math.min(280, Math.max(120, bounds.height - 24));
+        let content: string;
+        try {
+          const value = node.structuredValue !== undefined ? node.structuredValue : node.value;
+          content = typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? String(value);
+        } catch {
+          content = String(node.value ?? node.id);
+        }
+        const left = Math.max(12, Math.min(event.clientX - bounds.left + 14, bounds.width - width - 12));
+        const top = Math.max(12, Math.min(event.clientY - bounds.top + 14, bounds.height - height - 12));
+        this.zone.run(() => {
+          this.hoveredNodeTooltip = { title: String(node.id ?? node.value ?? 'Node'), content, left, top };
+        });
+      },
       nodes: nodes || [],
       links: links || [],
+      mapEntries: this.struct.d3Data?.mapEntries || [],
       simulation: simulation,
       svg: this.svg,
       width: width,
@@ -111,6 +134,7 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
   }
 
   private destroy() {
+    this.hoveredNodeTooltip = null;
     d3.select(this.graphContainer.nativeElement).selectAll('*').remove();
   }
 

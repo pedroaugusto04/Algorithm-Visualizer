@@ -47,6 +47,16 @@ export class GraphRenderer implements Renderer {
             .attr('stroke-width', 2)
             .attr('marker-end', 'url(#arrowhead)');
 
+        const linkLabels = linkGroup.selectAll('text.edge-label')
+            .data(d3Data.links)
+            .join('text')
+            .attr('class', 'edge-label')
+            .attr('text-anchor', 'middle')
+            .attr('fill', '#334155')
+            .style('font-size', '11px')
+            .style('pointer-events', 'none')
+            .text((d: any) => d.label ?? '');
+
         const nodeSelection = nodeGroup
             .selectAll('g.node-item')
             .data(d3Data.nodes, (d: any) => d.id)
@@ -64,7 +74,7 @@ export class GraphRenderer implements Renderer {
 
                 g.append('text')
                     .attr('class', 'node-text')
-                    .text((d: any) => d.value)
+                    .text((d: any) => this.nodeLabel(d))
                     .attr('text-anchor', 'middle')
                     .attr('dy', '.35em')
                     .attr('fill', '#fff')
@@ -82,6 +92,10 @@ export class GraphRenderer implements Renderer {
 
         nodeSelection
             .style('cursor', (d: any) => isStructuredValue(d.structuredValue) ? 'pointer' : 'grab')
+            .on('mouseenter.node-tooltip', (event: MouseEvent, d: any) => {
+                d3Data.onNodeHover?.(d, event);
+            })
+            .on('mouseleave.node-tooltip', () => d3Data.onNodeHover?.(null, null))
             .on('click.structured-value', (_event: unknown, d: any) => {
                 if (!isStructuredValue(d.structuredValue)) return;
                 toggleStructuredSelection(d3Data, { path: d.structuredValuePath, value: d.structuredValue });
@@ -92,7 +106,7 @@ export class GraphRenderer implements Renderer {
 
 
         // sincroniza valor
-        nodeSelection.select('text.node-text').text((d: any) => d.value);
+        nodeSelection.select('text.node-text').text((d: any) => this.nodeLabel(d));
 
         // sincroniza cor
         nodeSelection.select('circle')
@@ -119,9 +133,18 @@ export class GraphRenderer implements Renderer {
                 .attr('y1', (d: any) => d.source?.y ?? 0)
                 .attr('x2', (d: any) => d.target?.x ?? 0)
                 .attr('y2', (d: any) => d.target?.y ?? 0);
+
+            linkLabels
+                .attr('x', (d: any) => ((d.source?.x ?? 0) + (d.target?.x ?? 0)) / 2)
+                .attr('y', (d: any) => ((d.source?.y ?? 0) + (d.target?.y ?? 0)) / 2 - 6);
         });
 
         d3Data.simulation.alpha(1).restart();
+    }
+
+    private nodeLabel(node: any): string {
+        const label = String(node?.label ?? (node?.structuredValue !== undefined ? node?.id : node?.value ?? node?.id ?? ''));
+        return label.length > 10 ? `${label.slice(0, 9)}…` : label;
     }
 
     private getDimensions(svg: any): { width: number, height: number } {

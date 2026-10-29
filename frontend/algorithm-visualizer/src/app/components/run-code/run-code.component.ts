@@ -1,4 +1,4 @@
-import { Component, signal, OnDestroy } from '@angular/core';
+import { Component, computed, signal, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,7 +17,7 @@ import { AlgorithmUtilsService } from 'src/app/services/utils/algorithms/algorit
 import { StructureVisualizerComponent } from '../app-structure-visualizer/app-structure-visualizer.component';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { GlobalRenderer } from 'src/app/services/renderers/GlobalRenderer';
-import { buildMapSnapshot } from 'src/app/services/renderers/map-snapshot';
+import { buildMapGraphSnapshot, buildMapSnapshot } from 'src/app/services/renderers/map-snapshot';
 import { SwalService } from 'src/app/services/utils/swal/swal.service';
 
 @Component({
@@ -41,14 +41,23 @@ import { SwalService } from 'src/app/services/utils/swal/swal.service';
   styleUrls: ['./run-code.component.scss']
 })
 export class RunCodeComponent implements OnDestroy {
+  @ViewChild('sourceLinesContainer')
+  set sourceLinesContainerRef(ref: ElementRef<HTMLDivElement> | undefined) {
+    this.sourceScrollContainer = ref?.nativeElement;
+    if (ref) this.scrollActiveSourceLine();
+  }
+
   languageControl = new FormControl<'cpp17' | 'cpp20' | 'cpp23'>('cpp17', { nonNullable: true });
 
   sourceCode = signal<string>('');
+  sourceLineList = computed(() => this.sourceCode().split('\n'));
   testCaseInput = signal<string>('');
   executionResult = signal<string>('');
 
   entries: ExecutionLogEntry[] = [];
+  private initialEntries: ExecutionLogEntry[] = [];
   operations: ExecutionLogEntry[] = [];
+  private operationIndicesByPath = new Map<string, number[]>();
 
   initialStructures: StructureWindow[] = [];
   structures: StructureWindow[] = [];
@@ -59,10 +68,15 @@ export class RunCodeComponent implements OnDestroy {
   readonly STEP_DELAY = 1000;
 
   private resumeTimeout: any;
+  private sourceScrollContainer?: HTMLDivElement;
+  private tabSelectionVersion = 0;
+  private autoSwitchTargetIndex: number | null = null;
 
   // tabs
   selectedTabIndex = signal<number>(0);
   autoSwitchTabs = signal<boolean>(true);
+  executionStarted = signal<boolean>(false);
+  executionSettingsVisible = signal<boolean>(true);
 
   constructor(
     private codeService: CodeService,
@@ -78,6 +92,8 @@ export class RunCodeComponent implements OnDestroy {
       return;
     }
 
+    this.executionStarted.set(true);
+    this.executionSettingsVisible.set(false);
     this.resetState();
     this.executionResult.set('Compiling and running...');
 
@@ -117,14 +133,27 @@ export class RunCodeComponent implements OnDestroy {
       .join('\n');
     this.executionResult.set(output || 'Code executed successfully!');
     this.entries = res.events;
+    this.initialEntries = this.entries.filter(entry => entry.op === 'init');
 
     const operations: ExecutionLogEntry[] = this.entries.filter(e => e.op !== 'init');
 
     this.operations = operations;
+    this.operationIndicesByPath.clear();
+    this.operations.forEach((entry, index) => {
+      const rootPath = entry.path.split('[')[0];
+      const indices = this.operationIndicesByPath.get(rootPath) ?? [];
+      indices.push(index);
+      this.operationIndicesByPath.set(rootPath, indices);
+    });
 
     this.totalSteps.set(this.operations.length);
 
     this.resetStructures();
+    const firstOperation = this.operations[0];
+    const firstRootPath = firstOperation?.path.split('[')[0];
+    const firstStructureIndex = this.structures.findIndex(structure => structure.path === firstRootPath);
+    if (firstStructureIndex >= 0) this.selectStructureTab(firstStructureIndex);
+    else if (this.autoSwitchTabs()) this.showOutputConsole();
     this.play();
   }
 
@@ -144,6 +173,7 @@ export class RunCodeComponent implements OnDestroy {
         this.nextStep(false);
       } else {
         this.pause();
+        this.showOutputConsole();
       }
     }, this.STEP_DELAY);
   }
@@ -199,18 +229,10 @@ export class RunCodeComponent implements OnDestroy {
   }
 
   goToStep(stepIndex: number): void {
-    const isMovingBackwards = stepIndex < this.currentStep();
-
-    if (isMovingBackwards) {
-      this.resetStructures();
-      setTimeout(() => {
-        this.applyOperations(0, stepIndex);
-      }, 0);
-      return;
-    }
-
     setTimeout(() => {
-      this.applyOperations(this.currentStep() + 1, stepIndex);
+      this.resetStructures();
+      this.applyOperations(0, stepIndex);
+      this.globalRenderer.renderElements(this.structures);
     }, 0);
   }
 
@@ -219,6 +241,40 @@ export class RunCodeComponent implements OnDestroy {
   }
 
   private applyOperations(start: number, end: number): void {
+    if (start === 0 && end >= 0) {
+      for (const [rootPath, indices] of this.operationIndicesByPath) {
+        let low = 0;
+        let high = indices.length - 1;
+        let match = -1;
+        while (low <= high) {
+          const middle = (low + high) >> 1;
+          if (indices[middle] <= end) {
+            match = indices[middle];
+            low = middle + 1;
+          } else {
+            high = middle - 1;
+          }
+        }
+        if (match < 0) continue;
+        const entry = this.operations[match];
+        const structureIndex = this.structures.findIndex(item => item.path === rootPath);
+        const structure = this.structures[structureIndex];
+        if (!structure) continue;
+        structure.initialized = true;
+        this.operationFactory.getStrategy(structure.type, structure.viewMode || '', entry.op)
+          ?.execute(structure, this.structures, entry, true);
+      }
+      this.currentStep.set(end);
+      const activeRoot = this.operations[end]?.path.split('[')[0];
+      const activeStructureIndex = this.structures.findIndex(item => item.path === activeRoot);
+      if (activeStructureIndex >= 0 && end < this.totalSteps() - 1) {
+        this.highlightStructure(this.structures[activeStructureIndex], activeStructureIndex);
+      }
+      this.scrollActiveSourceLine();
+      if (end === this.totalSteps() - 1) this.showOutputConsole();
+      return;
+    }
+
     for (let i = start; i <= end; i++) {
       const entry = this.operations[i];
       if (!entry) break;
@@ -242,17 +298,133 @@ export class RunCodeComponent implements OnDestroy {
         }
       }
       this.currentStep.set(i);
+      this.scrollActiveSourceLine();
     }
+    if (end === this.totalSteps() - 1) this.showOutputConsole();
+  }
+
+  private showOutputConsole(): void {
+    this.tabSelectionVersion++;
+    this.autoSwitchTargetIndex = this.structures.length;
+    this.selectedTabIndex.set(this.autoSwitchTargetIndex);
+  }
+
+  private selectStructureTab(tabIndex: number): void {
+    if (!this.autoSwitchTabs() || tabIndex < 0) return;
+    const version = ++this.tabSelectionVersion;
+    this.autoSwitchTargetIndex = tabIndex;
+    this.selectedTabIndex.set(tabIndex);
+    requestAnimationFrame(() => {
+      if (version === this.tabSelectionVersion && this.autoSwitchTabs() && this.structures[tabIndex]) {
+        this.selectedTabIndex.set(tabIndex);
+      }
+    });
+  }
+
+  onSelectedTabChange(index: number): void {
+    if (this.autoSwitchTabs() && this.autoSwitchTargetIndex !== null && index !== this.autoSwitchTargetIndex) return;
+    this.selectedTabIndex.set(index);
+  }
+
+  private scrollActiveSourceLine(): void {
+    const line = this.activeLine();
+    if (line === null || !this.sourceScrollContainer) return;
+
+    requestAnimationFrame(() => {
+      const container = this.sourceScrollContainer;
+      const row = container?.querySelector<HTMLElement>(`[data-source-line="${line}"]`);
+      if (!container || !row) return;
+      const containerBounds = container.getBoundingClientRect();
+      const rowBounds = row.getBoundingClientRect();
+      if (rowBounds.top < containerBounds.top) {
+        container.scrollTo({ top: container.scrollTop - (containerBounds.top - rowBounds.top), behavior: 'smooth' });
+      } else if (rowBounds.bottom > containerBounds.bottom) {
+        container.scrollTo({ top: container.scrollTop + (rowBounds.bottom - containerBounds.bottom), behavior: 'smooth' });
+      }
+    });
+  }
+
+  activeLine(): number | null {
+    return this.currentStep() >= 0 ? this.operations[this.currentStep()]?.line ?? null : null;
+  }
+
+  currentChangeSummary(): string {
+    const entry = this.operations[this.currentStep()];
+    if (!entry) return 'Execute the program to inspect its changes.';
+    const rootPath = entry.path.split('[')[0];
+    const indices = this.operationIndicesByPath.get(rootPath) ?? [];
+    let previousIndex: number | undefined;
+    for (const index of indices) {
+      if (index >= this.currentStep()) break;
+      previousIndex = index;
+    }
+    const initial = this.initialEntries.find(item => item.path.split('[')[0] === rootPath)?.value;
+    const previous = previousIndex === undefined ? initial : this.operations[previousIndex].value;
+    if (previous === undefined) return `${entry.path}: initialized as ${this.describeValue(entry.value)}`;
+    const differences = this.findDifferences(previous, entry.value);
+    if (differences.length === 0) return `${entry.path}: value updated`;
+    const suffix = differences.length > 2 ? ` (+${differences.length - 2} more)` : '';
+    const formatted = differences.slice(0, 2).map(difference =>
+      difference.startsWith('[') || difference.startsWith('.') ? `${rootPath}${difference}` : difference);
+    return `${formatted.join(' · ')}${suffix}`;
+  }
+
+  private findDifferences(previous: unknown, current: unknown, path = '', result: string[] = []): string[] {
+    if (JSON.stringify(previous) === JSON.stringify(current)) return result;
+    if (result.length >= 3) return result;
+    if (Array.isArray(previous) && Array.isArray(current)) {
+      const length = Math.max(previous.length, current.length);
+      for (let index = 0; index < length && result.length < 3; index++) {
+        const nextPath = `${path}[${index}]`;
+        if (index >= previous.length) result.push(`${nextPath}: added ${this.describeValue(current[index])}`);
+        else if (index >= current.length) result.push(`${nextPath}: removed ${this.describeValue(previous[index])}`);
+        else this.findDifferences(previous[index], current[index], nextPath, result);
+      }
+      return result;
+    }
+    if (this.isRecord(previous) && this.isRecord(current)) {
+      const keys = new Set([...Object.keys(previous), ...Object.keys(current)]);
+      for (const key of keys) {
+        if (result.length >= 3) break;
+        const nextPath = `${path}${/^[A-Za-z_$][\w$]*$/.test(key) ? `.${key}` : `[${JSON.stringify(key)}]`}`;
+        if (!(key in previous)) result.push(`${nextPath}: added ${this.describeValue(current[key])}`);
+        else if (!(key in current)) result.push(`${nextPath}: removed ${this.describeValue(previous[key])}`);
+        else this.findDifferences(previous[key], current[key], nextPath, result);
+      }
+      return result;
+    }
+    result.push(`${path || 'value'}: ${this.describeValue(previous)} → ${this.describeValue(current)}`);
+    return result;
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private describeValue(value: unknown): string {
+    let text: string;
+    try { text = typeof value === 'string' ? value : JSON.stringify(value); }
+    catch { text = String(value); }
+    return (text || 'undefined').length > 70 ? `${(text || '').slice(0, 67)}…` : text || 'undefined';
   }
 
   private resetState(): void {
     this.pause();
     this.entries = [];
+    this.initialEntries = [];
     this.operations = [];
+    this.operationIndicesByPath.clear();
     this.resetStructures(true);
     this.resetView();
     this.currentStep.set(-1);
     this.totalSteps.set(0);
+    this.autoSwitchTargetIndex = null;
+    this.tabSelectionVersion++;
+    this.selectedTabIndex.set(0);
+  }
+
+  showExecutionSettings(): void {
+    this.executionSettingsVisible.set(true);
   }
 
   private resetStructures(resetInitialized: boolean = false) {
@@ -271,7 +443,7 @@ export class RunCodeComponent implements OnDestroy {
       }
     });
 
-    this.entries.filter(e => e.op === 'init').forEach(entry => {
+    this.initialEntries.forEach(entry => {
       const struct = this.algorithmUtilsService.getOrCreateStructure(this.structures, entry.path, entry.type);
       if (struct && struct.d3Data) {
         const d3Data = struct.d3Data;
@@ -284,9 +456,12 @@ export class RunCodeComponent implements OnDestroy {
         } else if (struct.type === 'map') {
           const width = d3Data.width || 800;
           const height = d3Data.height || 600;
-          const snapshot = buildMapSnapshot(entry.path, entry.value, width, height);
+          const snapshot = struct.viewMode === 'graph'
+            ? buildMapGraphSnapshot(entry.path, entry.value, width, height)
+            : buildMapSnapshot(entry.path, entry.value, width, height);
           d3Data.nodes = snapshot.nodes;
           d3Data.links = snapshot.links;
+          d3Data.mapEntries = snapshot.entries;
         }
       }
     });
@@ -338,9 +513,7 @@ export class RunCodeComponent implements OnDestroy {
   highlightStructure(struct: StructureWindow, tabIndex: number) {
     struct.isHighlighting = true;
 
-    if (this.autoSwitchTabs()) {
-      this.selectedTabIndex.set(tabIndex);
-    }
+    this.selectStructureTab(tabIndex);
 
     setTimeout(() => {
       struct.isHighlighting = true;
@@ -351,15 +524,9 @@ export class RunCodeComponent implements OnDestroy {
     }, 10);
   }
 
-  setTabManully(event: any) {
-    if (this.autoSwitchTabs()) {
-      this.autoSwitchTabs.set(false);
-    }
-  }
-
   changeStructureViewMode(
     struct: StructureWindow,
-    newMode: 'map' | 'graph'
+    newMode: 'map' | 'graph' | 'array' | 'queue' | 'stack'
   ): void {
 
     if (struct.viewMode === newMode) return;
