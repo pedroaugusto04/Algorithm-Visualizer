@@ -22,7 +22,6 @@
 #include <cstdlib>
 #include <bitset>
 #include <tuple>
-#include <unordered_map>
 
 static constexpr size_t MAX_EVENT_BYTES = 2 * 1024 * 1024;
 // Upper bound for serialization work (bytes produced while checking for changes). Without it,
@@ -34,7 +33,21 @@ static size_t __event_bytes = 0;
 static size_t __av_serialization_work = 0;
 static bool __av_tracing_enabled = true;
 static bool __visualization_incomplete = false;
-static std::unordered_map<std::string, std::string> __av_last_snapshots;
+
+// === Object Tracking Registry ===
+struct __AvTrackedObject {
+    std::string path;
+    std::string lastSnapshot;
+    std::string func;
+    int frame = 0;
+    int depth = 0;
+};
+
+static std::unordered_map<const void*, __AvTrackedObject> __av_registry;
+static int __av_frame_seq = 0;
+static int __av_depth = 0;
+static std::string __av_current_func = "main";
+
 static std::ofstream __event_file([] {
     const char* path = std::getenv("AV_EVENT_FILE");
     return std::ofstream(path ? path : "/work/events.jsonl", std::ios::out | std::ios::app);
@@ -103,7 +116,9 @@ std::string __to_str(const T& val) {
     }
 }
 
-inline void __log(std::string type, std::string path, std::string op, std::string val, int line) {
+inline void __log(const std::string& type, const std::string& path, const std::string& op,
+                  const std::string& val, int line, int frame = 0,
+                  const std::string& func = "", int depth = 0) {
     if (!__event_file) {
         __mark_visualization_incomplete("Não foi possível criar o arquivo de eventos de visualização.");
         return;
@@ -114,13 +129,17 @@ inline void __log(std::string type, std::string path, std::string op, std::strin
     }
 
     const std::string event =
-        "{\"schema\":\"av.event.v1\""
+        "{\"schema\":\"av.event.v2\""
         ",\"time\":" + std::to_string(__step++)
         + ",\"type\":" + __json_string(type)
         + ",\"path\":" + __json_string(path)
         + ",\"op\":" + __json_string(op)
         + ",\"line\":" + std::to_string(line)
+        + ",\"frame\":" + std::to_string(frame)
+        + ",\"func\":" + __json_string(func.empty() ? __av_current_func : func)
+        + ",\"depth\":" + std::to_string(depth)
         + ",\"value\":" + val + "}";
+
     if (__event_bytes + event.size() + 1 > MAX_EVENT_BYTES) {
         __mark_visualization_incomplete("Limite de tamanho dos eventos de visualização atingido; o programa continuou sem registrar novos passos.");
         return;
@@ -129,3 +148,55 @@ inline void __log(std::string type, std::string path, std::string op, std::strin
     __event_bytes += event.size() + 1;
 }
 
+// === Frame Guard ===
+struct __AvFrameGuard {
+    std::string prevFunc;
+    int prevDepth;
+    int frameId;
+    __AvFrameGuard(const std::string& func) : prevFunc(__av_current_func), prevDepth(__av_depth) {
+        frameId = ++__av_frame_seq;
+        __av_depth++;
+        __av_current_func = func;
+    }
+    ~__AvFrameGuard() {
+        __av_depth--;
+        __av_current_func = prevFunc;
+    }
+};
+
+// === Scope Guard ===
+template<typename T>
+struct __AvScopeGuard {
+    const void* ptr;
+    std::string type;
+    int line;
+
+    __AvScopeGuard(const T& val, const std::string& path, const std::string& ty, int ln,
+                   int frame, const std::string& func, int depth)
+        : ptr(static_cast<const void*>(&val)), type(ty), line(ln) {
+        __av_registry[ptr] = __AvTrackedObject{path, "", func, frame, depth};
+    }
+
+    ~__AvScopeGuard() {
+        if (!__av_tracing_enabled) {
+            __av_registry.erase(ptr);
+            return;
+        }
+        auto it = __av_registry.find(ptr);
+        if (it != __av_registry.end()) {
+            const auto obj = it->second;
+            __av_registry.erase(it);
+            __log(type, obj.path, "exit", "null", line, obj.frame, obj.func, obj.depth);
+        }
+    }
+};
+
+template<typename T>
+inline __AvScopeGuard<T> __av_make_scope_guard(
+    const T& val,
+    const std::string& path,
+    const std::string& ty,
+    int ln
+) {
+    return __AvScopeGuard<T>(val, path, ty, ln, __av_frame_seq, __av_current_func, __av_depth);
+}

@@ -11,12 +11,15 @@ public record ExecutionEventDTO(
         String path,
         Operation op,
         int line,
+        Integer frame,
+        String func,
+        Integer depth,
         JsonNode value
 ) {
-    public static final String SCHEMA = "av.event.v1";
+    public static final String SCHEMA = "av.event.v2";
 
     public enum Operation {
-        INIT("init"), SNAPSHOT("snapshot");
+        INIT("init"), SNAPSHOT("snapshot"), EXIT("exit");
 
         private final String value;
         Operation(String value) { this.value = value; }

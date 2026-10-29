@@ -47,6 +47,23 @@
       "expected_values": {
         "word": ["e", "v", "i", "t", "i", "t", "e", "p", "m", "o", "c"]
       }
+    },
+    {
+      "name": "dfs recursive",
+      "source": "dfs_recursive.cpp",
+      "expected_stdout": "1 1 1 1 1 \n",
+      "expected_values": {
+        "vis": [1, 1, 1, 1, 1],
+        "adj": [[1, 2], [3], [4], [], []]
+      }
+    },
+    {
+      "name": "fibonacci memo",
+      "source": "fibonacci_memo.cpp",
+      "expected_stdout": "8\n",
+      "expected_values": {
+        "memo": [0, 1, 1, 2, 3, 5, 8]
+      }
     }
   ]
 }

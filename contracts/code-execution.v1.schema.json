@@ -22,12 +22,15 @@
       "additionalProperties": false,
       "required": ["schema", "time", "type", "path", "op", "line", "value"],
       "properties": {
-        "schema": { "const": "av.event.v1" },
+        "schema": { "const": "av.event.v2" },
         "time": { "type": "integer", "minimum": 1 },
-        "type": { "type": "string", "enum": ["array", "map"] },
+        "type": { "type": "string" },
         "path": { "type": "string", "minLength": 1 },
-        "op": { "type": "string", "enum": ["init", "snapshot"] },
+        "op": { "type": "string", "enum": ["init", "snapshot", "exit"] },
         "line": { "type": "integer", "minimum": 1 },
+        "frame": { "type": "integer", "minimum": 0 },
+        "func": { "type": "string" },
+        "depth": { "type": "integer", "minimum": 0 },
         "value": {}
       }
     },

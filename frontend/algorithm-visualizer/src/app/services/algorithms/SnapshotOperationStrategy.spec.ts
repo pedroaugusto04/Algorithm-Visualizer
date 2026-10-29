@@ -19,7 +19,7 @@ describe('snapshot visualization contract', () => {
       d3Data: { arrayData: [1], nodes: [], links: [], simulation: null, svg: null, width: 0, height: 0 }
     };
     const event: ExecutionLogEntry = {
-      schema: 'av.event.v1',
+      schema: 'av.event.v2',
       time: 2,
       type: 'array',
       path: 'values',
@@ -42,7 +42,7 @@ describe('snapshot visualization contract', () => {
       d3Data: { arrayData: [], nodes: [], links: [], simulation: null, svg: null, width: 800, height: 600 }
     };
     const event: ExecutionLogEntry = {
-      schema: 'av.event.v1',
+      schema: 'av.event.v2',
       time: 2,
       type: 'map',
       path: 'scores',
@@ -61,11 +61,11 @@ describe('snapshot visualization contract', () => {
 
   it('projects corpus event lines for nested arrays, booleans, strings, and maps', () => {
     const lines = [
-      '{"schema":"av.event.v1","time":1,"type":"array","path":"ways","op":"init","line":4,"value":[[1,0],[0,0]]}',
-      '{"schema":"av.event.v1","time":2,"type":"array","path":"ways","op":"snapshot","line":6,"value":[[1,1],[1,2]]}',
-      '{"schema":"av.event.v1","time":3,"type":"array","path":"flags","op":"init","line":2,"value":[true,false]}',
-      '{"schema":"av.event.v1","time":4,"type":"array","path":"word","op":"init","line":3,"value":["c","p","p"]}',
-      '{"schema":"av.event.v1","time":5,"type":"map","path":"frequency","op":"init","line":8,"value":{"1":2,"2":1}}'
+      '{"schema":"av.event.v2","time":1,"type":"array","path":"ways","op":"init","line":4,"value":[[1,0],[0,0]]}',
+      '{"schema":"av.event.v2","time":2,"type":"array","path":"ways","op":"snapshot","line":6,"value":[[1,1],[1,2]]}',
+      '{"schema":"av.event.v2","time":3,"type":"array","path":"flags","op":"init","line":2,"value":[true,false]}',
+      '{"schema":"av.event.v2","time":4,"type":"array","path":"word","op":"init","line":3,"value":["c","p","p"]}',
+      '{"schema":"av.event.v2","time":5,"type":"map","path":"frequency","op":"init","line":8,"value":{"1":2,"2":1}}'
     ];
     const events = lines.map(line => JSON.parse(line) as ExecutionLogEntry);
     const structures = events.map(event => ({

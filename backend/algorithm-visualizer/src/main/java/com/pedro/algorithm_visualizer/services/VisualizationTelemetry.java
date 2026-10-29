@@ -19,7 +19,8 @@ final class VisualizationTelemetry {
     private static final String EVENT_FILE = "events.jsonl";
     private static final String STATUS_FILE = "visualization.status";
     private static final ObjectMapper JSON = new ObjectMapper();
-    private static final Set<String> EVENT_FIELDS = Set.of("schema", "time", "type", "path", "op", "line", "value");
+    private static final Set<String> REQUIRED_FIELDS = Set.of("schema", "time", "type", "path", "op", "line", "value");
+    private static final Set<String> ALLOWED_FIELDS = Set.of("schema", "time", "type", "path", "op", "line", "frame", "func", "depth", "value");
 
     /**
      * @param truncated true when the runtime stopped tracing early, so {@code events} is a prefix of the run.
@@ -93,7 +94,8 @@ final class VisualizationTelemetry {
 
         Set<String> actualFields = new HashSet<>();
         event.fieldNames().forEachRemaining(actualFields::add);
-        if (!actualFields.equals(EVENT_FIELDS)
+        if (!actualFields.containsAll(REQUIRED_FIELDS)
+                || !ALLOWED_FIELDS.containsAll(actualFields)
                 || !event.path("schema").isTextual()
                 || !event.path("time").isIntegralNumber()
                 || !event.path("type").isTextual()
@@ -102,9 +104,10 @@ final class VisualizationTelemetry {
                 || !event.path("line").isIntegralNumber()) {
             throw invalidEvent();
         }
-        if (!ExecutionEventDTO.SCHEMA.equals(event.path("schema").asText())) {
+        String schema = event.path("schema").asText();
+        if (!ExecutionEventDTO.SCHEMA.equals(schema)) {
             throw new IllegalStateException("Versão de evento de visualização não suportada: "
-                    + event.path("schema").asText());
+                    + schema);
         }
 
         ExecutionEventDTO typed = JSON.treeToValue(event, ExecutionEventDTO.class);
@@ -113,6 +116,6 @@ final class VisualizationTelemetry {
     }
 
     private static IllegalStateException invalidEvent() {
-        return new IllegalStateException("Evento de visualização viola o contrato av.event.v1.");
+        return new IllegalStateException("Evento de visualização viola o contrato.");
     }
 }

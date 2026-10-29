@@ -24,18 +24,24 @@ inline void __av_snapshot_if_changed(
     int line
 ) {
     if (!__av_tracing_enabled) return;
+    const void* ptr = static_cast<const void*>(&value);
+    auto it = __av_registry.find(ptr);
+    if (it == __av_registry.end()) {
+        it = __av_registry.emplace(ptr, __AvTrackedObject{path, "", __av_current_func, __av_frame_seq, __av_depth}).first;
+    }
+    __AvTrackedObject& obj = it->second;
+
     const std::string serialized = type == "array" ? __serialize_sequence(value) : __serialize(value);
     __av_serialization_work += serialized.size();
     if (__av_serialization_work > MAX_SERIALIZATION_WORK_BYTES) {
         __mark_visualization_incomplete("Limite de processamento da visualização atingido; o programa continuou sem registrar novos passos.");
         return;
     }
-    const auto previous = __av_last_snapshots.find(path);
-    if (previous == __av_last_snapshots.end()) {
-        __av_last_snapshots.emplace(path, serialized);
-        __log(type, path, "init", serialized, line);
-    } else if (previous->second != serialized) {
-        previous->second = serialized;
-        __log(type, path, "snapshot", serialized, line);
+    if (obj.lastSnapshot.empty()) {
+        obj.lastSnapshot = serialized;
+        __log(type, obj.path, "init", serialized, line, obj.frame, obj.func.empty() ? __av_current_func : obj.func, obj.depth);
+    } else if (obj.lastSnapshot != serialized) {
+        obj.lastSnapshot = serialized;
+        __log(type, obj.path, "snapshot", serialized, line, __av_frame_seq, __av_current_func, __av_depth);
     }
 }

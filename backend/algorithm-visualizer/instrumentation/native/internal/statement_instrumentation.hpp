@@ -75,7 +75,13 @@ public:
 
         class CallCollector : public RecursiveASTVisitor<CallCollector> {
         public:
-            bool VisitCallExpr(CallExpr*) { hasCall = true; return true; }
+            bool VisitCallExpr(CallExpr* call) {
+                if (const auto* operation = dyn_cast<CXXOperatorCallExpr>(call)) {
+                    if (operation->getOperator() == OO_Subscript) return true;
+                }
+                hasCall = true;
+                return true;
+            }
             bool hasCall = false;
         } calls;
         calls.TraverseStmt(const_cast<Expr*>(value));
@@ -108,6 +114,22 @@ public:
             }
 
             std::string code;
+            if (const auto* declStmt = dyn_cast<DeclStmt>(statement)) {
+                for (const Decl* decl : declStmt->decls()) {
+                    if (const auto* var = dyn_cast<VarDecl>(decl)) {
+                        const auto* canonical = canonicalVariable(var);
+                        auto it = variables_.find(canonical);
+                        if (it != variables_.end() && !it->second.global && !it->second.isParam) {
+                            const auto& info = it->second;
+                            const unsigned line = context_.getSourceManager().getSpellingLineNumber(statement->getBeginLoc());
+                            code += " auto __av_guard_" + info.expression + "_" + std::to_string(line)
+                                    + " = __av_make_scope_guard(" + info.expression + ", \"" + info.path
+                                    + "\", \"" + info.type + "\", " + std::to_string(line) + ");";
+                        }
+                    }
+                }
+            }
+
             for (const VarDecl* variable : orderedVariables(annotation.variables)) {
                 const auto& info = variables_.at(variable);
                 const unsigned line = context_.getSourceManager().getSpellingLineNumber(statement->getBeginLoc());

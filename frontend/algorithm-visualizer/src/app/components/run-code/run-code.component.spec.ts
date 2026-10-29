@@ -54,10 +54,10 @@ describe('RunCodeComponent', () => {
     spyOn(component['globalRenderer'], 'renderElements');
     spyOn<any>(component, 'highlightStructure');
     const logs: ExecutionLogEntry[] = [
-      { schema: 'av.event.v1', time: 1, type: 'array', path: 'ways', op: 'init', line: 3, value: [[1, 0], [0, 0]] },
-      { schema: 'av.event.v1', time: 2, type: 'array', path: 'ways', op: 'snapshot', line: 5, value: [[1, 1], [1, 2]] },
-      { schema: 'av.event.v1', time: 3, type: 'map', path: 'frequency', op: 'init', line: 6, value: { '1': 1 } },
-      { schema: 'av.event.v1', time: 4, type: 'map', path: 'frequency', op: 'snapshot', line: 8, value: { '1': 2, '2': 1 } }
+      { schema: 'av.event.v2', time: 1, type: 'array', path: 'ways', op: 'init', line: 3, value: [[1, 0], [0, 0]] },
+      { schema: 'av.event.v2', time: 2, type: 'array', path: 'ways', op: 'snapshot', line: 5, value: [[1, 1], [1, 2]] },
+      { schema: 'av.event.v2', time: 3, type: 'map', path: 'frequency', op: 'init', line: 6, value: { '1': 1 } },
+      { schema: 'av.event.v2', time: 4, type: 'map', path: 'frequency', op: 'snapshot', line: 8, value: { '1': 2, '2': 1 } }
     ];
 
     component['processResult']({

@@ -51,6 +51,27 @@ llvm::cl::opt<std::string> Standard(
     llvm::cl::init("gnu++17"),
     llvm::cl::cat(Category));
 
+class FunctionFrameInstrumenter : public RecursiveASTVisitor<FunctionFrameInstrumenter> {
+public:
+    FunctionFrameInstrumenter(SourceManager& sm, Rewriter& rewriter)
+        : sourceManager_(sm), rewriter_(rewriter) {}
+
+    bool VisitFunctionDecl(FunctionDecl* function) {
+        if (!function->hasBody() || !sourceManager_.isWrittenInMainFile(function->getLocation())) return true;
+        const auto* body = dyn_cast<CompoundStmt>(function->getBody());
+        if (!body) return true;
+        SourceLocation braceLoc = body->getLBracLoc();
+        if (braceLoc.isInvalid() || braceLoc.isMacroID()) return true;
+
+        std::string code = " __AvFrameGuard __av_fg(__FUNCTION__);";
+        rewriter_.InsertTextAfterToken(braceLoc, code);
+        return true;
+    }
+private:
+    SourceManager& sourceManager_;
+    Rewriter& rewriter_;
+};
+
 class InstrumentConsumer : public ASTConsumer {
 public:
     InstrumentConsumer(Rewriter& rewriter, std::string& error, SourceManager& sourceManager)
@@ -114,6 +135,9 @@ public:
                     + field->getNameAsString();
             return;
         }
+
+        FunctionFrameInstrumenter frameInstrumenter(sourceManager_, rewriter_);
+        frameInstrumenter.TraverseDecl(context.getTranslationUnitDecl());
 
         StatementInstrumenter instrumenter(context, rewriter_, tracked, declarations.parents());
         instrumenter.TraverseDecl(context.getTranslationUnitDecl());

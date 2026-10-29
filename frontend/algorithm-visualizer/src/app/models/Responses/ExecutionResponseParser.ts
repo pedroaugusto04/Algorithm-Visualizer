@@ -33,13 +33,13 @@ export function parseExecutionResponse(value: unknown): ExecuteCodeResponse {
 
 function isExecutionEvent(value: unknown): value is ExecutionLogEntry {
   return isRecord(value)
-    && value['schema'] === 'av.event.v1'
+    && value['schema'] === 'av.event.v2'
     && isInteger(value['time'])
     && value['time'] > 0
-    && (value['type'] === 'array' || value['type'] === 'map')
+    && typeof value['type'] === 'string'
     && typeof value['path'] === 'string'
     && value['path'].length > 0
-    && (value['op'] === 'init' || value['op'] === 'snapshot')
+    && (value['op'] === 'init' || value['op'] === 'snapshot' || value['op'] === 'exit')
     && isInteger(value['line'])
     && value['line'] > 0
     && Object.prototype.hasOwnProperty.call(value, 'value');

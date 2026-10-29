@@ -21,7 +21,7 @@ class VisualizationTelemetryTest {
     @Test
     void returnsPartialTraceWhenRuntimeBudgetWasReached() throws Exception {
         String event = """
-                {"schema":"av.event.v1","time":1,"type":"array","path":"v","op":"init","line":2,"value":[1,2,3]}
+                {"schema":"av.event.v2","time":1,"type":"array","path":"v","op":"init","line":2,"value":[1,2,3]}
                 """.strip();
         Files.writeString(workspace.resolve("events.jsonl"), event + "\n");
         Files.writeString(workspace.resolve("visualization.status"), "budget reached");
@@ -51,8 +51,8 @@ class VisualizationTelemetryTest {
     @Test
     void readPartialEventsDropsCutLastLineInsteadOfDiscardingEverything() throws Exception {
         String good = """
-                {"schema":"av.event.v1","time":1,"type":"array","path":"v","op":"init","line":2,"value":[1]}
-                {"schema":"av.event.v1","time":2,"type":"array","path":"v","op":"snapshot","line":3,"value":[2]}
+                {"schema":"av.event.v2","time":1,"type":"array","path":"v","op":"init","line":2,"value":[1]}
+                {"schema":"av.event.v2","time":2,"type":"array","path":"v","op":"snapshot","line":3,"value":[2]}
                 """.strip();
         Files.writeString(workspace.resolve("events.jsonl"), good + "\n{\"cut");
 
@@ -64,8 +64,8 @@ class VisualizationTelemetryTest {
     @Test
     void rejectsEventWithOutOfOrderTime() throws Exception {
         String bad = """
-                {"schema":"av.event.v1","time":5,"type":"array","path":"v","op":"init","line":2,"value":[]}
-                {"schema":"av.event.v1","time":3,"type":"array","path":"v","op":"snapshot","line":3,"value":[1]}
+                {"schema":"av.event.v2","time":5,"type":"array","path":"v","op":"init","line":2,"value":[]}
+                {"schema":"av.event.v2","time":3,"type":"array","path":"v","op":"snapshot","line":3,"value":[1]}
                 """.strip();
         Files.writeString(workspace.resolve("events.jsonl"), bad);
         assertThrows(Exception.class, () -> VisualizationTelemetry.readEvents(workspace));

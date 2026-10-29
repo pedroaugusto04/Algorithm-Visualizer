@@ -21,6 +21,7 @@ struct TrackedVariable {
     std::string path;
     std::string expression;
     bool global = false;
+    bool isParam = false;
 };
 
 using TrackedMap = std::unordered_map<const VarDecl*, TrackedVariable>;
@@ -31,6 +32,7 @@ const VarDecl* canonicalVariable(const VarDecl* variable) {
 
 std::string observedType(QualType type) {
     type = type.getCanonicalType();
+    if (type->isReferenceType()) type = type.getNonReferenceType().getCanonicalType();
 
     if (type->isConstantArrayType()) return avObservedStlType("C array");
 
@@ -71,7 +73,15 @@ public:
 
     bool VisitVarDecl(VarDecl* declaration) {
         if (!sourceManager_.isWrittenInMainFile(declaration->getLocation())) return true;
-        if (isa<ParmVarDecl>(declaration)) return true;
+        if (isa<ParmVarDecl>(declaration)) {
+            const std::string type = observedType(declaration->getType());
+            if (type.empty()) return true;
+            const VarDecl* canonical = canonicalVariable(declaration);
+            variables_.emplace(canonical, TrackedVariable{
+                declaration, type, canonical->getNameAsString(), canonical->getNameAsString(), false, true
+            });
+            return true;
+        }
         const std::string type = observedType(declaration->getType());
         if (!declaration->isLocalVarDecl()) {
             if (type.empty()) return true;

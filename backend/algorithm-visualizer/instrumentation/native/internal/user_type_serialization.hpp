@@ -21,7 +21,9 @@ public:
     bool inject(const TrackedMap& tracked, const FunctionDecl* mainFunction) {
         for (const auto& [declaration, info] : tracked) {
             (void)info;
-            if (!collectValueType(declaration->getType())) return false;
+            QualType varType = declaration->getType();
+            if (varType->isReferenceType()) varType = varType.getNonReferenceType();
+            if (!collectValueType(varType)) return false;
         }
 
         if (records_.empty()) return true;

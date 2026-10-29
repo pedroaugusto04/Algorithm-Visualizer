@@ -1,10 +1,13 @@
 export interface ExecutionLogEntry {
-  schema: 'av.event.v1';
+  schema: 'av.event.v2';
   time: number;
-  type: 'map' | 'array';
+  type: string;
   path: string;
-  op: 'init' | 'snapshot';
+  op: 'init' | 'snapshot' | 'exit';
   line: number;
+  frame?: number;
+  func?: string;
+  depth?: number;
   value: JsonValue;
 }
 

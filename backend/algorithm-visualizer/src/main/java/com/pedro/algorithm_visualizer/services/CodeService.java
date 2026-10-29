@@ -67,12 +67,21 @@ public class CodeService {
                 throw new IllegalStateException("Servidor ocupado com outras execuções. Tente novamente em instantes.");
 
             workspace = Files.createTempDirectory("algo-run-");
-            Files.writeString(workspace.resolve("main.cpp"), code, StandardCharsets.UTF_8);
-            Files.writeString(workspace.resolve("testcase.txt"), input, StandardCharsets.UTF_8);
+            workspace.toFile().setReadable(true, false);
+            workspace.toFile().setWritable(true, false);
+            workspace.toFile().setExecutable(true, false);
+            Path mainCpp = Files.writeString(workspace.resolve("main.cpp"), code, StandardCharsets.UTF_8);
+            mainCpp.toFile().setReadable(true, false);
+            mainCpp.toFile().setWritable(true, false);
+            Path testCase = Files.writeString(workspace.resolve("testcase.txt"), input, StandardCharsets.UTF_8);
+            testCase.toFile().setReadable(true, false);
+            testCase.toFile().setWritable(true, false);
 
             stage = ExecutionStage.INSTRUMENTATION;
             ContainerStepRunner.StepResult instrumented = stepRunner.run(workspace, "instrument", standard);
-            Files.writeString(workspace.resolve("instrumented.cpp"), instrumented.stdout());
+            Path instr = Files.writeString(workspace.resolve("instrumented.cpp"), instrumented.stdout());
+            instr.toFile().setReadable(true, false);
+            instr.toFile().setWritable(true, false);
 
             stage = ExecutionStage.COMPILATION;
             stderr = stepRunner.run(workspace, "compile", standard).stderr();

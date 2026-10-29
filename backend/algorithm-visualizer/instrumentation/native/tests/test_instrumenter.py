@@ -73,7 +73,7 @@ int main() {
 }
 """)
         self.assertEqual(stdout, "4\n")
-        states = [event["value"] for event in events if event["path"] == "values"]
+        states = [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "values"]
         self.assertEqual(states, [[1, 2], [2, 2], [2, 2, 3], [3, 2, 2], [3, 2, 2, 4]])
         self.assertEqual(events[0]["op"], "init")
         self.assertTrue(all("line" in event for event in events))
@@ -112,7 +112,7 @@ int main() {
 }
 """)
         self.assertEqual(stdout, "10\n")
-        states = [event["value"] for event in events if event["path"] == "values"]
+        states = [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "values"]
         self.assertEqual(states, [[1, 2, 3], [3, 2, 3], [3, 4, 3]])
 
     def test_competitive_input_nested_vectors_and_unbraced_loop(self):
@@ -128,7 +128,7 @@ int main() {
 }
 """, stdin="2\n")
         self.assertEqual(stdout, "3 2\n")
-        states = [event["value"] for event in events if event["path"] == "rows"]
+        states = [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "rows"]
         self.assertEqual(states, [[[1], [2]], [[1, 3], [2]], [[1, 3, 4], [2]]])
 
     def test_unbraced_continue_with_observed_container_compiles(self):
@@ -146,7 +146,7 @@ int main() {
 }
 """)
         self.assertEqual(stdout, "0 1 2 \n")
-        states = [event["value"] for event in events if event["path"] == "distance"]
+        states = [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "distance"]
         self.assertEqual(states[-1], [0, 1, 2])
 
     def test_nested_pairs_are_serialized_as_json_values(self):
@@ -168,11 +168,11 @@ int main() {
         self.assertEqual(states["pairs"], [[1, 2]])
         self.assertEqual(states["grouped"], {"7": [[3, 4]]})
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "pairs"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "pairs"],
             [[[1, 2]], [[1, 2], [5, 6]]],
         )
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "grouped"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "grouped"],
             [{"7": [[3, 4]]}, {"7": [[3, 4], [8, 9]]}],
         )
 
@@ -195,7 +195,8 @@ int main() {
         self.assertEqual(stdout, "15\n")
         values = {}
         for event in events:
-            values.setdefault(event["path"], []).append(event["value"])
+            if event.get("op") != "exit":
+                values.setdefault(event["path"], []).append(event["value"])
 
         self.assertEqual(values["selected"], [[True, False, True, False], [True, True, True, False]])
         self.assertEqual(values["edge"], [[2, 7], [2, 9]])
@@ -227,7 +228,7 @@ int main() {
 """)
         self.assertEqual(stdout, "2 10\n")
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "nodes"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "nodes"],
             [
                 [{"name": "a", "edges": [{"to": 2, "weight": 7}], "preferred": {"to": 3, "weight": 4}}],
                 [{"name": "a", "edges": [{"to": 2, "weight": 10}], "preferred": {"to": 3, "weight": 4}}],
@@ -255,11 +256,11 @@ int main() {
 """)
         self.assertEqual(stdout, "5\n")
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "flags"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "flags"],
             [[True, False], [True, True]],
         )
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "scores"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "scores"],
             [{"1": 10, "2": 20}, {"1": 10, "2": 20, "3": 30}],
         )
 
@@ -309,7 +310,8 @@ int main() {
         self.assertEqual(stdout, "ok\n")
         values = {}
         for event in events:
-            values.setdefault(event["path"], []).append(event["value"])
+            if event.get("op") != "exit":
+                values.setdefault(event["path"], []).append(event["value"])
 
         expected = {
             "vector": [[1], [1, 2]],
@@ -346,7 +348,8 @@ int main() {
                 self.assertEqual(stdout, case["expected_stdout"])
                 final_values = {}
                 for event in events:
-                    final_values[event["path"]] = event["value"]
+                    if event.get("op") != "exit":
+                        final_values[event["path"]] = event["value"]
                 for path, expected in case["expected_values"].items():
                     self.assertIn(path, final_values)
                     self.assertEqual(final_values[path], expected)
@@ -393,22 +396,22 @@ int main() {
         self.assertEqual(initial["best"], [])
         self.assertEqual(initial["text"], ["a", "b"])
 
-        states = [event["value"] for event in events if event["path"] == "lifo"]
+        states = [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "lifo"]
         self.assertEqual(states, [[], [10], [20, 10]])
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "fifo"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "fifo"],
             [[], [7]],
         )
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "best"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "best"],
             [[], [2], [5, 2]],
         )
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "text"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "text"],
             [["a", "b"], ["a", "b", "c"]],
         )
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "repeated"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "repeated"],
             [[], [[2, 10]], [[2, 10], [2, 20]]],
         )
 
@@ -455,7 +458,7 @@ int main() {
 """)
         self.assertEqual(stdout, "2\n")
         self.assertEqual(
-            [event["value"] for event in events if event["path"] == "values"],
+            [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "values"],
             [[1], [1, 2]],
         )
 
@@ -478,7 +481,8 @@ int main() {
         self.assertEqual(stdout, "7\n")
         states_by_path = {}
         for event in events:
-            states_by_path.setdefault(event["path"], []).append(event["value"])
+            if event.get("op") != "exit":
+                states_by_path.setdefault(event["path"], []).append(event["value"])
 
         self.assertEqual(len(states_by_path), 3)
         self.assertTrue(all(path.startswith("values@") for path in states_by_path))
@@ -554,7 +558,7 @@ int main() {
 }
 """)
         self.assertEqual(stdout, "10 3\n")
-        self.assertEqual([event["value"] for event in events if event["path"] == "values"], [[2, 3, 5]])
+        self.assertEqual([event["value"] for event in events if event.get("op") != "exit" and event["path"] == "values"], [[2, 3, 5]])
 
     def test_read_only_container_condition_remains_supported(self):
         stdout, events = self.run_program(r"""
@@ -568,7 +572,49 @@ int main() {
 }
 """)
         self.assertEqual(stdout, "2\n")
-        self.assertEqual([event["value"] for event in events if event["path"] == "values"], [[1], [2]])
+        self.assertEqual([event["value"] for event in events if event.get("op") != "exit" and event["path"] == "values"], [[1], [2]])
+
+    def test_recursive_function_frame_and_scope_exit(self):
+        stdout, events = self.run_program(r"""
+#include <iostream>
+#include <vector>
+
+std::vector<int> history;
+
+void recurse(int step) {
+    history.push_back(step);
+    if (step < 2) {
+        recurse(step + 1);
+    }
+}
+
+int main() {
+    recurse(0);
+    std::cout << history.size() << '\n';
+}
+""")
+        self.assertEqual(stdout, "3\n")
+        # Check v2 event fields
+        self.assertTrue(all(event["schema"] == "av.event.v2" for event in events))
+        self.assertTrue(all("frame" in event and "func" in event and "depth" in event for event in events))
+        # Recursive calls should have func == "recurse" and increasing depth
+        recurse_events = [e for e in events if e.get("func") == "recurse"]
+        self.assertTrue(len(recurse_events) >= 3)
+        depths = [e["depth"] for e in recurse_events]
+        self.assertTrue(max(depths) >= 2)
+        # Check scope exit event for local containers
+        stdout2, events2 = self.run_program(r"""
+#include <vector>
+int main() {
+    {
+        std::vector<int> inner{1, 2};
+        inner.push_back(3);
+    }
+}
+""")
+        exit_events = [e for e in events2 if e["op"] == "exit" and e["path"] == "inner"]
+        self.assertEqual(len(exit_events), 1)
+        self.assertEqual(exit_events[0]["value"], None)
 
 
 if __name__ == "__main__":
