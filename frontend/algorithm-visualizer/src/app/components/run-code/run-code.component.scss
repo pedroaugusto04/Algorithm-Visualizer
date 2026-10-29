@@ -1,28 +1,29 @@
 :host {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
+    display: block;
     width: 100%;
-    height: 100vh;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .content {
-    height: 100vh;
+    height: 100%;
+    min-height: 0;
     width: 100%;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     background-color: #f5f5f5;
     overflow: hidden;
 }
 
-.execution-workspace {
+.main-workspace {
     display: flex;
-    flex: 1 1 auto;
-    gap: 12px;
+    flex: 1 1 0;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
-    padding: 16px;
+    gap: 12px;
+    padding: 8px 12px;
 }
 
 .source-preview {
@@ -31,9 +32,10 @@
     border-radius: 10px;
     color: #dbe3ef;
     display: flex;
-    flex: 1 1 44%;
+    flex: 1 1 0;
     flex-direction: column;
     min-width: 220px;
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -61,6 +63,12 @@
     flex: 1 1 auto;
     overflow: auto;
     padding: 10px 0;
+    scrollbar-color: #64748b #1e2430;
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar { height: 8px; width: 8px; }
+    &::-webkit-scrollbar-track { background: #1e2430; }
+    &::-webkit-scrollbar-thumb { background: #64748b; border: 2px solid #1e2430; border-radius: 8px; }
 }
 
 .source-line {
@@ -113,19 +121,76 @@ app-structure-visualizer {
 }
 
 .form-container {
-    overflow-y: auto;
-    border-right: 1px solid #ccc;
-    padding: 20px;
-    min-width: 18rem;
-    max-width: 22rem;
+    display: flex;
+    flex: 0 1 44%;
+    flex-direction: column;
+    min-width: 300px;
+    max-width: 560px;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid #d8dee8;
+    border-radius: 10px;
+    padding: 16px;
     background-color: white;
-    height: 100%;
+    box-sizing: border-box;
+}
+
+.code-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 0 auto;
+    gap: 12px;
+    margin-bottom: 12px;
+
+    > div {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+
+    strong { color: #1e293b; font-size: 15px; }
+    span { color: #64748b; font-size: 11px; }
+
+    button {
+        flex: 0 0 auto;
+        font-size: 12px;
+        line-height: 32px;
+        padding: 0 10px;
+    }
+}
+
+.code-panel-fields {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-color: #94a3b8 #f1f5f9;
+    scrollbar-width: thin;
+
+    > mat-form-field { flex: 0 0 auto; }
+}
+
+.source-editor-field {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 190px;
+
+    mat-form-field { flex: 1 1 auto; }
+    textarea { min-height: 150px; }
+}
+
+.stdin-field {
+    margin-top: 4px;
 }
 
 .visualization-container {
     flex: 1 1 56%;
     min-width: 0;
-    height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -137,25 +202,38 @@ app-structure-visualizer {
     display: flex;
     flex: 0 0 36px;
     font-size: 12px;
-    justify-content: flex-end;
+    justify-content: space-between;
     padding: 0 4px;
 
     button { color: #475569; }
+
+    strong { color: #334155; font-size: 14px; }
+}
+
+.toolbar-call-stack {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #0369a1;
+    font-family: monospace;
+
+    mat-icon { font-size: 16px; height: 16px; width: 16px; }
+    code { color: inherit; }
 }
 
 .animation-player {
     background: #f4f4f7;
-    padding: 16px;
+    padding: 10px 14px;
     border-radius: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
     box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 
     .controls-row {
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
+        gap: 8px;
+        margin-bottom: 6px;
     }
 
     .slider-row {
@@ -341,10 +419,17 @@ app-structure-visualizer {
     .mat-mdc-tab-body-content {
         padding: 0 !important;
     }
+
+    .visualization-container > .mat-mdc-tab-group {
+        flex: 1 1 0;
+        min-height: 0;
+        height: auto !important;
+    }
 }
 
 ::ng-deep .mat-mdc-tab-group {
     height: 100%;
+    min-height: 0;
     display: flex;
     flex-direction: column;
 }
@@ -364,7 +449,8 @@ app-structure-visualizer {
 }
 
 .structure-render {
-    flex-grow: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     width: auto;
     height: 100%;
     background-color: #E0E0E0;
@@ -407,13 +493,48 @@ app-structure-visualizer {
 .console-output {
     background-color: #1e1e1e;
     color: #d4d4d4;
-    padding: 16px;
+    height: 118px;
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    min-height: 0;
+    margin: 0 12px 12px;
+    padding: 10px 14px;
     font-family: 'Fira Code', 'Courier New', monospace;
-    height: 100%;
-    min-height: 200px;
     border-radius: 8px;
-    overflow-y: auto;
+    overflow: auto;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+    scrollbar-color: #64748b #1e1e1e;
+    scrollbar-width: thin;
+}
+
+.output-panel {
+    flex: 0 0 auto;
+    max-height: 190px;
+    min-height: 42px;
+    overflow: hidden;
+    background: #111827;
+    border-top: 1px solid #334155;
+    color: #e2e8f0;
+
+    &.collapsed { max-height: 42px; }
+}
+
+.output-panel-header {
+    align-items: center;
+    display: flex;
+    height: 42px;
+    justify-content: space-between;
+    padding: 0 12px;
+
+    > div {
+        align-items: center;
+        display: flex;
+        gap: 8px;
+    }
+
+    mat-icon { color: #94a3b8; }
+    strong { color: #e2e8f0; font-size: 12px; }
+    button { color: #cbd5e1; }
 }
 
 .console-output pre {
@@ -454,17 +575,17 @@ app-structure-visualizer {
 }
 
 @media (max-width: 1100px) {
-    .source-preview { flex-basis: 40%; min-width: 190px; }
-    .visualization-container { flex-basis: 60%; }
+    .form-container { flex-basis: 42%; }
+    .visualization-container { flex-basis: 58%; }
 }
 
 @media (max-width: 760px) {
     :host, .content { height: auto; min-height: 100vh; }
-    .content { flex-direction: column; overflow: auto; }
-    .form-container { height: auto; max-width: none; width: 100%; }
-    .execution-workspace { flex-direction: column; overflow: visible; }
-    .source-preview { flex: 0 0 260px; min-height: 220px; }
-    .visualization-container { flex: 1 1 65vh; height: 65vh; min-height: 420px; }
+    .content { overflow: visible; }
+    .main-workspace { flex: 0 0 auto; flex-direction: column; overflow: visible; padding: 8px; }
+    .form-container { flex: 0 0 auto; max-height: 70vh; max-width: none; min-width: 0; width: 100%; }
+    .visualization-container { flex: 0 0 65vh; height: 65vh; min-height: 420px; width: 100%; }
+    .output-panel { max-height: 190px; }
 }
 
 .map-mode-selector::ng-deep .mat-button-toggle-group {
@@ -513,19 +634,8 @@ app-structure-visualizer {
 }
 
 @media (max-width: 768px) {
-    .content {
-        flex-direction: column;
-    }
-
     .form-container {
-        max-width: 100%;
-        height: auto;
         border-right: none;
-        border-bottom: 1px solid #ccc;
-    }
-
-    .visualization-container {
-        height: 100vh;
     }
 }
 

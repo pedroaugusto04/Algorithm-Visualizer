@@ -93,7 +93,8 @@ export class RunCodeComponent implements OnDestroy {
   selectedTabIndex = signal<number>(0);
   autoSwitchTabs = signal<boolean>(true);
   executionStarted = signal<boolean>(false);
-  executionSettingsVisible = signal<boolean>(true);
+  sourceEditorVisible = signal<boolean>(true);
+  outputConsoleExpanded = signal<boolean>(true);
 
   constructor(
     private codeService: CodeService,
@@ -108,7 +109,7 @@ export class RunCodeComponent implements OnDestroy {
     }
 
     this.executionStarted.set(true);
-    this.executionSettingsVisible.set(false);
+    this.sourceEditorVisible.set(false);
     this.resetState();
     this.executionResult.set('Compiling and running...');
     this.executionWarnings.set([]);
@@ -296,9 +297,7 @@ export class RunCodeComponent implements OnDestroy {
   }
 
   private showOutputConsole(): void {
-    this.tabSelectionVersion++;
-    this.autoSwitchTargetIndex = this.structures.length;
-    this.selectedTabIndex.set(this.autoSwitchTargetIndex);
+    this.outputConsoleExpanded.set(true);
   }
 
   private selectStructureTab(tabIndex: number): void {
@@ -358,8 +357,12 @@ export class RunCodeComponent implements OnDestroy {
     this.isTraceTruncated.set(false);
   }
 
-  showExecutionSettings(): void {
-    this.executionSettingsVisible.set(true);
+  toggleSourceEditor(): void {
+    this.sourceEditorVisible.update(visible => !visible);
+  }
+
+  toggleOutputConsole(): void {
+    this.outputConsoleExpanded.update(expanded => !expanded);
   }
 
   @HostListener('window:keydown', ['$event'])

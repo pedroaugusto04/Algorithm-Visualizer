@@ -116,6 +116,18 @@ export class ArrayRenderer implements Renderer {
       });
 
     const isStack = d3Data.viewMode === 'stack' && !is2D;
+    const isQueue = d3Data.viewMode === 'queue' && !is2D;
+    const columnCount = is2D
+      ? Math.max(0, ...arrayData.map((row: any[]) => row?.length ?? 0))
+      : flatData.length;
+    const rowCount = is2D ? arrayData.length : (isStack ? flatData.length : 1);
+    const viewWidth = isStack
+      ? Math.max(240, cellWidth + 160)
+      : Math.max(160, columnCount * (cellWidth + padding) + 80);
+    const viewHeight = Math.max(160, rowCount * (cellHeight + padding) + 100);
+    svg.attr('viewBox', `0 0 ${viewWidth} ${viewHeight}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+
     allCells.transition()
       .duration(300)
       .attr('transform', (d: any) => {
@@ -138,7 +150,7 @@ export class ArrayRenderer implements Renderer {
       .style('font-size', is2D ? '9px' : '12px')
       .attr('y', is2D ? cellHeight + 13 : cellHeight + 20);
 
-    if (!is2D && (d3Data.viewMode === 'queue' || isStack)) {
+    if (isQueue || isStack) {
       const markers = [
         { label: isStack ? 'TOP' : 'FRONT', index: isStack ? flatData.length - 1 : 0 },
         { label: isStack ? 'BOTTOM' : 'REAR', index: isStack ? 0 : flatData.length - 1 }

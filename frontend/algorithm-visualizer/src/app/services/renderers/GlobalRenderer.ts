@@ -10,10 +10,16 @@ export class GlobalRenderer {
     for (const structure of structures) {
       const data = structure.d3Data;
       if (!data?.svg) continue;
+      const nextMode = `${structure.type}:${structure.viewMode ?? structure.type}`;
+      if (data.renderedMode && data.renderedMode !== nextMode) {
+        data.simulation?.stop();
+        data.svg.selectAll('*').remove();
+      }
       data.viewMode = structure.viewMode;
 
       const renderer = this.registry.getRenderer(structure.type, structure.viewMode);
       renderer?.renderElements(data);
+      data.renderedMode = nextMode;
     }
   }
 }

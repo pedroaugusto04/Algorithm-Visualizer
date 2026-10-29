@@ -10,6 +10,7 @@ export interface StructureD3Data {
   mapEntries?: Array<{ key: string; value: any; path: string }>;
   ownerPath?: string;
   changedPaths?: Set<string>;
+  renderedMode?: string;
   selectedValuePath?: string;
   selectedValueSnapshot?: JsonValue;
   onStructuredValueSelected?: (selection: StructuredValueSelection | null) => void;
