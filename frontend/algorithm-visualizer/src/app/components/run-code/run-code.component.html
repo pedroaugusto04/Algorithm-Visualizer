@@ -88,17 +88,33 @@
         }
         <div class="animation-player">
             <div class="controls-row">
-                <button mat-icon-button (click)="prevStep()" [disabled]="currentStep() === 0">
+                <button mat-icon-button (click)="prevStep()" [disabled]="currentStep() === 0" title="Previous step">
                     <mat-icon>skip_previous</mat-icon>
                 </button>
 
-                <button mat-mini-fab color="primary" (click)="togglePlay()">
+                <button mat-mini-fab color="primary" (click)="togglePlay()" [title]="isPlaying() ? 'Pause' : 'Play'">
                     <mat-icon>{{ isPlaying() ? 'pause' : 'play_arrow' }}</mat-icon>
                 </button>
 
-                <button mat-icon-button (click)="nextStep()" [disabled]="currentStep() >= totalSteps() - 1">
+                <button mat-icon-button (click)="nextStep()" [disabled]="currentStep() >= totalSteps() - 1" title="Next step">
                     <mat-icon>skip_next</mat-icon>
                 </button>
+
+                <mat-button-toggle-group class="speed-toggle-group" [value]="playbackSpeed()"
+                    (change)="setPlaybackSpeed($any($event.value))" exclusive appearance="legacy" aria-label="Playback speed">
+                    <mat-button-toggle [value]="0.5">0.5x</mat-button-toggle>
+                    <mat-button-toggle [value]="1">1x</mat-button-toggle>
+                    <mat-button-toggle [value]="2">2x</mat-button-toggle>
+                    <mat-button-toggle [value]="4">4x</mat-button-toggle>
+                </mat-button-toggle-group>
+
+                @if (currentCallStack(); as stack) {
+                <span class="call-stack-badge" [title]="'Frame #' + stack.frame + ' in ' + stack.func">
+                    <mat-icon>account_tree</mat-icon>
+                    <code>{{ stack.func }}()</code>
+                    <span class="depth-tag">d:{{ stack.depth }}</span>
+                </span>
+                }
 
                 <div class="toggle-container">
                     <mat-slide-toggle color="accent" [checked]="autoSwitchTabs()"
@@ -155,6 +171,7 @@
                             <mat-button-toggle value="array">Array</mat-button-toggle>
                             <mat-button-toggle value="queue">Queue</mat-button-toggle>
                             <mat-button-toggle value="stack">Stack</mat-button-toggle>
+                            <mat-button-toggle value="graph">Graph</mat-button-toggle>
                         </mat-button-toggle-group>
                     </div>
                     }

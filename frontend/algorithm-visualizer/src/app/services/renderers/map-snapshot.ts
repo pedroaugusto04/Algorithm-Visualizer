@@ -64,12 +64,25 @@ export function buildMapSnapshot(path: string, value: JsonValue, width: number, 
   return { nodes, links, entries: mapEntries };
 }
 
-/** Treat map keys as graph vertices and collection values as outgoing neighbors. */
-export function buildMapGraphSnapshot(path: string, value: JsonValue, width: number, height: number): MapSnapshot {
+/** Treat map keys or 2D array indices as graph vertices and collection values as outgoing neighbors. */
+export function buildMapGraphSnapshot(
+  path: string,
+  value: JsonValue,
+  width: number,
+  height: number,
+  isArray = false
+): MapSnapshot {
   const map = buildMapSnapshot(path, value, width, height);
-  const rawEntries = Array.isArray(value)
-    ? value.filter((entry): entry is JsonValue[] => Array.isArray(entry) && entry.length >= 2)
-    : isStructuredValue(value) ? Object.entries(value) : [];
+
+  let rawEntries: [unknown, unknown][] = [];
+  if (isArray && Array.isArray(value)) {
+    rawEntries = value.map((neighbors, i) => [i, neighbors]);
+  } else if (Array.isArray(value)) {
+    rawEntries = value.filter((entry): entry is JsonValue[] => Array.isArray(entry) && entry.length >= 2)
+      .map(entry => [entry[0], entry[1]]);
+  } else if (isStructuredValue(value)) {
+    rawEntries = Object.entries(value);
+  }
   const nodeById = new Map<string, MapVisualNode>();
   const links: MapVisualLink[] = [];
   const getNode = (value: unknown): MapVisualNode => {

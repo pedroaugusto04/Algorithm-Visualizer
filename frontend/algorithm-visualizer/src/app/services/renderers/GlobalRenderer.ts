@@ -22,8 +22,10 @@ export class GlobalRenderer implements Renderer {
             if (!data?.svg) return;
             data.viewMode = structure.viewMode;
 
-            if (structure.type === 'array') this.arrayRenderer.renderElements(data);
-            else if (structure.type === 'map') {
+            if (structure.type === 'array') {
+                if (structure.viewMode === 'graph') this.graphRenderer.renderElements(data);
+                else this.arrayRenderer.renderElements(data);
+            } else if (structure.type === 'map') {
                 if (structure.viewMode === 'graph') this.graphRenderer.renderElements(data);
                 else this.mapRenderer.renderElements(data);
             }

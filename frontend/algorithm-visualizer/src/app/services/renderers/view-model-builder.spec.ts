@@ -94,4 +94,46 @@ describe('view-model-builder', () => {
     expect(nodeIds).toContain('3');
     expect(graphMap.d3Data?.links.length).toBe(3);
   });
+
+  it('builds adjacency graph when 2D vector (vector<vector<int>>) is viewed as graph', () => {
+    const graphVector: StructureWindow = {
+      path: 'adj',
+      type: 'array',
+      viewMode: 'graph',
+      children: [],
+      d3Data: { arrayData: [], nodes: [], links: [], simulation: null, svg: null, width: 800, height: 600 }
+    };
+
+    // vector<vector<int>>: vertex 0 -> [1, 2], vertex 1 -> [2], vertex 2 -> [0]
+    applySnapshotToStructure(graphVector, [[1, 2], [2], [0]]);
+
+    const nodeIds = graphVector.d3Data?.nodes.map(n => n.id);
+    expect(nodeIds).toContain('0');
+    expect(nodeIds).toContain('1');
+    expect(nodeIds).toContain('2');
+    expect(graphVector.d3Data?.links.length).toBe(4);
+  });
+
+  it('builds weighted adjacency graph when 2D vector of pairs (vector<vector<pair<int,int>>>) is viewed as graph', () => {
+    const graphVector: StructureWindow = {
+      path: 'adj',
+      type: 'array',
+      viewMode: 'graph',
+      children: [],
+      d3Data: { arrayData: [], nodes: [], links: [], simulation: null, svg: null, width: 800, height: 600 }
+    };
+
+    // vertex 0 -> neighbor 1 (wt 10), neighbor 2 (wt 5); vertex 1 -> neighbor 2 (wt 2)
+    applySnapshotToStructure(graphVector, [
+      [[1, 10], [2, 5]],
+      [[2, 2]],
+      []
+    ]);
+
+    expect(graphVector.d3Data?.links.length).toBe(3);
+    const linkLabels = graphVector.d3Data?.links.map(l => l.label);
+    expect(linkLabels).toContain('10');
+    expect(linkLabels).toContain('5');
+    expect(linkLabels).toContain('2');
+  });
 });

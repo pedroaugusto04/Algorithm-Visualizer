@@ -66,7 +66,24 @@ export class RunCodeComponent implements OnDestroy {
   currentStep = signal<number>(-1);
   totalSteps = signal<number>(0);
   isPlaying = signal<boolean>(false);
-  readonly STEP_DELAY = 1000;
+  playbackSpeed = signal<number>(1);
+  readonly BASE_STEP_DELAY = 1000;
+
+  get stepDelay(): number {
+    return Math.round(this.BASE_STEP_DELAY / (this.playbackSpeed() || 1));
+  }
+
+  currentCallStack = computed(() => {
+    const step = this.currentStep();
+    if (step < 0 || !this.player) return null;
+    const entry = this.player.activeEntry(step);
+    if (!entry || !entry.func) return null;
+    return {
+      func: entry.func,
+      depth: entry.depth ?? 0,
+      frame: entry.frame ?? 0,
+    };
+  });
 
   private resumeTimeout: any;
   private sourceScrollContainer?: HTMLDivElement;
@@ -191,8 +208,17 @@ export class RunCodeComponent implements OnDestroy {
         this.pause();
         this.showOutputConsole();
       },
-      this.STEP_DELAY
+      this.stepDelay
     );
+  }
+
+  setPlaybackSpeed(speed: number): void {
+    if (!speed || speed <= 0) return;
+    this.playbackSpeed.set(speed);
+    if (this.isPlaying()) {
+      this.pause();
+      this.play();
+    }
   }
 
   togglePlay(): void {
@@ -214,14 +240,6 @@ export class RunCodeComponent implements OnDestroy {
     if (this.currentStep() < this.totalSteps() - 1) {
       this.goToStep(this.currentStep() + 1, false);
     }
-
-    if (isManual) {
-      this.resumeTimeout = setTimeout(() => {
-        if (this.currentStep() < this.totalSteps() - 1) {
-          this.play();
-        }
-      }, 1000);
-    }
   }
 
   prevStep(isManual = true): void {
@@ -233,14 +251,6 @@ export class RunCodeComponent implements OnDestroy {
 
     if (this.currentStep() > 0) {
       this.goToStep(this.currentStep() - 1, false);
-    }
-
-    if (isManual) {
-      this.resumeTimeout = setTimeout(() => {
-        if (this.currentStep() < this.totalSteps() - 1) {
-          this.play();
-        }
-      }, 1000);
     }
   }
 
@@ -387,7 +397,7 @@ export class RunCodeComponent implements OnDestroy {
       struct.isHighlighting = true;
       setTimeout(() => {
         struct.isHighlighting = false;
-      }, this.STEP_DELAY - 50);
+      }, Math.max(50, this.stepDelay - 50));
     }, 10);
   }
 
