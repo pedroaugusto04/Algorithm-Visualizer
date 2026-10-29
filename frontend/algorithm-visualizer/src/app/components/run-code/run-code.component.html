@@ -17,6 +17,7 @@
             </div>
 
             <div class="code-panel-fields">
+                @if (!executionStarted() || sourceEditorVisible()) {
                 <mat-form-field appearance="outline" class="w-100">
                     <mat-label>Language</mat-label>
                     <mat-select [formControl]="languageControl">
@@ -26,7 +27,6 @@
                     </mat-select>
                 </mat-form-field>
 
-                @if (!executionStarted() || sourceEditorVisible()) {
                 <div class="source-editor-field">
                     <mat-label class="f-s-12 f-w-600">Source Code</mat-label>
                     <mat-form-field appearance="outline" class="w-100 code-field">
@@ -34,6 +34,15 @@
                             (ngModelChange)="sourceCode.set($event)"></textarea>
                     </mat-form-field>
                 </div>
+                <mat-form-field appearance="outline" class="w-100 stdin-field">
+                    <mat-label>Standard input</mat-label>
+                    <textarea matInput rows="3" placeholder="Paste the input that would be read from stdin"
+                        [ngModel]="testCaseInput()" (ngModelChange)="testCaseInput.set($event)"></textarea>
+                </mat-form-field>
+
+                <button class="run-button" mat-flat-button color="warn" (click)="onRunCode()" [disabled]="isPlaying()">
+                    <mat-icon>play_arrow</mat-icon> RUN CODE
+                </button>
                 } @else {
                 <section class="source-preview" aria-label="Source code synchronized with execution">
                     <div class="source-preview-header">
@@ -52,16 +61,6 @@
                     </div>
                 </section>
                 }
-
-                <mat-form-field appearance="outline" class="w-100 stdin-field">
-                    <mat-label>Standard input</mat-label>
-                    <textarea matInput rows="3" placeholder="Paste the input that would be read from stdin"
-                        [ngModel]="testCaseInput()" (ngModelChange)="testCaseInput.set($event)"></textarea>
-                </mat-form-field>
-
-                <button class="run-button" mat-flat-button color="warn" (click)="onRunCode()" [disabled]="isPlaying()">
-                    <mat-icon>play_arrow</mat-icon> RUN CODE
-                </button>
             </div>
         </section>
 

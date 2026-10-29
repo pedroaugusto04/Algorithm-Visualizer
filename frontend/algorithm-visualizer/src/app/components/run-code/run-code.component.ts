@@ -94,7 +94,7 @@ export class RunCodeComponent implements OnDestroy {
   autoSwitchTabs = signal<boolean>(true);
   executionStarted = signal<boolean>(false);
   sourceEditorVisible = signal<boolean>(true);
-  outputConsoleExpanded = signal<boolean>(true);
+  outputConsoleExpanded = signal<boolean>(false);
 
   constructor(
     private codeService: CodeService,
@@ -110,6 +110,7 @@ export class RunCodeComponent implements OnDestroy {
 
     this.executionStarted.set(true);
     this.sourceEditorVisible.set(false);
+    this.outputConsoleExpanded.set(false);
     this.resetState();
     this.executionResult.set('Compiling and running...');
     this.executionWarnings.set([]);
@@ -181,8 +182,6 @@ export class RunCodeComponent implements OnDestroy {
     const firstStructureIndex = firstRoot ? this.structures.findIndex(s => s.path === firstRoot) : -1;
     if (firstStructureIndex >= 0) {
       this.selectStructureTab(firstStructureIndex);
-    } else if (this.autoSwitchTabs()) {
-      this.showOutputConsole();
     }
 
     this.play();
@@ -204,7 +203,6 @@ export class RunCodeComponent implements OnDestroy {
       },
       () => {
         this.pause();
-        this.showOutputConsole();
       },
       this.stepDelay
     );
@@ -269,9 +267,6 @@ export class RunCodeComponent implements OnDestroy {
     if (activeStructureIndex >= 0 && this.player.currentStep < this.totalSteps() - 1) {
       this.highlightStructure(this.structures[activeStructureIndex], activeStructureIndex);
     }
-    if (this.player.currentStep === this.totalSteps() - 1) {
-      this.showOutputConsole();
-    }
   }
 
   goFrom0ToStep(stepIndex: number): void {
@@ -294,10 +289,6 @@ export class RunCodeComponent implements OnDestroy {
       }
     }
     this.globalRenderer.renderElements(this.structures);
-  }
-
-  private showOutputConsole(): void {
-    this.outputConsoleExpanded.set(true);
   }
 
   private selectStructureTab(tabIndex: number): void {
