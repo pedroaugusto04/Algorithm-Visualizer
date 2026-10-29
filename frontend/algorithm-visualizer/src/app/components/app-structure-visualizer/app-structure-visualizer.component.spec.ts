@@ -27,7 +27,6 @@ describe('StructureVisualizerComponent', () => {
     const struct: StructureWindow = {
       path: 'nodes',
       type: 'array',
-      children: [],
       d3Data: {
         arrayData: [{ name: 'a', edge: { to: 2, weight: 7 } }],
         nodes: [],

@@ -95,6 +95,31 @@ describe('TracePlayer', () => {
     expect(player.seek(-50)).toBe(-1);
   });
 
+  it('computes exact changed paths between steps for diff highlighting', () => {
+    const entries: ExecutionLogEntry[] = [
+      { schema: 'av.event.v2', time: 1, type: 'array', path: 'arr', op: 'init', line: 1, value: [10, 20, 30] },
+      { schema: 'av.event.v2', time: 2, type: 'array', path: 'arr', op: 'snapshot', line: 2, value: [10, 99, 30] },
+      { schema: 'av.event.v2', time: 3, type: 'map', path: 'freq', op: 'init', line: 3, value: { 'a': 1 } },
+      { schema: 'av.event.v2', time: 4, type: 'map', path: 'freq', op: 'snapshot', line: 4, value: { 'a': 1, 'b': 2 } }
+    ];
+    const player = new TracePlayer(entries);
+
+    // Step 0: init arr
+    const initChanged = player.changedPathsAt(0);
+    expect(initChanged.has('arr')).toBeTrue();
+    expect(initChanged.has('arr[0]')).toBeTrue();
+
+    // Step 1: index 1 changed to 99
+    const step1Changed = player.changedPathsAt(1);
+    expect(step1Changed.has('arr[1]')).toBeTrue();
+    expect(step1Changed.has('arr[0]')).toBeFalse();
+    expect(step1Changed.has('arr[2]')).toBeFalse();
+
+    // Step 3: freq key 'b' added
+    const step3Changed = player.changedPathsAt(3);
+    expect(step3Changed.has('freq[b]')).toBeTrue();
+  });
+
   it('handles playback timer and completion', (done) => {
     const player = new TracePlayer(sampleEntries);
     player.seek(2); // one step before the end (totalSteps = 4, indices 0..3)

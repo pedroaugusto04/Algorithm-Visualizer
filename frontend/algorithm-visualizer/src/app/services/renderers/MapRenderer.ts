@@ -57,11 +57,19 @@ export class MapRenderer implements Renderer {
     allRows.transition().duration(200)
       .attr('transform', (_entry: any, index: number) => `translate(${left}, ${top + index * rowHeight})`);
 
+    const changed = d3Data.changedPaths as Set<string> | undefined;
+    const isChanged = (p: string) => changed?.has(p) ?? false;
+
     allRows.select('rect')
       .attr('width', keyWidth + valueWidth)
       .attr('height', rowHeight - 5)
-      .attr('stroke', (entry: any) => entry.path === d3Data.selectedValuePath ? '#ff9800' : '#d8dee8')
-      .attr('stroke-width', (entry: any) => entry.path === d3Data.selectedValuePath ? 2 : 1);
+      .attr('fill', (entry: any) => isChanged(entry.path) ? '#fef08a' : '#fff')
+      .attr('stroke', (entry: any) => {
+        if (entry.path === d3Data.selectedValuePath) return '#ff9800';
+        if (isChanged(entry.path)) return '#eab308';
+        return '#d8dee8';
+      })
+      .attr('stroke-width', (entry: any) => (entry.path === d3Data.selectedValuePath || isChanged(entry.path)) ? 2 : 1);
     allRows.select('line').attr('x1', keyWidth).attr('x2', keyWidth).attr('y1', 0).attr('y2', rowHeight - 5);
     allRows.select('.map-key').text((entry: any) => entry.key);
     allRows.select('.map-value').attr('x', keyWidth + 12).text((entry: any) => display(entry.value).slice(0, 100));

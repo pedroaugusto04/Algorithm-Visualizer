@@ -108,11 +108,23 @@ export class GraphRenderer implements Renderer {
         // sincroniza valor
         nodeSelection.select('text.node-text').text((d: any) => this.nodeLabel(d));
 
+        const changed = d3Data.changedPaths as Set<string> | undefined;
+        const isChangedNode = (d: any) =>
+            (d.structuredValuePath && changed?.has(d.structuredValuePath)) ||
+            (d.id && changed?.has(`${d3Data.ownerPath}[${d.id}]`));
+
         // sincroniza cor
         nodeSelection.select('circle')
-            .attr('fill', (d: any) => (d.color || 'steelblue'))
-            .attr('stroke', (d: any) => d.structuredValuePath === d3Data.selectedValuePath ? '#ff9800' : '#fff')
-            .attr('stroke-width', (d: any) => d.structuredValuePath === d3Data.selectedValuePath ? 3 : 1.5);
+            .attr('fill', (d: any) => isChangedNode(d) ? '#f59e0b' : (d.color || 'steelblue'))
+            .attr('stroke', (d: any) => {
+                if (d.structuredValuePath === d3Data.selectedValuePath) return '#ff9800';
+                if (isChangedNode(d)) return '#ca8a04';
+                return '#fff';
+            })
+            .attr('stroke-width', (d: any) => {
+                if (d.structuredValuePath === d3Data.selectedValuePath || isChangedNode(d)) return 3;
+                return 1.5;
+            });
 
         d3Data.simulation.nodes(d3Data.nodes);
         d3Data.simulation.force('link').links(d3Data.links);

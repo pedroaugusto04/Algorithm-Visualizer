@@ -94,6 +94,13 @@ export class TracePlayer {
     return entry ? this.extractRootPath(entry.path) : null;
   }
 
+  /** Maps an operations-step index to the corresponding index in `this.entries`. */
+  entryIndexForStep(step: number = this._currentStep): number {
+    if (step < 0 || step >= this.operations.length) return -1;
+    const op = this.operations[step];
+    return (this.entries as ExecutionLogEntry[]).indexOf(op);
+  }
+
   stateAt(step: number, rootPath: string): StructureStateSnapshot | null {
     const known = this.knownStructures.get(rootPath);
     if (!known) return null;
@@ -204,6 +211,70 @@ export class TracePlayer {
       difference.startsWith('[') || difference.startsWith('.') ? `${rootPath}${difference}` : difference
     );
     return `${formatted.join(' · ')}${suffix}`;
+  }
+
+  changedPathsAt(step: number = this._currentStep): Set<string> {
+    const paths = new Set<string>();
+    if (step < 0 || step >= this.entries.length) return paths;
+
+    const entry = this.entries[step];
+    const rootPath = this.extractRootPath(entry.path);
+
+    // For init events, everything is new — compare against undefined
+    if (entry.op === 'init') {
+      this.collectChangedPaths(undefined, entry.value, rootPath, paths);
+      return paths;
+    }
+
+    // Find the most recent prior entry for this rootPath
+    let previous: unknown = this.knownStructures.get(rootPath)?.initialValue;
+    for (let i = step - 1; i >= 0; i--) {
+      if (this.extractRootPath(this.entries[i].path) === rootPath && this.entries[i].op !== 'exit') {
+        previous = this.entries[i].value;
+        break;
+      }
+    }
+
+    this.collectChangedPaths(previous, entry.value, rootPath, paths);
+    return paths;
+  }
+
+  private collectChangedPaths(previous: unknown, current: unknown, path: string, result: Set<string>): void {
+    if (previous !== undefined && JSON.stringify(previous) === JSON.stringify(current)) return;
+    result.add(path);
+
+    if (Array.isArray(previous) && Array.isArray(current)) {
+      const length = Math.max(previous.length, current.length);
+      for (let i = 0; i < length; i++) {
+        const nextPath = `${path}[${i}]`;
+        if (i >= previous.length || i >= current.length || JSON.stringify(previous[i]) !== JSON.stringify(current[i])) {
+          result.add(nextPath);
+          this.collectChangedPaths(previous[i], current[i], nextPath, result);
+        }
+      }
+      return;
+    }
+
+    // When previous is undefined/null, mark all children of current as changed
+    if (previous === undefined || previous === null) {
+      if (Array.isArray(current)) {
+        current.forEach((_, i) => result.add(`${path}[${i}]`));
+      } else if (this.isRecord(current)) {
+        Object.keys(current).forEach(key => result.add(`${path}[${key}]`));
+      }
+      return;
+    }
+
+    if (this.isRecord(previous) && this.isRecord(current)) {
+      const keys = new Set([...Object.keys(previous), ...Object.keys(current)]);
+      for (const key of keys) {
+        const nextPath = `${path}[${key}]`;
+        if (!(key in previous) || !(key in current) || JSON.stringify(previous[key]) !== JSON.stringify(current[key])) {
+          result.add(nextPath);
+          this.collectChangedPaths(previous[key], current[key], nextPath, result);
+        }
+      }
+    }
   }
 
   seek(step: number): number {

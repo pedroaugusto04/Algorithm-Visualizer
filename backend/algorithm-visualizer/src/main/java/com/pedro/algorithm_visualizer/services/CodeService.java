@@ -11,6 +11,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,7 @@ public class CodeService {
     /** Bounds simultaneous container pipelines; each run can use up to 2 GB while instrumenting. */
     private final Semaphore runSlots;
 
+    @Autowired
     public CodeService(
             ContainerStepRunner stepRunner,
             @Value("${av.execution.max-concurrent:2}") int maxConcurrentRuns

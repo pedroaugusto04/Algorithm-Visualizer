@@ -91,11 +91,19 @@ export class ArrayRenderer implements Renderer {
       }
     );
 
+    const changed = d3Data.changedPaths as Set<string> | undefined;
+    const isChanged = (p: string) => changed?.has(p) ?? false;
+
     allCells.select('rect')
       .attr('width', cellWidth)
       .attr('height', cellHeight)
-      .attr('stroke', (d: any) => d.valuePath === d3Data.selectedValuePath ? '#ff9800' : '#333')
-      .attr('stroke-width', (d: any) => d.valuePath === d3Data.selectedValuePath ? 3 : 2);
+      .attr('fill', (d: any) => isChanged(d.valuePath) ? '#fef08a' : '#fff')
+      .attr('stroke', (d: any) => {
+        if (d.valuePath === d3Data.selectedValuePath) return '#ff9800';
+        if (isChanged(d.valuePath)) return '#eab308';
+        return '#333';
+      })
+      .attr('stroke-width', (d: any) => (d.valuePath === d3Data.selectedValuePath || isChanged(d.valuePath)) ? 3 : 2);
     allCells.select('text.cell-text').attr('x', cellWidth / 2);
     allCells.select('text.index-text').attr('x', cellWidth / 2);
     allCells.style('cursor', (d: any) => isStructuredValue(d.value) ? 'pointer' : 'default')

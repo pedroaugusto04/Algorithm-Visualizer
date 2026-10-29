@@ -1,4 +1,4 @@
-import { Component, computed, signal, OnDestroy, ElementRef, ViewChild } from '@angular/core';
+import { Component, computed, signal, OnDestroy, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,8 +12,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { CodeService } from 'src/app/services/code.service';
 import { ExecuteCodeResponse } from 'src/app/models/Responses/ExecuteCodeResponse';
 import { ExecutionLogEntry } from 'src/app/models/ExecutionLogEntry';
-import { StructureWindow } from 'src/app/models/StructureWindow';
-import { AlgorithmUtilsService } from 'src/app/services/utils/algorithms/algorithm-utils.service';
+import { StructureWindow, createStructureWindow } from 'src/app/models/StructureWindow';
 import { StructureVisualizerComponent } from '../app-structure-visualizer/app-structure-visualizer.component';
 import { GlobalRenderer } from 'src/app/services/renderers/GlobalRenderer';
 import { applySnapshotToStructure } from 'src/app/services/renderers/view-model-builder';
@@ -98,7 +97,6 @@ export class RunCodeComponent implements OnDestroy {
 
   constructor(
     private codeService: CodeService,
-    private algorithmUtilsService: AlgorithmUtilsService,
     private swalService: SwalService,
     private globalRenderer: GlobalRenderer
   ) { }
@@ -173,10 +171,9 @@ export class RunCodeComponent implements OnDestroy {
 
     this.structures = [];
     for (const known of this.player.structures) {
-      const struct = this.algorithmUtilsService.getOrCreateStructure(this.structures, known.path, known.type);
-      if (struct) {
-        applySnapshotToStructure(struct, known.initialValue, struct.viewMode);
-      }
+      const struct = createStructureWindow(known.path, known.type);
+      applySnapshotToStructure(struct, known.initialValue, struct.viewMode);
+      this.structures.push(struct);
     }
 
     const firstRoot = this.player.activeRootPath(0);
@@ -283,11 +280,16 @@ export class RunCodeComponent implements OnDestroy {
   private syncStructuresToStep(step: number): void {
     if (!this.player) return;
     const states = this.player.allStatesAt(step);
+    const changedPaths = this.player.changedPathsAt(this.player.entryIndexForStep(step));
     for (const struct of this.structures) {
       const state = states.get(struct.path);
       if (state) {
         struct.initialized = state.active;
         applySnapshotToStructure(struct, state.value, struct.viewMode);
+      }
+      if (struct.d3Data) {
+        struct.d3Data.ownerPath = struct.path;
+        struct.d3Data.changedPaths = changedPaths;
       }
     }
     this.globalRenderer.renderElements(this.structures);
@@ -360,14 +362,26 @@ export class RunCodeComponent implements OnDestroy {
     this.executionSettingsVisible.set(true);
   }
 
-  onPaste(event: ClipboardEvent): void {
-    event.preventDefault();
-    let text = event.clipboardData?.getData('text') ?? '';
-    text = text
-      .replace(/\\r\\n/g, '\n')
-      .replace(/\\n/g, '\n')
-      .replace(/\\"/g, '"');
-    this.sourceCode.set(text);
+  @HostListener('window:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (this.totalSteps() <= 0) return;
+
+    // Do not intercept if user is typing in an input or textarea
+    const target = event.target as HTMLElement | null;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      return;
+    }
+
+    if (event.code === 'Space') {
+      event.preventDefault();
+      this.togglePlay();
+    } else if (event.code === 'ArrowRight') {
+      event.preventDefault();
+      this.nextStep();
+    } else if (event.code === 'ArrowLeft') {
+      event.preventDefault();
+      this.prevStep();
+    }
   }
 
   onSliderInput(stepIndex: number): void {
