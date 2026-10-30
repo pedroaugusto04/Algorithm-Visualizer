@@ -41,6 +41,7 @@ import { TracePlayer } from 'src/app/services/trace/trace-player';
 })
 export class RunCodeComponent implements OnDestroy, OnInit {
   private zone = inject(NgZone);
+  private hostElement = inject(ElementRef<HTMLElement>);
   @ViewChild('sourceLinesContainer')
   set sourceLinesContainerRef(ref: ElementRef<HTMLDivElement> | undefined) {
     this.sourceScrollContainer = ref?.nativeElement;
@@ -149,8 +150,9 @@ export class RunCodeComponent implements OnDestroy, OnInit {
         this.sourceCode.set(shared.code);
         this.testCaseInput.set(shared.testcase);
         this.languageControl.setValue(shared.language);
-        this.onRunCode();
       });
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      this.zone.run(() => this.hostElement.nativeElement.querySelector<HTMLButtonElement>('.run-button')?.click());
     } catch {
       this.shareNotice.set('The shared execution link is invalid.');
     }
