@@ -1,4 +1,4 @@
-import { Component, computed, signal, OnDestroy, OnInit, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { Component, computed, signal, OnDestroy, OnInit, ElementRef, ViewChild, HostListener, NgZone, inject } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -40,6 +40,7 @@ import { TracePlayer } from 'src/app/services/trace/trace-player';
   styleUrls: ['./run-code.component.scss']
 })
 export class RunCodeComponent implements OnDestroy, OnInit {
+  private zone = inject(NgZone);
   @ViewChild('sourceLinesContainer')
   set sourceLinesContainerRef(ref: ElementRef<HTMLDivElement> | undefined) {
     this.sourceScrollContainer = ref?.nativeElement;
@@ -143,11 +144,13 @@ export class RunCodeComponent implements OnDestroy, OnInit {
           || typeof shared.testcase !== 'string' || !['cpp17', 'cpp20', 'cpp23'].includes(shared.language)) return;
       if (new TextEncoder().encode(shared.code).length > 200_000
           || new TextEncoder().encode(shared.testcase).length > 1_048_576) return;
-      this.sourceCode.set(shared.code);
-      this.testCaseInput.set(shared.testcase);
-      this.languageControl.setValue(shared.language);
       await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-      this.onRunCode();
+      this.zone.run(() => {
+        this.sourceCode.set(shared.code);
+        this.testCaseInput.set(shared.testcase);
+        this.languageControl.setValue(shared.language);
+        this.onRunCode();
+      });
     } catch {
       this.shareNotice.set('The shared execution link is invalid.');
     }
