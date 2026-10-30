@@ -146,6 +146,7 @@ export class RunCodeComponent implements OnDestroy, OnInit {
       this.sourceCode.set(shared.code);
       this.testCaseInput.set(shared.testcase);
       this.languageControl.setValue(shared.language);
+      setTimeout(() => this.onRunCode(), 0);
     } catch {
       this.shareNotice.set('The shared execution link is invalid.');
     }
