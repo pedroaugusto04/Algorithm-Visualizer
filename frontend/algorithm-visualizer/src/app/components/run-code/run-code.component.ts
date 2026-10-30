@@ -130,11 +130,15 @@ export class RunCodeComponent implements OnDestroy, OnInit {
     private globalRenderer: GlobalRenderer
   ) { }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     const prefix = '#av-run=';
     if (!window.location.hash.startsWith(prefix)) return;
     try {
-      const shared = JSON.parse(decodeURIComponent(window.location.hash.slice(prefix.length)));
+      const encodedPayload = window.location.hash.slice(prefix.length);
+      const sharedJson = encodedPayload.startsWith('z:')
+        ? await this.decompressSharePayload(encodedPayload.slice(2))
+        : decodeURIComponent(encodedPayload);
+      const shared = JSON.parse(sharedJson);
       if (shared?.version !== 1 || typeof shared.code !== 'string'
           || typeof shared.testcase !== 'string' || !['cpp17', 'cpp20', 'cpp23'].includes(shared.language)) return;
       if (new TextEncoder().encode(shared.code).length > 200_000
@@ -154,7 +158,8 @@ export class RunCodeComponent implements OnDestroy, OnInit {
       code: this.sourceCode(),
       testcase: this.testCaseInput()
     };
-    const url = `${window.location.href.split('#')[0]}#av-run=${encodeURIComponent(JSON.stringify(payload))}`;
+    const compressed = await this.compressSharePayload(JSON.stringify(payload));
+    const url = `${window.location.href.split('#')[0]}#av-run=z:${compressed}`;
     if (url.length > 8_000) {
       this.shareNotice.set('This code is too large for a shareable link.');
       this.sharedUrl.set('');
@@ -168,6 +173,22 @@ export class RunCodeComponent implements OnDestroy, OnInit {
       this.sharedUrl.set(url);
       this.shareNotice.set('Copy this link to share the code and input.');
     }
+  }
+
+  private async compressSharePayload(value: string): Promise<string> {
+    const stream = new Blob([value]).stream().pipeThrough(new CompressionStream('gzip'));
+    const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
+
+  private async decompressSharePayload(value: string): Promise<string> {
+    const base64 = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return new Response(stream).text();
   }
 
   onRunCode(): void {
