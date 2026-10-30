@@ -1,4 +1,4 @@
-import { Component, computed, signal, OnDestroy, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { Component, computed, signal, OnDestroy, OnInit, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -39,7 +39,7 @@ import { TracePlayer } from 'src/app/services/trace/trace-player';
   templateUrl: './run-code.component.html',
   styleUrls: ['./run-code.component.scss']
 })
-export class RunCodeComponent implements OnDestroy {
+export class RunCodeComponent implements OnDestroy, OnInit {
   @ViewChild('sourceLinesContainer')
   set sourceLinesContainerRef(ref: ElementRef<HTMLDivElement> | undefined) {
     this.sourceScrollContainer = ref?.nativeElement;
@@ -57,6 +57,8 @@ export class RunCodeComponent implements OnDestroy {
   executionResult = signal<string>('');
   executionWarnings = signal<string[]>([]);
   isTraceTruncated = signal<boolean>(false);
+  shareNotice = signal<string>('');
+  sharedUrl = signal<string>('');
 
   entries: ExecutionLogEntry[] = [];
   player: TracePlayer | null = null;
@@ -127,6 +129,46 @@ export class RunCodeComponent implements OnDestroy {
     private swalService: SwalService,
     private globalRenderer: GlobalRenderer
   ) { }
+
+  ngOnInit(): void {
+    const prefix = '#av-run=';
+    if (!window.location.hash.startsWith(prefix)) return;
+    try {
+      const shared = JSON.parse(decodeURIComponent(window.location.hash.slice(prefix.length)));
+      if (shared?.version !== 1 || typeof shared.code !== 'string'
+          || typeof shared.testcase !== 'string' || !['cpp17', 'cpp20', 'cpp23'].includes(shared.language)) return;
+      if (new TextEncoder().encode(shared.code).length > 200_000
+          || new TextEncoder().encode(shared.testcase).length > 1_048_576) return;
+      this.sourceCode.set(shared.code);
+      this.testCaseInput.set(shared.testcase);
+      this.languageControl.setValue(shared.language);
+    } catch {
+      this.shareNotice.set('The shared execution link is invalid.');
+    }
+  }
+
+  async shareExecution(): Promise<void> {
+    const payload = {
+      version: 1,
+      language: this.languageControl.value,
+      code: this.sourceCode(),
+      testcase: this.testCaseInput()
+    };
+    const url = `${window.location.href.split('#')[0]}#av-run=${encodeURIComponent(JSON.stringify(payload))}`;
+    if (url.length > 8_000) {
+      this.shareNotice.set('This code is too large for a shareable link.');
+      this.sharedUrl.set('');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      this.sharedUrl.set('');
+      this.shareNotice.set('Reproducible link copied.');
+    } catch {
+      this.sharedUrl.set(url);
+      this.shareNotice.set('Copy this link to share the code and input.');
+    }
+  }
 
   onRunCode(): void {
     if (!this.sourceCode() || !this.languageControl.value) {

@@ -1,6 +1,7 @@
 :host {
     display: block;
-    height: 100%;
+    flex: 1 1 0;
+    height: auto;
     min-height: 0;
     width: 100%;
 }
@@ -17,11 +18,13 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    flex: 1 1 auto;
-    min-height: 160px;
+    flex: 1 1 0;
+    height: 0;
+    min-height: 0;
     width: 100%;
     background-color: #E0E0E0;
     position: relative;
+    overflow: hidden;
 }
 
 .graph-node-tooltip {

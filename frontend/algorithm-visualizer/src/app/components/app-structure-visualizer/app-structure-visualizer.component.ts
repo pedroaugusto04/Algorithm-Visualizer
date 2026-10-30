@@ -6,6 +6,7 @@ import {
   ViewChild,
   SimpleChanges,
   OnChanges,
+  OnDestroy,
   inject,
   NgZone
 } from '@angular/core';
@@ -23,21 +24,33 @@ import { StructuredValueSelection } from '../../models/StructuredValueSelection'
   templateUrl: './app-structure-visualizer.component.html',
   styleUrls: ['./app-structure-visualizer.component.scss']
 })
-export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
+export class StructureVisualizerComponent implements AfterViewInit, OnChanges, OnDestroy {
 
   @ViewChild('graphContainer', { static: true }) graphContainer!: ElementRef<HTMLDivElement>;
   svg: any;
   @Input() struct!: StructureWindow;
 
+  private resizeObserver: ResizeObserver | null = null;
+  private renderedWidth = 0;
+  private renderedHeight = 0;
   private globalRenderer = inject(GlobalRenderer);
   private zone = inject(NgZone);
   selectedValueTree: JsonValueTreeNode | null = null;
   hoveredNodeTooltip: { title: string; content: string; left: number; top: number } | null = null;
 
   ngAfterViewInit() {
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.resizeVisualizer());
+      this.resizeObserver.observe(this.graphContainer.nativeElement);
+    }
     setTimeout(() => {
-      this.renderizeSvg();
+      this.resizeVisualizer();
     }, 0);
+  }
+
+  ngOnDestroy(): void {
+    this.resizeObserver?.disconnect();
+    this.struct?.d3Data?.simulation?.stop();
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -51,8 +64,11 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
     if (!this.struct) return;
 
     const container = this.graphContainer.nativeElement;
-    const width = container.clientWidth || 800;
-    const height = container.clientHeight || 600;
+    const bounds = container.getBoundingClientRect();
+    const isGraph = this.struct.viewMode === 'graph';
+    const width = bounds.width || (isGraph ? 0 : 800);
+    const height = bounds.height || (isGraph ? 0 : 600);
+    if (width <= 0 || height <= 0) return;
 
     d3.select(container).selectAll('svg').remove();
 
@@ -62,7 +78,14 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
     this.svg = d3.select(container)
       .append('svg')
       .attr('width', '100%')
-      .attr('height', '100%');
+      .attr('height', '100%')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'none')
+      .style('position', 'absolute')
+      .style('inset', '0')
+      .style('display', 'block');
+    this.renderedWidth = width;
+    this.renderedHeight = height;
 
     const simulation = d3.forceSimulation(nodes)
       .force('link', d3.forceLink(links).id((d: any) => d.id).distance(100))
@@ -109,6 +132,28 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
     this.globalRenderer.renderElements([this.struct]);
   }
 
+  private resizeVisualizer(): void {
+    if (!this.struct) return;
+    const bounds = this.graphContainer.nativeElement.getBoundingClientRect();
+    const width = bounds.width;
+    const height = bounds.height;
+    if (width <= 0 || height <= 0) return;
+    if (!this.svg || !this.struct.d3Data?.simulation) {
+      this.renderizeSvg();
+      return;
+    }
+    if (width === this.renderedWidth && height === this.renderedHeight) return;
+
+    this.renderedWidth = width;
+    this.renderedHeight = height;
+    this.svg
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'none');
+    this.struct.d3Data.width = width;
+    this.struct.d3Data.height = height;
+    this.globalRenderer.renderElements([this.struct]);
+  }
+
   closeSelectedValue(): void {
     if (this.struct.d3Data) {
       this.struct.d3Data.selectedValuePath = undefined;
@@ -135,7 +180,11 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges {
 
   private destroy() {
     this.hoveredNodeTooltip = null;
+    this.struct?.d3Data?.simulation?.stop();
     d3.select(this.graphContainer.nativeElement).selectAll('*').remove();
+    this.svg = null;
+    this.renderedWidth = 0;
+    this.renderedHeight = 0;
   }
 
 }
