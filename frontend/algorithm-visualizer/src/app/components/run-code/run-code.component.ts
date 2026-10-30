@@ -152,7 +152,10 @@ export class RunCodeComponent implements OnDestroy, OnInit {
         this.languageControl.setValue(shared.language);
       });
       await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-      this.zone.run(() => this.hostElement.nativeElement.querySelector<HTMLButtonElement>('.run-button')?.click());
+      this.zone.run(() => {
+        const runButton = this.hostElement.nativeElement.querySelector('.run-button') as HTMLButtonElement | null;
+        runButton?.click();
+      });
     } catch {
       this.shareNotice.set('The shared execution link is invalid.');
     }
