@@ -40,6 +40,8 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      runner:
+        condition: service_completed_successfully
     healthcheck:
       test:
         - CMD-SHELL
@@ -55,8 +57,7 @@ services:
       context: ./backend/algorithm-visualizer
       dockerfile: Dockerfile-Instrumenter
     restart: "no"
-    profiles:
-      - tools
+    entrypoint: ["/bin/sh", "-c", "command -v av-instrumenter >/dev/null && test -x /usr/local/bin/av-runner"]
 
 volumes:
   av_mysql_data:

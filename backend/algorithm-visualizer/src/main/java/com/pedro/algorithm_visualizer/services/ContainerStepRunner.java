@@ -75,7 +75,7 @@ class ContainerStepRunner {
         // forwarded to the container, which would otherwise keep running (and consuming CPU) orphaned.
         String containerName = "av-" + mode + "-" + UUID.randomUUID();
         Process process = new ProcessBuilder(
-                "docker", "run", "--rm", "--name", containerName, "--network", "none", "--cpus", "1",
+                "docker", "run", "--pull", "never", "--rm", "--name", containerName, "--network", "none", "--cpus", "1",
                 "--memory", memoryLimit, "--pids-limit", "256",
                 "--security-opt", "no-new-privileges", "--cap-drop", "ALL",
                 "-v", workspace.toAbsolutePath() + ":/work",

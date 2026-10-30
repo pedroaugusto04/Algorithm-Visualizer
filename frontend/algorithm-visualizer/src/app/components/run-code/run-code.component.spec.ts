@@ -82,4 +82,45 @@ describe('RunCodeComponent', () => {
     expect(component.structures.find(item => item.path === 'frequency')?.d3Data?.nodes.slice(1)
       .map(node => node.value)).toEqual(['1: 2', '2: 1']);
   });
+
+  it('parses compact array format correctly', () => {
+    const compactJson = JSON.stringify([1, 1, 'int main() {}', 'input42']);
+    const parsed = component.parseSharedPayload(compactJson);
+    expect(parsed).toEqual({
+      language: 'cpp20',
+      code: 'int main() {}',
+      testcase: 'input42'
+    });
+  });
+
+  it('parses legacy object format correctly', () => {
+    const legacyJson = JSON.stringify({
+      version: 1,
+      language: 'cpp23',
+      code: 'int x = 1;',
+      testcase: ''
+    });
+    const parsed = component.parseSharedPayload(legacyJson);
+    expect(parsed).toEqual({
+      language: 'cpp23',
+      code: 'int x = 1;',
+      testcase: ''
+    });
+  });
+
+  it('loads and runs code automatically when a valid share hash is present', async () => {
+    const runSpy = spyOn(component, 'onRunCode');
+    const payload = JSON.stringify([1, 0, 'int main(){return 0;}', '5']);
+    const compressed = await component['compressSharePayload'](payload);
+    window.location.hash = `#s=${compressed}`;
+
+    await component['loadFromHash']();
+
+    expect(component.sourceCode()).toBe('int main(){return 0;}');
+    expect(component.testCaseInput()).toBe('5');
+    expect(component.languageControl.value).toBe('cpp17');
+    expect(runSpy).toHaveBeenCalled();
+
+    window.location.hash = '';
+  });
 });

@@ -1,6 +1,6 @@
 import { Component, computed, signal, OnDestroy, OnInit, ElementRef, ViewChild, HostListener, NgZone, inject } from '@angular/core';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -41,6 +41,7 @@ import { TracePlayer } from 'src/app/services/trace/trace-player';
 })
 export class RunCodeComponent implements OnDestroy, OnInit {
   private zone = inject(NgZone);
+  private location = inject(Location);
   private hostElement = inject(ElementRef<HTMLElement>);
   @ViewChild('sourceLinesContainer')
   set sourceLinesContainerRef(ref: ElementRef<HTMLDivElement> | undefined) {
@@ -133,43 +134,105 @@ export class RunCodeComponent implements OnDestroy, OnInit {
   ) { }
 
   async ngOnInit(): Promise<void> {
-    const prefix = '#av-run=';
-    if (!window.location.hash.startsWith(prefix)) return;
+    await this.loadFromHash();
+  }
+
+  @HostListener('window:hashchange')
+  async onHashChange(): Promise<void> {
+    await this.loadFromHash();
+  }
+
+  private async loadFromHash(): Promise<void> {
+    const hash = window.location.hash;
+    let rawPayload = '';
+
+    if (hash.startsWith('#s=')) {
+      rawPayload = hash.slice(3);
+    } else if (hash.startsWith('#run=')) {
+      rawPayload = hash.slice(5);
+    } else if (hash.startsWith('#av-run=')) {
+      rawPayload = hash.slice(8);
+    } else {
+      return;
+    }
+
+    if (!rawPayload) return;
+
     try {
-      const encodedPayload = window.location.hash.slice(prefix.length);
-      const sharedJson = encodedPayload.startsWith('z:')
-        ? await this.decompressSharePayload(encodedPayload.slice(2))
-        : decodeURIComponent(encodedPayload);
-      const shared = JSON.parse(sharedJson);
-      if (shared?.version !== 1 || typeof shared.code !== 'string'
-          || typeof shared.testcase !== 'string' || !['cpp17', 'cpp20', 'cpp23'].includes(shared.language)) return;
-      if (new TextEncoder().encode(shared.code).length > 200_000
-          || new TextEncoder().encode(shared.testcase).length > 1_048_576) return;
-      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const isCompressed = rawPayload.startsWith('z:') || hash.startsWith('#s=');
+      const json = isCompressed
+        ? await this.decompressSharePayload(rawPayload)
+        : decodeURIComponent(rawPayload);
+
+      const parsed = this.parseSharedPayload(json);
+      if (!parsed) {
+        this.zone.run(() => this.shareNotice.set('The shared execution link is invalid.'));
+        return;
+      }
+
+      if (new TextEncoder().encode(parsed.code).length > 200_000
+          || new TextEncoder().encode(parsed.testcase).length > 1_048_576) {
+        this.zone.run(() => this.shareNotice.set('The shared code is too large to execute.'));
+        return;
+      }
+
       this.zone.run(() => {
-        this.sourceCode.set(shared.code);
-        this.testCaseInput.set(shared.testcase);
-        this.languageControl.setValue(shared.language);
-      });
-      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-      this.zone.run(() => {
-        const runButton = this.hostElement.nativeElement.querySelector('.run-button') as HTMLButtonElement | null;
-        runButton?.click();
+        this.sourceCode.set(parsed.code);
+        this.testCaseInput.set(parsed.testcase);
+        this.languageControl.setValue(parsed.language);
+        this.onRunCode();
       });
     } catch {
-      this.shareNotice.set('The shared execution link is invalid.');
+      this.zone.run(() => this.shareNotice.set('The shared execution link is invalid.'));
     }
   }
 
+  parseSharedPayload(json: string): { language: 'cpp17' | 'cpp20' | 'cpp23'; code: string; testcase: string } | null {
+    try {
+      const data = JSON.parse(json);
+      const langList: ('cpp17' | 'cpp20' | 'cpp23')[] = ['cpp17', 'cpp20', 'cpp23'];
+
+      // Compact array format: [version, langIdx, code, testcase?]
+      if (Array.isArray(data) && data[0] === 1 && typeof data[1] === 'number' && typeof data[2] === 'string') {
+        const language = langList[data[1]] || 'cpp17';
+        const code = data[2];
+        const testcase = typeof data[3] === 'string' ? data[3] : '';
+        return { language, code, testcase };
+      }
+
+      // Legacy object format: { version: 1, language, code, testcase }
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        if (data.version === 1 && typeof data.code === 'string') {
+          const language = langList.includes(data.language) ? data.language : 'cpp17';
+          const testcase = typeof data.testcase === 'string' ? data.testcase : '';
+          return { language, code: data.code, testcase };
+        }
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
   async shareExecution(): Promise<void> {
-    const payload = {
-      version: 1,
-      language: this.languageControl.value,
-      code: this.sourceCode(),
-      testcase: this.testCaseInput()
-    };
+    const language = this.languageControl.value || 'cpp17';
+    const code = this.sourceCode();
+    const testcase = this.testCaseInput();
+
+    const langList: ('cpp17' | 'cpp20' | 'cpp23')[] = ['cpp17', 'cpp20', 'cpp23'];
+    const langIndex = langList.indexOf(language);
+    // Compact format: [1, langIndex, code] or [1, langIndex, code, testcase]
+    const payload = testcase
+      ? [1, langIndex >= 0 ? langIndex : 0, code, testcase]
+      : [1, langIndex >= 0 ? langIndex : 0, code];
+
     const compressed = await this.compressSharePayload(JSON.stringify(payload));
-    const url = `${window.location.href.split('#')[0]}#av-run=z:${compressed}`;
+    const runCodePath = this.location.prepareExternalUrl('/run-code');
+    const base = new URL(runCodePath, window.location.origin);
+    base.hash = `s=${compressed}`;
+    const url = base.href;
+
     if (url.length > 8_000) {
       this.shareNotice.set('This code is too large for a shareable link.');
       this.sharedUrl.set('');
@@ -185,20 +248,50 @@ export class RunCodeComponent implements OnDestroy, OnInit {
     }
   }
 
-  private async compressSharePayload(value: string): Promise<string> {
-    const stream = new Blob([value]).stream().pipeThrough(new CompressionStream('gzip'));
-    const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  private bytesToBase64Url(bytes: Uint8Array): string {
     let binary = '';
-    for (const byte of bytes) binary += String.fromCharCode(byte);
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+    }
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   }
 
-  private async decompressSharePayload(value: string): Promise<string> {
-    const base64 = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
+  private base64UrlToBytes(base64Url: string): Uint8Array {
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - base64Url.length % 4) % 4);
     const binary = atob(base64);
-    const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
-    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-    return new Response(stream).text();
+    return Uint8Array.from(binary, character => character.charCodeAt(0));
+  }
+
+  private async compressSharePayload(value: string): Promise<string> {
+    try {
+      const stream = new Blob([value]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+      const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+      return this.bytesToBase64Url(bytes);
+    } catch {
+      const stream = new Blob([value]).stream().pipeThrough(new CompressionStream('gzip'));
+      const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+      return 'z:' + this.bytesToBase64Url(bytes);
+    }
+  }
+
+  private async decompressSharePayload(value: string): Promise<string> {
+    const isGzip = value.startsWith('z:');
+    const raw = isGzip ? value.slice(2) : value;
+    const bytes = this.base64UrlToBytes(raw);
+
+    if (isGzip) {
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      return new Response(stream).text();
+    }
+
+    try {
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return await new Response(stream).text();
+    } catch {
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+      return await new Response(stream).text();
+    }
   }
 
   onRunCode(): void {

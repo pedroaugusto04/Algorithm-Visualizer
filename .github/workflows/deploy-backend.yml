@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'backend/**'
+      - 'contracts/**'
       - 'scripts/deploy/**'
       - 'docker-compose.prod.yml'
       - '.github/workflows/deploy-backend.yml'
@@ -123,8 +124,5 @@ jobs:
             git checkout -B main origin/main
             git reset --hard origin/main
             cp backend.env .env.prod
-            sudo docker compose --env-file .env.prod -f docker-compose.prod.yml build --pull --no-cache runner
-            sudo docker run --rm --entrypoint /bin/sh pedroaug4/algo-runner:latest -c \
-              'command -v av-instrumenter >/dev/null && test -x /usr/local/bin/av-runner'
-            sudo docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build --remove-orphans mysql api
-            sudo docker image prune -f
+            chmod +x scripts/deploy/deploy-backend.sh
+            bash scripts/deploy/deploy-backend.sh .env.prod docker-compose.prod.yml
