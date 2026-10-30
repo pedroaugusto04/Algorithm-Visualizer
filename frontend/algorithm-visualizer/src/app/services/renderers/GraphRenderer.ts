@@ -79,7 +79,7 @@ export class GraphRenderer implements Renderer {
                     .attr('dy', '.35em')
                     .attr('fill', '#fff')
                     .style('font-family', 'sans-serif')
-                    .style('font-size', '12px')
+                    .style('font-size', '14px')
                     .style('pointer-events', 'none')
                     .style('user-select', 'none');
 
@@ -155,8 +155,7 @@ export class GraphRenderer implements Renderer {
     }
 
     private nodeLabel(node: any): string {
-        const label = String(node?.label ?? (node?.structuredValue !== undefined ? node?.id : node?.value ?? node?.id ?? ''));
-        return label.length > 10 ? `${label.slice(0, 9)}…` : label;
+        return String(node?.label ?? node?.id ?? 'Node');
     }
 
     private getDimensions(svg: any): { width: number, height: number } {
