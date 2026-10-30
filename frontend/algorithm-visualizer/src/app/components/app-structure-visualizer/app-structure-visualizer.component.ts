@@ -16,6 +16,7 @@ import { GlobalRenderer } from '../../services/renderers/GlobalRenderer';
 import { JsonValueTreeComponent } from '../json-value-tree/json-value-tree.component';
 import { JsonValueTreeNode, projectJsonValueTree } from '../../services/renderers/json-value-tree';
 import { StructuredValueSelection } from '../../models/StructuredValueSelection';
+import { JsonValue } from '../../models/ExecutionLogEntry';
 
 @Component({
   selector: 'app-structure-visualizer',
@@ -36,7 +37,7 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges, O
   private globalRenderer = inject(GlobalRenderer);
   private zone = inject(NgZone);
   selectedValueTree: JsonValueTreeNode | null = null;
-  hoveredNodeTooltip: { title: string; content: string; left: number; top: number } | null = null;
+  hoveredNodeTooltip: { title: string; path: string; tree: JsonValueTreeNode; left: number; top: number } | null = null;
 
   ngAfterViewInit() {
     if (typeof ResizeObserver !== 'undefined') {
@@ -106,17 +107,14 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges, O
         const bounds = container.getBoundingClientRect();
         const width = Math.min(360, Math.max(180, bounds.width - 24));
         const height = Math.min(280, Math.max(120, bounds.height - 24));
-        let content: string;
-        try {
-          const value = node.structuredValue !== undefined ? node.structuredValue : node.value;
-          content = typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? String(value);
-        } catch {
-          content = String(node.value ?? node.id);
-        }
+        const value = node.structuredValue !== undefined ? node.structuredValue : node.value;
+        const title = String(node.id ?? node.value ?? 'Node');
+        const path = String(node.structuredValuePath ?? node.id ?? 'value');
+        const tree = projectJsonValueTree('value', path, value as JsonValue);
         const left = Math.max(12, Math.min(event.clientX - bounds.left + 14, bounds.width - width - 12));
         const top = Math.max(12, Math.min(event.clientY - bounds.top + 14, bounds.height - height - 12));
         this.zone.run(() => {
-          this.hoveredNodeTooltip = { title: String(node.id ?? node.value ?? 'Node'), content, left, top };
+          this.hoveredNodeTooltip = { title, path, tree, left, top };
         });
       },
       nodes: nodes || [],

@@ -50,16 +50,18 @@
         margin-bottom: 6px;
     }
 
-    pre {
+    .tooltip-path {
+        color: #9ba4b0;
+        display: block;
+        font-size: 10px;
+        margin-bottom: 6px;
+        overflow-wrap: anywhere;
+    }
+
+    .tooltip-value-tree {
         color: #e2e8f0;
-        font-family: 'Fira Code', 'Courier New', monospace;
-        font-size: 11px;
-        line-height: 1.45;
-        margin: 0;
         max-height: 230px;
         overflow: auto;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
     }
 }
 

@@ -3,7 +3,10 @@
     @if (hoveredNodeTooltip; as tooltip) {
       <aside class="graph-node-tooltip" [style.left.px]="tooltip.left" [style.top.px]="tooltip.top">
         <strong>{{ tooltip.title }}</strong>
-        <pre>{{ tooltip.content }}</pre>
+        <code class="tooltip-path">{{ tooltip.path }}</code>
+        <div class="tooltip-value-tree">
+          <app-json-value-tree [node]="tooltip.tree"></app-json-value-tree>
+        </div>
       </aside>
     }
   </div>
