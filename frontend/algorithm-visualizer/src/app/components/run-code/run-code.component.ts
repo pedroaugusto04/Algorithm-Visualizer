@@ -51,6 +51,9 @@ export class RunCodeComponent implements OnDestroy {
   sourceCode = signal<string>('');
   sourceLineList = computed(() => this.sourceCode().split('\n'));
   testCaseInput = signal<string>('');
+  testCaseLineList = computed(() => this.testCaseInput().split('\n'));
+  sourceEditorScrollTop = signal<number>(0);
+  stdinEditorScrollTop = signal<number>(0);
   executionResult = signal<string>('');
   executionWarnings = signal<string[]>([]);
   isTraceTruncated = signal<boolean>(false);
@@ -66,7 +69,30 @@ export class RunCodeComponent implements OnDestroy {
   totalSteps = signal<number>(0);
   isPlaying = signal<boolean>(false);
   playbackSpeed = signal<number>(1);
+  private traceRevision = signal<number>(0);
   readonly BASE_STEP_DELAY = 1000;
+
+  variableStates = computed(() => {
+    this.traceRevision();
+    const player = this.player;
+    if (!player) return [];
+
+    const step = this.currentStep();
+    const changedPaths = player.changedPathsAt(player.entryIndexForStep(step));
+    return player.structures
+      .filter(variable => variable.type === 'scalar')
+      .map(variable => {
+        const state = player.stateAt(step, variable.path);
+        return state?.active ? {
+          path: variable.path,
+          value: state.value,
+          valueType: state.value === null ? 'null' : typeof state.value,
+          scope: state.func ? `${state.func}() · frame ${state.frame ?? 0}` : 'Global',
+          changed: changedPaths.has(variable.path),
+        } : null;
+      })
+      .filter((state): state is NonNullable<typeof state> => state !== null);
+  });
 
   get stepDelay(): number {
     return Math.round(this.BASE_STEP_DELAY / (this.playbackSpeed() || 1));
@@ -169,10 +195,12 @@ export class RunCodeComponent implements OnDestroy {
   private loadEvents(allEvents: ExecutionLogEntry[]): void {
     this.entries = allEvents;
     this.player = new TracePlayer(allEvents);
+    this.traceRevision.update(revision => revision + 1);
     this.totalSteps.set(this.player.totalSteps);
 
     this.structures = [];
     for (const known of this.player.structures) {
+      if (known.type === 'scalar') continue;
       const struct = createStructureWindow(known.path, known.type);
       applySnapshotToStructure(struct, known.initialValue, struct.viewMode);
       this.structures.push(struct);
@@ -259,6 +287,7 @@ export class RunCodeComponent implements OnDestroy {
 
     this.player.seek(stepIndex);
     this.currentStep.set(this.player.currentStep);
+    this.traceRevision.update(revision => revision + 1);
     this.syncStructuresToStep(this.player.currentStep);
     this.scrollActiveSourceLine();
 
@@ -338,6 +367,7 @@ export class RunCodeComponent implements OnDestroy {
     this.pause();
     this.entries = [];
     this.player = null;
+    this.traceRevision.update(revision => revision + 1);
     this.structures = [];
     this.currentStep.set(-1);
     this.totalSteps.set(0);
@@ -346,6 +376,18 @@ export class RunCodeComponent implements OnDestroy {
     this.selectedTabIndex.set(0);
     this.executionWarnings.set([]);
     this.isTraceTruncated.set(false);
+  }
+
+  formatVariableValue(value: unknown): string {
+    if (typeof value === 'string') return JSON.stringify(value);
+    if (value === undefined) return 'undefined';
+    return String(value);
+  }
+
+  syncEditorLineNumbers(event: Event, editor: 'source' | 'stdin'): void {
+    const scrollTop = (event.target as HTMLTextAreaElement).scrollTop;
+    if (editor === 'source') this.sourceEditorScrollTop.set(scrollTop);
+    else this.stdinEditorScrollTop.set(scrollTop);
   }
 
   toggleSourceEditor(): void {

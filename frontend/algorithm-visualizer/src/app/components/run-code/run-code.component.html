@@ -27,17 +27,31 @@
                 </mat-form-field>
 
                 <div class="source-editor-field">
-                    <mat-label class="f-s-12 f-w-600">Source Code</mat-label>
-                    <mat-form-field appearance="outline" class="w-100 code-field">
-                        <textarea matInput rows="6" placeholder="Paste your code here..." [ngModel]="sourceCode()"
-                            (ngModelChange)="sourceCode.set($event)"></textarea>
-                    </mat-form-field>
+                    <label class="editor-field-label" for="source-code-input">Source Code</label>
+                    <div class="line-numbered-editor source-code-editor">
+                        <div class="line-number-gutter" aria-hidden="true">
+                            <div class="line-number-list" [style.transform]="'translateY(-' + sourceEditorScrollTop() + 'px)'">
+                                @for (line of sourceLineList(); track $index) { <span>{{ $index + 1 }}</span> }
+                            </div>
+                        </div>
+                        <textarea id="source-code-input" aria-label="Source code" spellcheck="false" autocomplete="off"
+                            autocapitalize="off" wrap="off" placeholder="Paste your code here..." [ngModel]="sourceCode()"
+                            (ngModelChange)="sourceCode.set($event)" (scroll)="syncEditorLineNumbers($event, 'source')"></textarea>
+                    </div>
                 </div>
-                <mat-form-field appearance="outline" class="w-100 stdin-field">
-                    <mat-label>Standard input</mat-label>
-                    <textarea matInput rows="3" placeholder="Paste the input that would be read from stdin"
-                        [ngModel]="testCaseInput()" (ngModelChange)="testCaseInput.set($event)"></textarea>
-                </mat-form-field>
+                <div class="stdin-field">
+                    <label class="editor-field-label" for="stdin-input">Standard input</label>
+                    <div class="line-numbered-editor stdin-editor">
+                        <div class="line-number-gutter" aria-hidden="true">
+                            <div class="line-number-list" [style.transform]="'translateY(-' + stdinEditorScrollTop() + 'px)'">
+                                @for (line of testCaseLineList(); track $index) { <span>{{ $index + 1 }}</span> }
+                            </div>
+                        </div>
+                        <textarea id="stdin-input" aria-label="Standard input" spellcheck="false" wrap="off"
+                            placeholder="Paste the input that would be read from stdin" [ngModel]="testCaseInput()"
+                            (ngModelChange)="testCaseInput.set($event)" (scroll)="syncEditorLineNumbers($event, 'stdin')"></textarea>
+                    </div>
+                </div>
 
                 <button class="run-button" mat-flat-button color="warn" (click)="onRunCode()" [disabled]="isPlaying()">
                     <mat-icon>play_arrow</mat-icon> RUN CODE
@@ -170,6 +184,33 @@
                         </div>
                         }
                     </div>
+                </mat-tab>
+                }
+                @if (variableStates().length > 0) {
+                <mat-tab label="Variables">
+                    <section class="variables-panel" aria-label="Scalar variable state">
+                        <div class="variables-panel-header">
+                            <strong>Variables</strong>
+                            <span>State at step {{ currentStep() + 1 }}</span>
+                        </div>
+                        <div class="variables-table-wrap">
+                            <table class="variables-table">
+                                <thead>
+                                    <tr><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Value</th><th scope="col">Scope</th></tr>
+                                </thead>
+                                <tbody>
+                                    @for (variable of variableStates(); track variable.path) {
+                                    <tr [class.variable-changed]="variable.changed">
+                                        <th scope="row"><code>{{ variable.path }}</code></th>
+                                        <td>{{ variable.valueType }}</td>
+                                        <td><code>{{ formatVariableValue(variable.value) }}</code></td>
+                                        <td>{{ variable.scope }}</td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
                 </mat-tab>
                 }
                 </mat-tab-group>
