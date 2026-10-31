@@ -19,4 +19,17 @@ class CodeServiceValidationTest {
         assertTrue(response.error().message().contains("Padrão C++ não suportado"));
         verifyNoInteractions(runner);
     }
+
+    @Test
+    void formatsHelpfulMessageWhenRunnerImageIsMissing() {
+        var failure = new ContainerStepRunner.StepFailure(
+                "instrument",
+                125,
+                "",
+                "docker: Error response from daemon: No such image: pedroaug4/algo-runner:latest",
+                "pedroaug4/algo-runner:latest"
+        );
+        assertTrue(failure.getMessage().contains("Imagem do runner não encontrada no Docker"));
+        assertTrue(failure.getMessage().contains("docker-compose.prod.yml build runner"));
+    }
 }

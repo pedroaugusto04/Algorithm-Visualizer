@@ -16,11 +16,28 @@ import org.springframework.stereotype.Component;
 class ContainerStepRunner {
     private static final int MAX_OUTPUT_BYTES = 2 * 1024 * 1024;
     private static final long PREPARATION_TIMEOUT_SECONDS = 60;
+    private static final String DEFAULT_RUNNER_IMAGE = "pedroaug4/algo-runner:latest";
+    private static final String DEFAULT_PULL_POLICY = "never";
+
     private final long timeoutSeconds;
+    private final String runnerImage;
+    private final String pullPolicy;
 
     ContainerStepRunner() { this(20); }
 
-    ContainerStepRunner(long timeoutSeconds) { this.timeoutSeconds = timeoutSeconds; }
+    ContainerStepRunner(long timeoutSeconds) {
+        this(
+            timeoutSeconds,
+            System.getenv().getOrDefault("AV_RUNNER_IMAGE", DEFAULT_RUNNER_IMAGE),
+            System.getenv().getOrDefault("AV_RUNNER_PULL_POLICY", DEFAULT_PULL_POLICY)
+        );
+    }
+
+    ContainerStepRunner(long timeoutSeconds, String runnerImage, String pullPolicy) {
+        this.timeoutSeconds = timeoutSeconds;
+        this.runnerImage = (runnerImage == null || runnerImage.isBlank()) ? DEFAULT_RUNNER_IMAGE : runnerImage.trim();
+        this.pullPolicy = (pullPolicy == null || pullPolicy.isBlank()) ? DEFAULT_PULL_POLICY : pullPolicy.trim();
+    }
 
     record StepResult(String stdout, String stderr) {}
 
@@ -31,11 +48,24 @@ class ContainerStepRunner {
         private final String stderr;
 
         StepFailure(String mode, int exitCode, String stdout, String stderr) {
-            super("Process terminated during " + mode + " with exit code " + exitCode);
+            this(mode, exitCode, stdout, stderr, DEFAULT_RUNNER_IMAGE);
+        }
+
+        StepFailure(String mode, int exitCode, String stdout, String stderr, String runnerImage) {
+            super(formatMessage(mode, exitCode, stderr, runnerImage));
             this.mode = mode;
             this.exitCode = exitCode;
             this.stdout = stdout;
             this.stderr = stderr;
+        }
+
+        private static String formatMessage(String mode, int exitCode, String stderr, String runnerImage) {
+            if (exitCode == 125 && stderr != null && (stderr.contains("No such image") || stderr.contains("not found"))) {
+                return "Imagem do runner não encontrada no Docker ('" + runnerImage + "'). Construa-a executando: " +
+                        "docker compose -f docker-compose.prod.yml build runner (ou: docker build -t " + runnerImage +
+                        " -f backend/algorithm-visualizer/Dockerfile-Instrumenter backend/algorithm-visualizer)";
+            }
+            return "Process terminated during " + mode + " with exit code " + exitCode;
         }
 
         String mode() { return mode; }
@@ -75,13 +105,13 @@ class ContainerStepRunner {
         // forwarded to the container, which would otherwise keep running (and consuming CPU) orphaned.
         String containerName = "av-" + mode + "-" + UUID.randomUUID();
         Process process = new ProcessBuilder(
-                "docker", "run", "--pull", "never", "--rm", "--name", containerName, "--network", "none", "--cpus", "1",
+                "docker", "run", "--pull", pullPolicy, "--rm", "--name", containerName, "--network", "none", "--cpus", "1",
                 "--memory", memoryLimit, "--pids-limit", "256",
                 "--security-opt", "no-new-privileges", "--cap-drop", "ALL",
                 "-v", workspace.toAbsolutePath() + ":/work",
                 "-e", "AV_EVENT_FILE=/work/events.jsonl",
                 "-e", "AV_STATUS_FILE=/work/visualization.status",
-                "pedroaug4/algo-runner:latest", mode, standard
+                runnerImage, mode, standard
         ).start();
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -99,7 +129,7 @@ class ContainerStepRunner {
             try {
                 StepResult result = new StepResult(stdout.get(), stderr.get());
                 if (process.exitValue() != 0) {
-                    throw new StepFailure(mode, process.exitValue(), result.stdout(), result.stderr());
+                    throw new StepFailure(mode, process.exitValue(), result.stdout(), result.stderr(), runnerImage);
                 }
                 return result;
             } catch (ExecutionException e) {
