@@ -306,8 +306,13 @@
                                 </thead>
                                 <tbody>
                                     @for (variable of variableStates(); track variable.path) {
-                                    <tr [class.variable-changed]="variable.changed">
-                                        <th scope="row"><code>{{ variable.path }}</code></th>
+                                    <tr [class.variable-changed]="variable.changed" [class.variable-closed]="!variable.active">
+                                        <th scope="row">
+                                            <code>{{ variable.path }}</code>
+                                            @if (!variable.active) {
+                                            <span class="scope-closed-badge" title="Scope closed (retaining final state)">closed</span>
+                                            }
+                                        </th>
                                         <td>{{ variable.valueType }}</td>
                                         <td><code>{{ formatVariableValue(variable.value) }}</code></td>
                                         <td>{{ variable.scope }}</td>

@@ -84,13 +84,18 @@ export class RunCodeComponent implements OnDestroy {
       .filter(variable => variable.type === 'scalar')
       .map(variable => {
         const state = player.stateAt(step, variable.path);
-        return state?.active ? {
+        if (!state) return null;
+        const isInitialized = state.initialized ?? (state.value !== null && state.value !== undefined);
+        if (!isInitialized) return null;
+
+        return {
           path: variable.path,
           value: state.value,
           valueType: state.value === null ? 'null' : typeof state.value,
           scope: state.func ? `${state.func}() · frame ${state.frame ?? 0}` : 'Global',
+          active: state.active,
           changed: changedPaths.has(variable.path),
-        } : null;
+        };
       })
       .filter((state): state is NonNullable<typeof state> => state !== null);
   });
@@ -358,17 +363,16 @@ export class RunCodeComponent implements OnDestroy {
     this.syncStructuresToStep(this.player.currentStep);
     this.scrollActiveSourceLine();
 
+    const activeEntry = this.player.activeEntry(this.player.currentStep);
+    const isExitOp = activeEntry?.op === 'exit';
     const activeRoot = this.player.activeRootPath(this.player.currentStep);
     const activeStructureIndex = activeRoot ? this.structures.findIndex(s => s.path === activeRoot) : -1;
-    if (activeStructureIndex >= 0 && this.player.currentStep < this.totalSteps() - 1) {
-      this.highlightStructure(this.structures[activeStructureIndex], activeStructureIndex);
-    } else if (
-      activeRoot &&
-      this.hasVariablesTab() &&
-      this.isScalarPath(activeRoot) &&
-      this.player.currentStep < this.totalSteps() - 1
-    ) {
-      this.highlightVariablesTab();
+    if (!isExitOp && this.player.currentStep < this.totalSteps() - 1) {
+      if (activeStructureIndex >= 0) {
+        this.highlightStructure(this.structures[activeStructureIndex], activeStructureIndex);
+      } else if (activeRoot && this.hasVariablesTab() && this.isScalarPath(activeRoot)) {
+        this.highlightVariablesTab();
+      }
     }
   }
 

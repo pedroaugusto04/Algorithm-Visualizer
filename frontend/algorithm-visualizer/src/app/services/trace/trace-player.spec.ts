@@ -120,6 +120,14 @@ describe('TracePlayer', () => {
     expect(step3Changed.has('freq[b]')).toBeTrue();
   });
 
+  it('does not treat scope exit operations as changed paths', () => {
+    const player = new TracePlayer(sampleEntries);
+    // Step 5 in sampleEntries (which is operations index 3) is op: 'exit'
+    const exitEntryIndex = sampleEntries.findIndex(e => e.op === 'exit');
+    const exitChanged = player.changedPathsAt(exitEntryIndex);
+    expect(exitChanged.size).toBe(0);
+  });
+
   it('handles playback timer and completion', (done) => {
     const player = new TracePlayer(sampleEntries);
     player.seek(2); // one step before the end (totalSteps = 4, indices 0..3)

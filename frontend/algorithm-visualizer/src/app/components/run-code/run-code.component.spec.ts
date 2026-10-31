@@ -371,5 +371,69 @@ describe('RunCodeComponent', () => {
       expect(component.selectedTabIndex()).toBe(0);
       tick(1000);
     }));
+
+    it('retains closed variables with active: false instead of removing them, and renders closed badge', () => {
+      const events: ExecutionLogEntry[] = [
+        { schema: 'av.event.v2', time: 1, type: 'scalar', path: 'inner', op: 'snapshot', line: 3, func: 'main', frame: 1, value: 42 },
+        { schema: 'av.event.v2', time: 2, type: 'scalar', path: 'inner', op: 'exit', line: 4, func: 'main', frame: 1, value: null },
+        { schema: 'av.event.v2', time: 3, type: 'scalar', path: 'dummy', op: 'snapshot', line: 5, func: 'main', frame: 1, value: 1 },
+      ];
+
+      component['loadEvents'](events);
+      // Step 0: snapshot inner = 42
+      component.goToStep(0, false);
+      expect(component.variableStates().length).toBe(1);
+      expect(component.variableStates()[0].path).toBe('inner');
+      expect(component.variableStates()[0].value as number).toBe(42);
+      expect(component.variableStates()[0].active).toBe(true);
+
+      // Step 1: exit inner
+      component.goToStep(1, false);
+      expect(component.variableStates().length).toBe(1);
+      expect(component.variableStates()[0].path).toBe('inner');
+      expect(component.variableStates()[0].value as number).toBe(42);
+      expect(component.variableStates()[0].active).toBe(false);
+
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('.scope-closed-badge')).toBeTruthy();
+      expect(compiled.querySelector('.scope-closed-badge')?.textContent).toContain('closed');
+    });
+
+    it('does not trigger highlightVariablesTab on exit operations', fakeAsync(() => {
+      const events: ExecutionLogEntry[] = [
+        { schema: 'av.event.v2', time: 1, type: 'scalar', path: 'inner', op: 'snapshot', line: 3, func: 'main', frame: 1, value: 42 },
+        { schema: 'av.event.v2', time: 2, type: 'scalar', path: 'inner', op: 'exit', line: 4, func: 'main', frame: 1, value: null },
+        { schema: 'av.event.v2', time: 3, type: 'scalar', path: 'other', op: 'snapshot', line: 5, func: 'main', frame: 1, value: 100 },
+      ];
+
+      component['loadEvents'](events);
+      component.goToStep(0, false);
+      tick(1000);
+      expect(component.isVariablesTabHighlighting()).toBe(false);
+
+      // Go to step 1 (exit) -> should NOT activate highlight
+      component.goToStep(1, false);
+      expect(component.isVariablesTabHighlighting()).toBe(false);
+      tick(1000);
+    }));
+
+    it('does not display uninitialized variables before their first operation', () => {
+      const events: ExecutionLogEntry[] = [
+        { schema: 'av.event.v2', time: 1, type: 'array', path: 'arr', op: 'init', line: 1, func: 'main', frame: 1, value: [1] },
+        { schema: 'av.event.v2', time: 2, type: 'array', path: 'arr', op: 'snapshot', line: 2, func: 'main', frame: 1, value: [1, 2] },
+        { schema: 'av.event.v2', time: 3, type: 'scalar', path: 'lateVar', op: 'snapshot', line: 10, func: 'main', frame: 1, value: 99 },
+      ];
+
+      component['loadEvents'](events);
+      // At step 0 (arr snapshot), lateVar hasn't been reached yet
+      component.goToStep(0, false);
+      expect(component.variableStates().find(v => v.path === 'lateVar')).toBeUndefined();
+
+      // At step 1 (lateVar snapshot), it should be visible
+      component.goToStep(1, false);
+      expect(component.variableStates().find(v => v.path === 'lateVar')).toBeDefined();
+      expect(component.variableStates().find(v => v.path === 'lateVar')?.value as number).toBe(99);
+    });
   });
 });

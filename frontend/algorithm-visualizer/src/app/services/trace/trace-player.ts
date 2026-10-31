@@ -5,6 +5,7 @@ export interface StructureStateSnapshot {
   type: string;
   value: JsonValue;
   active: boolean;
+  initialized?: boolean;
   frame?: number;
   func?: string;
   depth?: number;
@@ -115,11 +116,13 @@ export class TracePlayer {
     if (!known) return null;
 
     if (step < 0) {
+      const isInit = known.initialValue !== null && known.initialValue !== undefined;
       return {
         path: rootPath,
         type: known.type,
         value: known.initialValue,
-        active: true,
+        active: isInit,
+        initialized: isInit,
         frame: known.frame,
         func: known.func,
         depth: known.depth,
@@ -142,11 +145,13 @@ export class TracePlayer {
     }
 
     if (match < 0) {
+      const isInit = known.initialValue !== null && known.initialValue !== undefined;
       return {
         path: rootPath,
         type: known.type,
         value: known.initialValue,
-        active: true,
+        active: isInit,
+        initialized: isInit,
         frame: known.frame,
         func: known.func,
         depth: known.depth,
@@ -168,6 +173,7 @@ export class TracePlayer {
         type: known.type,
         value: lastValue,
         active: false,
+        initialized: true,
         frame: entry.frame,
         func: entry.func,
         depth: entry.depth,
@@ -179,6 +185,7 @@ export class TracePlayer {
       type: known.type,
       value: entry.value,
       active: true,
+      initialized: true,
       frame: entry.frame,
       func: entry.func,
       depth: entry.depth,
@@ -233,6 +240,11 @@ export class TracePlayer {
     if (step < 0 || step >= this.entries.length) return paths;
 
     const entry = this.entries[step];
+    // Scope exit does not modify variable value
+    if (entry.op === 'exit') {
+      return paths;
+    }
+
     const rootPath = this.extractRootPath(entry.path);
 
     // For init events, everything is new — compare against undefined

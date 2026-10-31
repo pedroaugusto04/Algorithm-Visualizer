@@ -176,13 +176,14 @@ export class ArrayRenderer implements Renderer {
     }
 
     // Render active variable pointers (e.g. l, r, mid, i) above 1D array cells
-    const activePointers: Array<{ path: string; value: unknown; changed?: boolean }> =
+    const activePointers: Array<{ path: string; value: unknown; changed?: boolean; active?: boolean }> =
       (!is2D && !isStack && !isQueue && Array.isArray(d3Data.activePointers))
         ? d3Data.activePointers
         : [];
 
     const pointersByIndex = new Map<number, { names: string[]; hasChanged: boolean }>();
     for (const ptr of activePointers) {
+      if (ptr.active === false) continue;
       if (typeof ptr.value === 'number' && Number.isInteger(ptr.value) && ptr.value >= 0 && ptr.value < flatData.length) {
         const existing = pointersByIndex.get(ptr.value) ?? { names: [], hasChanged: false };
         existing.names.push(ptr.path);
