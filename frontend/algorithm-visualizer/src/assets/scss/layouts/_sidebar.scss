@@ -111,7 +111,7 @@
 
         .mdc-list-item__start,
         .mdc-list-item__primary-text {
-          color: $secondary;
+          color: $primary;
         }
       }
 
@@ -130,7 +130,7 @@
       }
 
       &.activeMenu {
-        background-color: var(--mat-sys-secondary);
+        background-color: var(--mat-sys-primary);
 
         .mdc-list-item__primary-text {
           color: $white !important;
