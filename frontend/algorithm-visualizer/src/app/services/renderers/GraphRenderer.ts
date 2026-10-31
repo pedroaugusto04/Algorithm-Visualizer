@@ -39,16 +39,20 @@ export class GraphRenderer implements Renderer {
             nodeGroup = d3Data.svg.append('g').attr('class', 'nodes-group');
         }
 
+        linkGroup.selectAll('line').remove();
+        const linkKey = (d: any) => `${d.source?.id ?? d.source}->${d.target?.id ?? d.target}`;
         const linkSelection = linkGroup
-            .selectAll('line')
-            .data(d3Data.links)
-            .join('line')
+            .selectAll('path.edge-path')
+            .data(d3Data.links, linkKey)
+            .join('path')
+            .attr('class', 'edge-path')
+            .attr('fill', 'none')
             .attr('stroke', '#999')
             .attr('stroke-width', 2)
             .attr('marker-end', 'url(#arrowhead)');
 
         const linkLabels = linkGroup.selectAll('text.edge-label')
-            .data(d3Data.links)
+            .data(d3Data.links, linkKey)
             .join('text')
             .attr('class', 'edge-label')
             .attr('text-anchor', 'middle')
@@ -126,12 +130,40 @@ export class GraphRenderer implements Renderer {
                 return 1.5;
             });
 
+        // Preserve coordinates of previously simulated nodes to prevent jumpiness
+        const prevNodes = d3Data.simulation.nodes() as any[] | undefined;
+        let isTopologyChanged = true;
+        if (prevNodes && prevNodes.length > 0) {
+            const prevMap = new Map<string, any>(prevNodes.map((n: any) => [String(n.id), n]));
+            isTopologyChanged = prevNodes.length !== d3Data.nodes.length;
+            for (const n of d3Data.nodes) {
+                const prev = prevMap.get(String(n.id));
+                if (prev && prev.x !== undefined && prev.y !== undefined) {
+                    n.x = prev.x;
+                    n.y = prev.y;
+                    n.vx = prev.vx;
+                    n.vy = prev.vy;
+                } else {
+                    isTopologyChanged = true;
+                }
+            }
+        }
+
+        const edgeSet = new Set<string>();
+        for (const l of d3Data.links) {
+            const s = l.source?.id ?? l.source;
+            const t = l.target?.id ?? l.target;
+            edgeSet.add(`${s}->${t}`);
+        }
+
         d3Data.simulation.nodes(d3Data.nodes);
-        d3Data.simulation.force('link').links(d3Data.links);
+        if (d3Data.simulation.force('link')) {
+            d3Data.simulation.force('link').links(d3Data.links);
+        }
         d3Data.simulation.force('center', d3.forceCenter(width / 2, height / 2));
         d3Data.simulation.force('collide', d3.forceCollide(radius + 5));
 
-        d3Data.simulation.on('tick', () => {
+        const updatePositions = () => {
             nodeSelection.attr('transform', (d: any) => {
                 const x = d.x || width / 2;
                 const y = d.y || height / 2;
@@ -140,18 +172,76 @@ export class GraphRenderer implements Renderer {
                 return `translate(${d.x},${d.y})`;
             });
 
-            linkSelection
-                .attr('x1', (d: any) => d.source?.x ?? 0)
-                .attr('y1', (d: any) => d.source?.y ?? 0)
-                .attr('x2', (d: any) => d.target?.x ?? 0)
-                .attr('y2', (d: any) => d.target?.y ?? 0);
+            linkSelection.attr('d', (d: any) => {
+                const sx = d.source?.x ?? 0;
+                const sy = d.source?.y ?? 0;
+                const tx = d.target?.x ?? 0;
+                const ty = d.target?.y ?? 0;
+                const sId = String(d.source?.id ?? d.source);
+                const tId = String(d.target?.id ?? d.target);
+
+                if (sId === tId) {
+                    return `M ${sx},${sy - radius} C ${sx - 30},${sy - 50} ${sx + 30},${sy - 50} ${sx + 5},${sy - radius}`;
+                }
+
+                const hasReverse = edgeSet.has(`${tId}->${sId}`);
+                if (!hasReverse) {
+                    return `M ${sx},${sy} L ${tx},${ty}`;
+                }
+
+                const dx = tx - sx;
+                const dy = ty - sy;
+                const dr = Math.sqrt(dx * dx + dy * dy);
+                if (dr === 0) return `M ${sx},${sy} L ${tx},${ty}`;
+
+                const nx = -dy / dr;
+                const ny = dx / dr;
+                const curvature = 24;
+                const cx = (sx + tx) / 2 + nx * curvature;
+                const cy = (sy + ty) / 2 + ny * curvature;
+                return `M ${sx},${sy} Q ${cx},${cy} ${tx},${ty}`;
+            });
 
             linkLabels
-                .attr('x', (d: any) => ((d.source?.x ?? 0) + (d.target?.x ?? 0)) / 2)
-                .attr('y', (d: any) => ((d.source?.y ?? 0) + (d.target?.y ?? 0)) / 2 - 6);
-        });
+                .attr('x', (d: any) => {
+                    const sx = d.source?.x ?? 0;
+                    const tx = d.target?.x ?? 0;
+                    const sId = String(d.source?.id ?? d.source);
+                    const tId = String(d.target?.id ?? d.target);
+                    const hasReverse = sId !== tId && edgeSet.has(`${tId}->${sId}`);
+                    if (!hasReverse) return (sx + tx) / 2;
+                    const sy = d.source?.y ?? 0;
+                    const ty = d.target?.y ?? 0;
+                    const dx = tx - sx;
+                    const dy = ty - sy;
+                    const dr = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const nx = -dy / dr;
+                    const cx = (sx + tx) / 2 + nx * 24;
+                    return (sx + 2 * cx + tx) / 4;
+                })
+                .attr('y', (d: any) => {
+                    const sy = d.source?.y ?? 0;
+                    const ty = d.target?.y ?? 0;
+                    const sId = String(d.source?.id ?? d.source);
+                    const tId = String(d.target?.id ?? d.target);
+                    const hasReverse = sId !== tId && edgeSet.has(`${tId}->${sId}`);
+                    if (!hasReverse) return (sy + ty) / 2 - 6;
+                    const sx = d.source?.x ?? 0;
+                    const tx = d.target?.x ?? 0;
+                    const dx = tx - sx;
+                    const dy = ty - sy;
+                    const dr = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const ny = dx / dr;
+                    const cy = (sy + ty) / 2 + ny * 24;
+                    return (sy + 2 * cy + ty) / 4 - 6;
+                });
+        };
 
-        d3Data.simulation.alpha(1).restart();
+        d3Data.simulation.on('tick', updatePositions);
+        updatePositions();
+
+        const alphaTarget = isTopologyChanged ? 0.3 : 0.05;
+        d3Data.simulation.alpha(alphaTarget).restart();
     }
 
     private nodeLabel(node: any): string {

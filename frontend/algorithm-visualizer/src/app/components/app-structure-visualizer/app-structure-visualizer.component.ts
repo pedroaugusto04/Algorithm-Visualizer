@@ -88,10 +88,12 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges, O
     this.renderedWidth = width;
     this.renderedHeight = height;
 
-    const simulation = d3.forceSimulation(nodes)
-      .force('link', d3.forceLink(links).id((d: any) => d.id).distance(100))
-      .force('charge', d3.forceManyBody().strength(-300))
-      .force('center', d3.forceCenter(width / 2, height / 2));
+    const simulation = isGraph
+      ? d3.forceSimulation(nodes)
+          .force('link', d3.forceLink(links).id((d: any) => d.id).distance(100))
+          .force('charge', d3.forceManyBody().strength(-300))
+          .force('center', d3.forceCenter(width / 2, height / 2))
+      : null;
       
     this.struct.d3Data = {
       ...this.struct.d3Data,
@@ -136,7 +138,8 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges, O
     const width = bounds.width;
     const height = bounds.height;
     if (width <= 0 || height <= 0) return;
-    if (!this.svg || !this.struct.d3Data?.simulation) {
+    const isGraph = this.struct.viewMode === 'graph';
+    if (!this.svg || !this.struct.d3Data || (isGraph && !this.struct.d3Data.simulation)) {
       this.renderizeSvg();
       return;
     }

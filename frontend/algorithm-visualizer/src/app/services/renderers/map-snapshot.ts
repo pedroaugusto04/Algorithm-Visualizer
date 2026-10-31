@@ -64,6 +64,20 @@ export function buildMapSnapshot(path: string, value: JsonValue, width: number, 
   return { nodes, links, entries: mapEntries };
 }
 
+function isSquareMatrixOfNumbers(val: unknown[]): boolean {
+  const n = val.length;
+  if (n < 2) return false;
+  for (let i = 0; i < n; i++) {
+    const row = val[i];
+    if (!Array.isArray(row) || row.length !== n) return false;
+    for (let j = 0; j < n; j++) {
+      const cell = row[j];
+      if (typeof cell !== 'number' && typeof cell !== 'boolean') return false;
+    }
+  }
+  return true;
+}
+
 /** Treat map keys or 2D array indices as graph vertices and collection values as outgoing neighbors. */
 export function buildMapGraphSnapshot(
   path: string,
@@ -94,6 +108,32 @@ export function buildMapGraphSnapshot(
     }
     return node;
   };
+
+  // If isArray and it's a square matrix of numbers/booleans, interpret as Adjacency Matrix
+  if (isArray && Array.isArray(value) && isSquareMatrixOfNumbers(value)) {
+    const n = value.length;
+    for (let i = 0; i < n; i++) {
+      const node = getNode(i);
+      node.structuredValuePath = `${path}[${i}]`;
+      node.structuredValue = value[i] as JsonValue;
+    }
+    for (let i = 0; i < n; i++) {
+      const source = getNode(i);
+      const row = value[i] as unknown[];
+      for (let j = 0; j < n; j++) {
+        const cell = row[j];
+        if (cell !== 0 && cell !== false && cell !== null && cell !== undefined) {
+          const target = getNode(j);
+          const link: MapVisualLink = { source, target };
+          if (cell !== 1 && cell !== true) {
+            link.label = String(cell);
+          }
+          links.push(link);
+        }
+      }
+    }
+    return { ...map, nodes: [...nodeById.values()], links };
+  }
 
   rawEntries.forEach((raw: any) => {
     if (!Array.isArray(raw) || raw.length < 2) return;

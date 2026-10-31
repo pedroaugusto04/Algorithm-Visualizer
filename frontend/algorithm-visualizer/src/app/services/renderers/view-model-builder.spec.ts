@@ -89,4 +89,32 @@ describe('view-model-builder', () => {
     expect(linkLabels).toContain('5');
     expect(linkLabels).toContain('2');
   });
+
+  it('builds directed graph when square 2D matrix (adjacency matrix) is viewed as graph', () => {
+    const graphMatrix = createStructureWindow('matrix', 'array', 'graph');
+
+    // 3x3 adjacency matrix: 0 -> 1, 1 -> 2, 2 -> 0 (with weight 7)
+    applySnapshotToStructure(graphMatrix, [
+      [0, 1, 0],
+      [0, 0, 1],
+      [7, 0, 0]
+    ]);
+
+    expect(graphMatrix.d3Data?.nodes.length).toBe(3);
+    const nodeIds = graphMatrix.d3Data?.nodes.map(n => n.id);
+    expect(nodeIds).toEqual(['0', '1', '2']);
+
+    expect(graphMatrix.d3Data?.links.length).toBe(3);
+    const links = graphMatrix.d3Data!.links;
+    expect(links[0].source.id).toBe('0');
+    expect(links[0].target.id).toBe('1');
+    expect(links[0].label).toBeUndefined();
+
+    expect(links[1].source.id).toBe('1');
+    expect(links[1].target.id).toBe('2');
+
+    expect(links[2].source.id).toBe('2');
+    expect(links[2].target.id).toBe('0');
+    expect(links[2].label).toBe('7');
+  });
 });

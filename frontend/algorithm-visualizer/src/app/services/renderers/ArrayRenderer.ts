@@ -133,7 +133,7 @@ export class ArrayRenderer implements Renderer {
       .attr('transform', (d: any) => {
         const x = isStack ? 80 : d.c * (cellWidth + padding) + 40;
         const y = isStack
-          ? 50 + (flatData.length - d.c - 1) * (cellHeight + padding)
+          ? 50 + d.c * (cellHeight + padding)
           : d.r * (cellHeight + padding) + 50;
         return `translate(${x}, ${y})`;
       });
@@ -151,16 +151,16 @@ export class ArrayRenderer implements Renderer {
       .attr('y', is2D ? cellHeight + 13 : cellHeight + 20);
 
     if (isQueue || isStack) {
-      const markers = [
-        { label: isStack ? 'TOP' : 'FRONT', index: isStack ? flatData.length - 1 : 0 },
-        { label: isStack ? 'BOTTOM' : 'REAR', index: isStack ? 0 : flatData.length - 1 }
+      const markers = flatData.length === 0 ? [] : [
+        { label: isStack ? 'TOP' : 'FRONT', index: 0 },
+        { label: isStack ? 'BOTTOM' : 'REAR', index: flatData.length - 1 }
       ];
       const markerSelection = svg.selectAll('text.array-end-marker').data(markers, (marker: any) => marker.label);
       markerSelection.exit().remove();
       markerSelection.join('text').attr('class', 'array-end-marker')
         .attr('x', (marker: any) => isStack ? 80 + cellWidth + 16 : marker.index * (cellWidth + padding) + 40 + cellWidth / 2)
         .attr('y', (marker: any) => isStack
-          ? 50 + (flatData.length - marker.index - 1) * (cellHeight + padding) + cellHeight / 2 + 4
+          ? 50 + marker.index * (cellHeight + padding) + cellHeight / 2 + 4
           : 50 + cellHeight + 42)
         .attr('text-anchor', isStack ? 'start' : 'middle')
         .attr('fill', '#64748b').style('font-size', '10px').style('font-weight', 700)
