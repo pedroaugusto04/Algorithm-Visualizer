@@ -41,6 +41,7 @@ struct __AvTrackedObject {
     std::string func;
     int frame = 0;
     int depth = 0;
+    bool initialized = false;
 };
 
 static std::unordered_map<const void*, __AvTrackedObject> __av_registry;
@@ -174,7 +175,7 @@ struct __AvScopeGuard {
     __AvScopeGuard(const T& val, const std::string& path, const std::string& ty, int ln,
                    int frame, const std::string& func, int depth)
         : ptr(static_cast<const void*>(&val)), type(ty), line(ln) {
-        __av_registry[ptr] = __AvTrackedObject{path, "", func, frame, depth};
+        __av_registry[ptr] = __AvTrackedObject{path, "", func, frame, depth, false};
     }
 
     ~__AvScopeGuard() {

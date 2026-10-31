@@ -62,6 +62,20 @@ class VisualizationTelemetryTest {
     }
 
     @Test
+    void acceptsScalarEventsCorrectly() throws Exception {
+        String event = """
+                {"schema":"av.event.v2","time":1,"type":"scalar","path":"counter","op":"init","line":5,"value":42}
+                """.strip();
+        Files.writeString(workspace.resolve("events.jsonl"), event + "\n");
+
+        var result = VisualizationTelemetry.readEvents(workspace);
+        assertEquals(1, result.events().size());
+        assertEquals(com.pedro.algorithm_visualizer.models.DTO.ExecutionEventType.SCALAR, result.events().get(0).type());
+        assertEquals("counter", result.events().get(0).path());
+        assertEquals(42, result.events().get(0).value().asInt());
+    }
+
+    @Test
     void rejectsEventWithOutOfOrderTime() throws Exception {
         String bad = """
                 {"schema":"av.event.v2","time":5,"type":"array","path":"v","op":"init","line":2,"value":[]}

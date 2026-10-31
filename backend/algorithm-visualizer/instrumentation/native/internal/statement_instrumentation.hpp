@@ -210,7 +210,12 @@ private:
             for (const Decl* declaration : declarationStatement->decls()) {
                 if (const auto* variable = dyn_cast<VarDecl>(declaration)) {
                     const auto* canonical = canonicalVariable(variable);
-        if (variables_.find(canonical) != variables_.end()) references.insert(canonical);
+                    auto it = variables_.find(canonical);
+                    if (it != variables_.end()) {
+                        if (it->second.type != "scalar" || variable->hasInit()) {
+                            references.insert(canonical);
+                        }
+                    }
                 }
             }
         }
@@ -295,7 +300,11 @@ private:
             bool referencesObserved(const Stmt* node) const {
                 ReferenceCollector references(tracked_);
                 references.TraverseStmt(const_cast<Stmt*>(node));
-                return !references.found().empty();
+                for (const auto* var : references.found()) {
+                    auto it = tracked_.find(var);
+                    if (it != tracked_.end() && it->second.type != "scalar") return true;
+                }
+                return false;
             }
         } visitor(variables_);
         visitor.TraverseStmt(const_cast<Stmt*>(expression));

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ExecutionEventType {
-    ARRAY("array"), MAP("map");
+    ARRAY("array"), MAP("map"), SCALAR("scalar");
 
     private final String value;
     ExecutionEventType(String value) { this.value = value; }

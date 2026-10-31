@@ -27,7 +27,7 @@ inline void __av_snapshot_if_changed(
     const void* ptr = static_cast<const void*>(&value);
     auto it = __av_registry.find(ptr);
     if (it == __av_registry.end()) {
-        it = __av_registry.emplace(ptr, __AvTrackedObject{path, "", __av_current_func, __av_frame_seq, __av_depth}).first;
+        it = __av_registry.emplace(ptr, __AvTrackedObject{path, "", __av_current_func, __av_frame_seq, __av_depth, false}).first;
     }
     __AvTrackedObject& obj = it->second;
 
@@ -37,7 +37,8 @@ inline void __av_snapshot_if_changed(
         __mark_visualization_incomplete("Limite de processamento da visualização atingido; o programa continuou sem registrar novos passos.");
         return;
     }
-    if (obj.lastSnapshot.empty()) {
+    if (!obj.initialized) {
+        obj.initialized = true;
         obj.lastSnapshot = serialized;
         __log(type, obj.path, "init", serialized, line, obj.frame, obj.func.empty() ? __av_current_func : obj.func, obj.depth);
     } else if (obj.lastSnapshot != serialized) {

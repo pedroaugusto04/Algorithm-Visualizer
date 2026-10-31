@@ -14,6 +14,9 @@ com o mesmo padrão GNU C++ (17, 20 ou 23) da compilação.
 <!-- generated-supported-types-end -->
 - `std::pair` e `std::tuple` declarados diretamente também são acompanhados e
   emitidos como arrays.
+- Variáveis escalares e tipos aritméticos (`int`, `long`, `double`, `float`, `char`, `bool` e enums)
+  declarados diretamente em blocos ou em escopo global são acompanhados e
+  emitidos com tipo `scalar` para inspeção na aba de variáveis (Variables).
 - Structs definidos antes de `main`, em escopo global ou namespace, podem ser
   usados dentro de contêineres observados. Seus campos públicos podem combinar
   tipos escalares, enums, `std::string`, arrays, `pair`, `tuple`, contêineres

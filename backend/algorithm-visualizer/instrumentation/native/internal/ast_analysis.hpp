@@ -36,6 +36,10 @@ std::string observedType(QualType type) {
 
     if (type->isConstantArrayType()) return avObservedStlType("C array");
 
+    if (type->isArithmeticType() || type->isEnumeralType()) {
+        return "scalar";
+    }
+
     const auto* record = type->getAsCXXRecordDecl();
     const auto* specialization = dyn_cast_or_null<ClassTemplateSpecializationDecl>(record);
     if (!specialization) return "";
@@ -110,7 +114,9 @@ public:
 
         if (type.empty()) return true;
         if (isa<ForStmt>(parent->second)) {
-            unsupportedForName = declaration->getNameAsString();
+            if (type != "scalar") {
+                unsupportedForName = declaration->getNameAsString();
+            }
             return true;
         }
         if (!isDirectBlockDeclaration(declarationStatement, parent->second)) return true;
@@ -124,9 +130,11 @@ public:
     }
 
     bool VisitFieldDecl(FieldDecl* declaration) {
-        if (sourceManager_.isWrittenInMainFile(declaration->getLocation())
-                && !observedType(declaration->getType()).empty()) {
-            observedMemberFields_.push_back(declaration);
+        if (sourceManager_.isWrittenInMainFile(declaration->getLocation())) {
+            const std::string type = observedType(declaration->getType());
+            if (!type.empty() && type != "scalar") {
+                observedMemberFields_.push_back(declaration);
+            }
         }
         return true;
     }

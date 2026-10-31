@@ -14,6 +14,9 @@ export interface KnownStructure {
   path: string;
   type: string;
   initialValue: JsonValue;
+  frame?: number;
+  func?: string;
+  depth?: number;
 }
 
 export class TracePlayer {
@@ -39,6 +42,9 @@ export class TracePlayer {
           path: rootPath,
           type: entry.type,
           initialValue: entry.value,
+          frame: entry.frame,
+          func: entry.func,
+          depth: entry.depth,
         });
       }
     });
@@ -54,6 +60,9 @@ export class TracePlayer {
           path: rootPath,
           type: entry.type,
           initialValue: null,
+          frame: entry.frame,
+          func: entry.func,
+          depth: entry.depth,
         });
       }
     });
@@ -111,6 +120,9 @@ export class TracePlayer {
         type: known.type,
         value: known.initialValue,
         active: true,
+        frame: known.frame,
+        func: known.func,
+        depth: known.depth,
       };
     }
 
@@ -135,6 +147,9 @@ export class TracePlayer {
         type: known.type,
         value: known.initialValue,
         active: true,
+        frame: known.frame,
+        func: known.func,
+        depth: known.depth,
       };
     }
 

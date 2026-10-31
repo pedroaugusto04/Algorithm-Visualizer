@@ -300,4 +300,30 @@ describe('RunCodeComponent', () => {
       expect(helpBtn.textContent.trim()).toBe('?');
     });
   });
+
+  describe('Variables tab', () => {
+    it('computes variableStates and displays the Variables tab when scalar variables exist', () => {
+      const events: ExecutionLogEntry[] = [
+        { schema: 'av.event.v2', time: 1, type: 'scalar', path: 'count', op: 'init', line: 2, func: 'main', frame: 1, value: 0 },
+        { schema: 'av.event.v2', time: 2, type: 'scalar', path: 'count', op: 'snapshot', line: 3, func: 'main', frame: 1, value: 1 },
+        { schema: 'av.event.v2', time: 3, type: 'scalar', path: 'count', op: 'snapshot', line: 4, func: 'main', frame: 1, value: 2 },
+      ];
+
+      component['loadEvents'](events);
+      expect(component.variableStates().length).toBe(1);
+      const state0 = component.variableStates()[0];
+      expect(state0.path).toBe('count');
+      expect(state0.value as number).toBe(0);
+      expect(state0.valueType).toBe('number');
+      expect(state0.scope).toBe('main() · frame 1');
+
+      component.nextStep();
+      expect(component.variableStates()[0].value as number).toBe(1);
+      expect(component.variableStates()[0].changed).toBe(true);
+
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.textContent).toContain('Variables');
+    });
+  });
 });

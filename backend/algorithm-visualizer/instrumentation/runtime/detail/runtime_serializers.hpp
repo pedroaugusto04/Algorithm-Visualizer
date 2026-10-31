@@ -34,6 +34,9 @@ std::string __serialize(const T& v) {
         }
         return std::to_string(v);
     }
+    else if constexpr (std::is_enum_v<T>) {
+        return std::to_string(static_cast<long long>(v));
+    }
     else {
         return __json_string(std::string("<") + typeid(T).name() + ">");
     }

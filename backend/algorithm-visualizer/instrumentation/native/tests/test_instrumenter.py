@@ -98,7 +98,28 @@ int main() {
     def test_scalar_only_main_is_left_runnable(self):
         stdout, events = self.run_program("int main() { int answer = 42; return answer == 42 ? 0 : 1; }\n")
         self.assertEqual(stdout, "")
-        self.assertEqual(events, [])
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[0]["type"], "scalar")
+        self.assertEqual(events[0]["path"], "answer")
+        self.assertEqual(events[0]["op"], "init")
+        self.assertEqual(events[0]["value"], 42)
+        self.assertEqual(events[1]["type"], "scalar")
+        self.assertEqual(events[1]["path"], "answer")
+        self.assertEqual(events[1]["op"], "exit")
+
+    def test_scalar_variable_mutation_across_steps(self):
+        stdout, events = self.run_program(r"""
+int main() {
+    int counter = 10;
+    counter += 5;
+    counter *= 2;
+    return 0;
+}
+""")
+        self.assertEqual(stdout, "")
+        counter_events = [e for e in events if e["path"] == "counter" and e["op"] != "exit"]
+        self.assertEqual(len(counter_events), 3)
+        self.assertEqual([e["value"] for e in counter_events], [10, 15, 30])
 
     def test_fixed_array_is_snapshotted_each_loop_iteration(self):
         stdout, events = self.run_program(r"""
