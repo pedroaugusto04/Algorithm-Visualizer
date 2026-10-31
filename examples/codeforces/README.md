@@ -1,17 +1,12 @@
-# Exemplos no estilo Codeforces
+# Codeforces-style Examples
 
-Cada exemplo tem um arquivo `.cpp` e um `.in` correspondente. No visualizador,
-cole o conteúdo do `.cpp` em **Source Code** e o do `.in` em **Standard input**.
-Os arquivos `.out` mostram a saída esperada.
+Each example includes a `.cpp` source file and a corresponding `.in` input file. In the visualizer, paste the contents of `.cpp` into **Source Code** and `.in` into **Standard input**. The `.out` files indicate the expected standard output.
 
-- `a_plus_b`: vários casos de teste e leitura de `stdin`.
-- `sort_vector`: vetor e ordenação, para conferir eventos de visualização.
-- `frequency_map`: contagem com `std::map`, para conferir visualização de mapa.
-- `bfs`: lista de adjacência em vetor aninhado e fila `std::queue`.
-- `dfs`: busca iterativa com vetor aninhado e pilha `std::stack`.
-- `dijkstra_map`: pesos em `std::map<int, std::vector<std::pair<int, int>>>` e fila de prioridade.
+- `a_plus_b`: multiple test cases and reading from `stdin`.
+- `sort_vector`: vector manipulation and sorting to inspect trace visualization events.
+- `frequency_map`: frequency counting using `std::map` to inspect map visualization.
+- `bfs`: breadth-first search using nested vector adjacency list and `std::queue`.
+- `dfs`: iterative depth-first search using nested vector and `std::stack`.
+- `dijkstra_map`: weighted shortest paths using `std::map<int, std::vector<std::pair<int, int>>>` and `std::priority_queue`.
 
-Todos são programas completos com `main()`, no formato stdin/stdout usado pelo
-backend atual. O visualizador mostra a lista de adjacência como estrutura
-aninhada; ele não infere as arestas para desenhar automaticamente um grafo
-semântico a partir do código.
+All examples are complete standalone programs with `main()`, conforming to the standard stdin/stdout format used by the backend execution engine. The visualizer renders adjacency lists as nested structures; it does not automatically infer graph topology directly from the code syntax.

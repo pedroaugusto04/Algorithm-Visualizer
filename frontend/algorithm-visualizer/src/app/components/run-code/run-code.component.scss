@@ -147,6 +147,8 @@ app-structure-visualizer {
     flex: 0 0 auto;
     gap: 12px;
     margin-bottom: 12px;
+    position: relative;
+    z-index: 10;
 
     > div {
         display: flex;
@@ -165,11 +167,172 @@ app-structure-visualizer {
         flex-shrink: 0;
     }
 
-    button {
+    > button {
         flex: 0 0 auto;
         font-size: 12px;
         line-height: 32px;
         padding: 0 10px;
+    }
+}
+
+.code-panel-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+.sample-code-help {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+
+    .help-circle-badge {
+        box-sizing: border-box;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        border-radius: 50%;
+        background-color: #2563eb;
+        color: #ffffff;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.35);
+        transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+
+        &:hover, &:focus-visible {
+            background-color: #1d4ed8;
+            transform: scale(1.12);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.45);
+            outline: none;
+        }
+
+        span {
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            user-select: none;
+        }
+    }
+
+    .sample-code-popover {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        z-index: 1000;
+        width: 270px;
+        max-width: min(290px, calc(100vw - 32px));
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-4px);
+        transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+        pointer-events: none;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 0;
+            right: 0;
+            height: 10px;
+        }
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 5px;
+            width: 10px;
+            height: 10px;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            border-left: 1px solid #e2e8f0;
+            transform: rotate(45deg);
+        }
+
+        .popover-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+
+            .popover-badge {
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                background-color: #eff6ff;
+                color: #2563eb;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+
+            .popover-title {
+                font-size: 13px;
+                font-weight: 600;
+                color: #1e293b;
+            }
+        }
+
+        .popover-text {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.45;
+            margin: 0 0 10px 0;
+            text-align: left;
+        }
+
+        .btn-load-sample {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            padding: 7px 12px;
+            border-radius: 6px;
+            background-color: #2563eb;
+            color: #ffffff;
+            border: none;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease, transform 0.1s ease;
+
+            mat-icon {
+                font-size: 16px;
+                width: 16px;
+                height: 16px;
+                line-height: 16px;
+            }
+
+            &:hover {
+                background-color: #1d4ed8;
+            }
+
+            &:active {
+                transform: scale(0.98);
+            }
+        }
+    }
+
+    &:hover,
+    &:focus-within {
+        .sample-code-popover {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
     }
 }
 

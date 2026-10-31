@@ -18,6 +18,7 @@ import { GlobalRenderer } from 'src/app/services/renderers/GlobalRenderer';
 import { applySnapshotToStructure } from 'src/app/services/renderers/view-model-builder';
 import { SwalService } from 'src/app/services/utils/swal/swal.service';
 import { TracePlayer } from 'src/app/services/trace/trace-player';
+import { DIJKSTRA_SAMPLE } from './sample-algorithms';
 
 @Component({
   selector: 'app-run-code',
@@ -135,6 +136,48 @@ export class RunCodeComponent implements OnDestroy {
     private swalService: SwalService,
     private globalRenderer: GlobalRenderer
   ) { }
+
+  async loadSampleCode(): Promise<void> {
+    const hasExistingContent = this.sourceCode().trim().length > 0 || this.testCaseInput().trim().length > 0;
+    const isAlreadySample =
+      this.sourceCode().trim() === DIJKSTRA_SAMPLE.sourceCode.trim() &&
+      this.testCaseInput().trim() === DIJKSTRA_SAMPLE.input.trim();
+
+    if (isAlreadySample) {
+      this.swalService.successNoButton('Sample Already Loaded', 'Dijkstra algorithm is already loaded in the editor.');
+      return;
+    }
+
+    if (hasExistingContent) {
+      const confirmed = await this.swalService.confirm(
+        'Loading the sample will replace your current code and input. Do you want to continue?',
+        'Load Example',
+        'Cancel',
+        'Load Sample Algorithm'
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    if (this.executionStarted()) {
+      this.resetState();
+      this.executionStarted.set(false);
+      this.sourceEditorVisible.set(true);
+      this.setMobileTab('editor');
+    }
+
+    this.languageControl.setValue(DIJKSTRA_SAMPLE.language);
+    this.sourceCode.set(DIJKSTRA_SAMPLE.sourceCode);
+    this.testCaseInput.set(DIJKSTRA_SAMPLE.input);
+    this.sourceEditorScrollTop.set(0);
+    this.stdinEditorScrollTop.set(0);
+
+    this.swalService.successNoButton(
+      'Example Loaded',
+      'Dijkstra shortest path algorithm loaded. Click "Run Code" to start!'
+    );
+  }
 
   onRunCode(): void {
     if (!this.sourceCode() || !this.languageControl.value) {

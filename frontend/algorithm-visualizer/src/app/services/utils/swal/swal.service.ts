@@ -17,11 +17,12 @@ export class SwalService {
 
   confirm(
     message: string,
-    confirmButtonText: string = 'Confirmar',
-    cancelButtonText: string = 'Cancelar'
+    confirmButtonText: string = 'Confirm',
+    cancelButtonText: string = 'Cancel',
+    title: string = 'Confirmation'
   ): Promise<boolean> {
     return this.swalWithBootstrapButtons.fire({
-      title: 'Confirmação',
+      title,
       text: message,
       icon: 'warning',
       showCancelButton: true,

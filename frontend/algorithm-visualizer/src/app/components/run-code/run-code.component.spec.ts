@@ -4,6 +4,7 @@ import { RunCodeComponent } from './run-code.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ExecutionLogEntry } from 'src/app/models/ExecutionLogEntry';
+import { DIJKSTRA_SAMPLE } from './sample-algorithms';
 
 describe('RunCodeComponent', () => {
   let component: RunCodeComponent;
@@ -193,6 +194,72 @@ describe('RunCodeComponent', () => {
       });
 
       expect(component.mobileTab()).toBe('console');
+    });
+  });
+
+  describe('loadSampleCode', () => {
+    it('loads Dijkstra sample code and input directly when editor is empty', async () => {
+      const successSpy = spyOn<any>(component['swalService'], 'successNoButton');
+      component.sourceCode.set('');
+      component.testCaseInput.set('');
+
+      await component.loadSampleCode();
+
+      expect(component.sourceCode()).toBe(DIJKSTRA_SAMPLE.sourceCode);
+      expect(component.testCaseInput()).toBe(DIJKSTRA_SAMPLE.input);
+      expect(component.languageControl.value).toBe(DIJKSTRA_SAMPLE.language);
+      expect(successSpy).toHaveBeenCalledWith(
+        'Example Loaded',
+        'Dijkstra shortest path algorithm loaded. Click "Run Code" to start!'
+      );
+    });
+
+    it('prompts for confirmation when editor already contains code, and cancels if rejected', async () => {
+      const confirmSpy = spyOn<any>(component['swalService'], 'confirm').and.returnValue(Promise.resolve(false));
+      const successSpy = spyOn<any>(component['swalService'], 'successNoButton');
+      component.sourceCode.set('int main() { return 0; }');
+      component.testCaseInput.set('123');
+
+      await component.loadSampleCode();
+
+      expect(confirmSpy).toHaveBeenCalled();
+      expect(component.sourceCode()).toBe('int main() { return 0; }');
+      expect(component.testCaseInput()).toBe('123');
+      expect(successSpy).not.toHaveBeenCalled();
+    });
+
+    it('overwrites code when confirmation is accepted', async () => {
+      spyOn<any>(component['swalService'], 'confirm').and.returnValue(Promise.resolve(true));
+      const successSpy = spyOn<any>(component['swalService'], 'successNoButton');
+      component.sourceCode.set('int main() { return 0; }');
+
+      await component.loadSampleCode();
+
+      expect(component.sourceCode()).toBe(DIJKSTRA_SAMPLE.sourceCode);
+      expect(component.testCaseInput()).toBe(DIJKSTRA_SAMPLE.input);
+      expect(successSpy).toHaveBeenCalled();
+    });
+
+    it('alerts if the sample code is already loaded', async () => {
+      const successSpy = spyOn<any>(component['swalService'], 'successNoButton');
+      component.sourceCode.set(DIJKSTRA_SAMPLE.sourceCode);
+      component.testCaseInput.set(DIJKSTRA_SAMPLE.input);
+
+      await component.loadSampleCode();
+
+      expect(successSpy).toHaveBeenCalledWith(
+        'Sample Already Loaded',
+        'Dijkstra algorithm is already loaded in the editor.'
+      );
+    });
+
+    it('renders the sample code help button when sourceEditorVisible is true', () => {
+      component.sourceEditorVisible.set(true);
+      fixture.detectChanges();
+
+      const helpBtn = fixture.nativeElement.querySelector('.help-circle-badge');
+      expect(helpBtn).toBeTruthy();
+      expect(helpBtn.textContent.trim()).toBe('?');
     });
   });
 });

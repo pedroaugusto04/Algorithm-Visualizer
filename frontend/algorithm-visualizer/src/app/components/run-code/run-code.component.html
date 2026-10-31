@@ -95,7 +95,32 @@
         <section class="form-container" aria-label="Code and execution input">
             <div class="code-panel-header">
                 <div>
-                    <strong>{{ sourceEditorVisible() ? 'Run Code' : 'Execution Trace' }}</strong>
+                    <div class="code-panel-title-row">
+                        <strong>{{ sourceEditorVisible() ? 'Run Code' : 'Execution Trace' }}</strong>
+                        @if (sourceEditorVisible()) {
+                        <div class="sample-code-help">
+                            <button type="button" class="help-circle-badge"
+                                (click)="loadSampleCode()"
+                                aria-label="Load sample Dijkstra algorithm"
+                                title="Click to load Dijkstra sample algorithm">
+                                <span>?</span>
+                            </button>
+                            <div class="sample-code-popover" role="tooltip">
+                                <div class="popover-header">
+                                    <span class="popover-badge">Example</span>
+                                    <span class="popover-title">Dijkstra's Algorithm</span>
+                                </div>
+                                <p class="popover-text">
+                                    Preload a complete C++ Dijkstra shortest path implementation with sample graph input to see data structures visualized in real time.
+                                </p>
+                                <button type="button" class="btn-load-sample" (click)="loadSampleCode()">
+                                    <mat-icon>play_circle_outline</mat-icon>
+                                    <span>Load Dijkstra Example</span>
+                                </button>
+                            </div>
+                        </div>
+                        }
+                    </div>
                     @if (!sourceEditorVisible() && activeLine(); as line) {
                     <span class="header-line-info">Active line: {{ line }}</span>
                     }
