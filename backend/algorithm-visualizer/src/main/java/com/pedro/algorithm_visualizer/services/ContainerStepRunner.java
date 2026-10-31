@@ -14,8 +14,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 class ContainerStepRunner {
-    private static final int MAX_OUTPUT_BYTES = 2 * 1024 * 1024;
-    private static final long PREPARATION_TIMEOUT_SECONDS = 60;
+    private static final int MAX_OUTPUT_BYTES = 4 * 1024 * 1024;
+    private static final long DEFAULT_PREPARATION_TIMEOUT_SECONDS = 120;
+    private static final long DEFAULT_TIMEOUT_SECONDS = 60;
     private static final String DEFAULT_RUNNER_IMAGE = "pedroaug4/algo-runner:latest";
     private static final String DEFAULT_PULL_POLICY = "never";
 
@@ -23,7 +24,29 @@ class ContainerStepRunner {
     private final String runnerImage;
     private final String pullPolicy;
 
-    ContainerStepRunner() { this(20); }
+    ContainerStepRunner() {
+        this(resolveTimeoutSeconds());
+    }
+
+    private static long resolveTimeoutSeconds() {
+        String env = System.getenv("AV_TIMEOUT_SECONDS");
+        if (env != null && !env.isBlank()) {
+            try {
+                return Long.parseLong(env.trim());
+            } catch (NumberFormatException ignored) {}
+        }
+        return DEFAULT_TIMEOUT_SECONDS;
+    }
+
+    private static long resolvePreparationTimeoutSeconds() {
+        String env = System.getenv("AV_PREPARATION_TIMEOUT_SECONDS");
+        if (env != null && !env.isBlank()) {
+            try {
+                return Long.parseLong(env.trim());
+            } catch (NumberFormatException ignored) {}
+        }
+        return DEFAULT_PREPARATION_TIMEOUT_SECONDS;
+    }
 
     ContainerStepRunner(long timeoutSeconds) {
         this(
@@ -97,16 +120,18 @@ class ContainerStepRunner {
             throw new IllegalArgumentException("Etapa do runner inválida: " + mode);
         }
         String memoryLimit = switch (mode) {
-            case "instrument" -> "2g";
-            case "compile" -> "1g";
-            default -> "256m";
+            case "instrument" -> System.getenv().getOrDefault("AV_MEMORY_INSTRUMENT", "4g");
+            case "compile" -> System.getenv().getOrDefault("AV_MEMORY_COMPILE", "2g");
+            default -> System.getenv().getOrDefault("AV_MEMORY_EXECUTE", "1g");
         };
+        String cpuLimit = System.getenv().getOrDefault("AV_CPUS", "2");
+        String pidsLimit = System.getenv().getOrDefault("AV_PIDS_LIMIT", "512");
         // Named so a timeout can kill the container itself: killing the docker CLI with SIGKILL is not
         // forwarded to the container, which would otherwise keep running (and consuming CPU) orphaned.
         String containerName = "av-" + mode + "-" + UUID.randomUUID();
         Process process = new ProcessBuilder(
-                "docker", "run", "--pull", pullPolicy, "--rm", "--name", containerName, "--network", "none", "--cpus", "1",
-                "--memory", memoryLimit, "--pids-limit", "256",
+                "docker", "run", "--pull", pullPolicy, "--rm", "--name", containerName, "--network", "none", "--cpus", cpuLimit,
+                "--memory", memoryLimit, "--pids-limit", pidsLimit,
                 "--security-opt", "no-new-privileges", "--cap-drop", "ALL",
                 "-v", workspace.toAbsolutePath() + ":/work",
                 "-e", "AV_EVENT_FILE=/work/events.jsonl",
@@ -119,7 +144,7 @@ class ContainerStepRunner {
              InputStream stderrStream = process.getErrorStream()) {
             Future<String> stdout = executor.submit(() -> readAll(stdoutStream));
             Future<String> stderr = executor.submit(() -> readAll(stderrStream));
-            long stepTimeout = mode.equals("execute") ? timeoutSeconds : PREPARATION_TIMEOUT_SECONDS;
+            long stepTimeout = mode.equals("execute") ? timeoutSeconds : resolvePreparationTimeoutSeconds();
             if (!process.waitFor(stepTimeout, TimeUnit.SECONDS)) {
                 killContainer(containerName);
                 process.destroyForcibly();

@@ -23,10 +23,10 @@
 #include <bitset>
 #include <tuple>
 
-static constexpr size_t MAX_EVENT_BYTES = 2 * 1024 * 1024;
+static constexpr size_t MAX_EVENT_BYTES = 4 * 1024 * 1024;
 // Upper bound for serialization work (bytes produced while checking for changes). Without it,
 // statements that read a large container in a loop cost O(n) each and the run degrades to O(n^2).
-static constexpr size_t MAX_SERIALIZATION_WORK_BYTES = 64 * 1024 * 1024;
+static constexpr size_t MAX_SERIALIZATION_WORK_BYTES = 128 * 1024 * 1024;
 
 static int __step = 1;
 static size_t __event_bytes = 0;

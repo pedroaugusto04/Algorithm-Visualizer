@@ -73,19 +73,7 @@ public:
         const auto references = collectReferences(value);
         if (references.empty()) return true;
 
-        class CallCollector : public RecursiveASTVisitor<CallCollector> {
-        public:
-            bool VisitCallExpr(CallExpr* call) {
-                if (const auto* operation = dyn_cast<CXXOperatorCallExpr>(call)) {
-                    if (operation->getOperator() == OO_Subscript) return true;
-                }
-                hasCall = true;
-                return true;
-            }
-            bool hasCall = false;
-        } calls;
-        calls.TraverseStmt(const_cast<Expr*>(value));
-        if (calls.hasCall) {
+        if (expressionMayMutateObservedValue(value)) {
             reportUnsupported("retorno que pode modificar um contêiner observado");
         }
         return true;
@@ -256,6 +244,10 @@ private:
     }
 
     bool headerMayMutateObservedValue(const Stmt* expression) const {
+        return expressionMayMutateObservedValue(expression);
+    }
+
+    bool expressionMayMutateObservedValue(const Stmt* expression) const {
         if (!expression) return false;
         class MutationVisitor : public RecursiveASTVisitor<MutationVisitor> {
         public:
@@ -276,7 +268,7 @@ private:
                 const std::string method = call->getMethodDecl()->getNameAsString();
                 static const std::set<std::string> readOnly = {
                     "size", "length", "empty", "capacity", "max_size", "count", "find",
-                    "contains", "lower_bound", "upper_bound", "equal_range", "top", "front", "back"
+                    "contains", "lower_bound", "upper_bound", "equal_range", "top", "front", "back", "at"
                 };
                 if (readOnly.find(method) == readOnly.end()) found = true;
                 return true;

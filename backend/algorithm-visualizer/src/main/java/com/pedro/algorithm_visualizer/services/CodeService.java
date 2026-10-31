@@ -23,12 +23,12 @@ import com.pedro.algorithm_visualizer.models.DTO.ExecutionResponseDTO;
 
 @Service
 public class CodeService {
-    private static final long MAX_INPUT_BYTES = 1024L * 1024L;
-    private static final long MAX_CODE_BYTES = 200_000L;
-    private static final long QUEUE_WAIT_SECONDS = 30;
+    private static final long MAX_INPUT_BYTES = 4 * 1024L * 1024L;
+    private static final long MAX_CODE_BYTES = 500_000L;
+    private static final long QUEUE_WAIT_SECONDS = 60;
 
     private final ContainerStepRunner stepRunner;
-    /** Bounds simultaneous container pipelines; each run can use up to 2 GB while instrumenting. */
+    /** Bounds simultaneous container pipelines; each run can use up to 4 GB while instrumenting. */
     private final Semaphore runSlots;
 
     @Autowired

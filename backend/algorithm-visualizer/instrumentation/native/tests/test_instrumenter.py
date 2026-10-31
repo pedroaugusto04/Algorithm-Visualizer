@@ -594,6 +594,29 @@ int main() {
             self.assertIn("efeito colateral em cabeçalho de controle", result.stderr)
             self.assertEqual(result.stdout, "")
 
+    def test_read_only_return_on_observed_container_is_allowed(self):
+        stdout, events = self.run_program(r"""
+#include <iostream>
+#include <vector>
+int get_size(std::vector<int>& values) {
+    return values.size();
+}
+int main() {
+    std::vector<int> values{1, 2, 3};
+    std::cout << get_size(values) << '\n';
+    return values.empty() ? 1 : 0;
+}
+""")
+        self.assertEqual(stdout, "3\n")
+
+    def test_mutating_return_on_observed_container_is_rejected(self):
+        self.assert_rejected_with(
+            "#include <vector>\n"
+            "int mutate(std::vector<int>& values) { values.push_back(42); return 0; }\n"
+            "int main() { std::vector<int> values{1}; return mutate(values); }\n",
+            "retorno que pode modificar um contêiner observado",
+        )
+
     def test_temporary_iterators_used_for_read_only_algorithms_are_not_aliases(self):
         stdout, events = self.run_program(r"""
 #include <iostream>
