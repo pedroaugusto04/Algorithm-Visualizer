@@ -1,5 +1,4 @@
-import { Routes, Router, CanActivateFn } from '@angular/router';
-import { inject } from '@angular/core';
+import { Routes } from '@angular/router';
 import { BlankComponent } from './layouts/blank/blank.component';
 import { FullComponent } from './layouts/full/full.component';
 import { CreateGraphStructureComponent } from './pages/create-graph-structure/create-graph-structure.component';
@@ -8,20 +7,6 @@ import { SeeGraphStructureComponent } from './pages/see-graph-structure/see-grap
 import { ProfileComponent } from './pages/profile/profile.component';
 import { RunCodeComponent } from './components/run-code/run-code.component';
 
-const hasShareHash = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  const hash = window.location.hash;
-  return hash.startsWith('#s=') || hash.startsWith('#run=') || hash.startsWith('#av-run=');
-};
-
-const redirectToRunCodeIfShared: CanActivateFn = () => {
-  if (hasShareHash()) {
-    const router = inject(Router);
-    return router.parseUrl('/run-code' + window.location.hash);
-  }
-  return true;
-};
-
 export const routes: Routes = [
   {
     path: '',
@@ -29,19 +14,11 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        redirectTo: '/home',
         pathMatch: 'full',
-        canActivate: [() => {
-          const router = inject(Router);
-          if (hasShareHash()) {
-            return router.parseUrl('/run-code' + window.location.hash);
-          }
-          return router.parseUrl('/home');
-        }],
-        children: [],
       },
       {
         path: 'home',
-        canActivate: [redirectToRunCodeIfShared],
         loadChildren: () =>
           import('./pages/pages.routes').then((m) => m.PagesRoutes),
       },

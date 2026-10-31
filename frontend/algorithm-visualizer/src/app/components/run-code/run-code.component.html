@@ -5,11 +5,6 @@
                 <div>
                     <strong>Run Code</strong>
                 </div>
-                @if (sourceCode()) {
-                <button mat-stroked-button type="button" (click)="shareExecution()" aria-label="Copy reproducible link">
-                    <mat-icon>link</mat-icon> Share
-                </button>
-                }
                 @if (executionStarted()) {
                 <button mat-stroked-button type="button" (click)="toggleSourceEditor()"
                     [attr.aria-label]="sourceEditorVisible() ? 'Follow active source line' : 'Edit source code'"
@@ -19,15 +14,6 @@
                 </button>
                 }
             </div>
-            @if (shareNotice()) {
-            <div class="share-notice" role="status">{{ shareNotice() }}</div>
-            @if (sharedUrl()) {
-            <mat-form-field appearance="outline" class="w-100">
-                <mat-label>Shareable link</mat-label>
-                <input matInput [value]="sharedUrl()" readonly (focus)="$any($event.target).select()">
-            </mat-form-field>
-            }
-            }
 
             <div class="code-panel-fields">
                 @if (!executionStarted() || sourceEditorVisible()) {
