@@ -21,3 +21,10 @@ You can also use the AI Prompt (in any language) to easily create any graph you 
 In this section, you can select any structure you've created and watch algorithms run in real time
 
 <img width="1901" height="861" alt="image" src="https://github.com/user-attachments/assets/a842257d-3135-4f79-8da4-ada62c0171f9" />
+
+## Run Code
+
+Run your own custom algorithm and input to watch a step-by-step animation of your code executing in real time.
+
+<img width="1911" height="862" alt="image" src="https://github.com/user-attachments/assets/fc2cc8fa-5817-4b31-8c6a-e372f10a6b42" />
+
