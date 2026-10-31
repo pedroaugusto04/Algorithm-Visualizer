@@ -119,6 +119,9 @@ export class RunCodeComponent implements OnDestroy {
   // tabs
   selectedTabIndex = signal<number>(0);
   autoSwitchTabs = signal<boolean>(true);
+  isVariablesTabHighlighting = signal<boolean>(false);
+  private variablesHighlightTimeout: ReturnType<typeof setTimeout> | null = null;
+  private variablesHighlightSubTimeout: ReturnType<typeof setTimeout> | null = null;
   executionStarted = signal<boolean>(false);
   sourceEditorVisible = signal<boolean>(true);
   outputConsoleExpanded = signal<boolean>(false);
@@ -272,6 +275,8 @@ export class RunCodeComponent implements OnDestroy {
     const firstStructureIndex = firstRoot ? this.structures.findIndex(s => s.path === firstRoot) : -1;
     if (firstStructureIndex >= 0) {
       this.selectStructureTab(firstStructureIndex);
+    } else if (firstRoot && this.hasVariablesTab() && this.isScalarPath(firstRoot)) {
+      this.selectStructureTab(this.variablesTabIndex);
     }
 
     this.play();
@@ -357,6 +362,13 @@ export class RunCodeComponent implements OnDestroy {
     const activeStructureIndex = activeRoot ? this.structures.findIndex(s => s.path === activeRoot) : -1;
     if (activeStructureIndex >= 0 && this.player.currentStep < this.totalSteps() - 1) {
       this.highlightStructure(this.structures[activeStructureIndex], activeStructureIndex);
+    } else if (
+      activeRoot &&
+      this.hasVariablesTab() &&
+      this.isScalarPath(activeRoot) &&
+      this.player.currentStep < this.totalSteps() - 1
+    ) {
+      this.highlightVariablesTab();
     }
   }
 
@@ -390,7 +402,8 @@ export class RunCodeComponent implements OnDestroy {
     this.autoSwitchTargetIndex = tabIndex;
     this.selectedTabIndex.set(tabIndex);
     requestAnimationFrame(() => {
-      if (version === this.tabSelectionVersion && this.autoSwitchTabs() && this.structures[tabIndex]) {
+      const isValidTab = Boolean(this.structures[tabIndex] || (this.hasVariablesTab() && tabIndex === this.variablesTabIndex));
+      if (version === this.tabSelectionVersion && this.autoSwitchTabs() && isValidTab) {
         this.selectedTabIndex.set(tabIndex);
       }
     });
@@ -438,6 +451,9 @@ export class RunCodeComponent implements OnDestroy {
     this.autoSwitchTargetIndex = null;
     this.tabSelectionVersion++;
     this.selectedTabIndex.set(0);
+    this.isVariablesTabHighlighting.set(false);
+    if (this.variablesHighlightTimeout) clearTimeout(this.variablesHighlightTimeout);
+    if (this.variablesHighlightSubTimeout) clearTimeout(this.variablesHighlightSubTimeout);
     this.executionWarnings.set([]);
     this.isTraceTruncated.set(false);
   }
@@ -517,6 +533,23 @@ export class RunCodeComponent implements OnDestroy {
     return struct.initialized ?? false;
   }
 
+  hasVariablesTab(): boolean {
+    return this.variableStates().length > 0;
+  }
+
+  get variablesTabIndex(): number {
+    return this.structures.length;
+  }
+
+  private isScalarPath(path: string): boolean {
+    const known = this.player?.structures.find(s => s.path === path);
+    if (known) {
+      return known.type === 'scalar';
+    }
+    const entry = this.player?.activeEntry(this.currentStep());
+    return entry?.type === 'scalar';
+  }
+
   highlightStructure(struct: StructureWindow, tabIndex: number): void {
     struct.isHighlighting = true;
     this.selectStructureTab(tabIndex);
@@ -525,6 +558,23 @@ export class RunCodeComponent implements OnDestroy {
       struct.isHighlighting = true;
       setTimeout(() => {
         struct.isHighlighting = false;
+      }, Math.max(50, this.stepDelay - 50));
+    }, 10);
+  }
+
+  highlightVariablesTab(): void {
+    if (!this.hasVariablesTab()) return;
+    const tabIndex = this.variablesTabIndex;
+    this.isVariablesTabHighlighting.set(true);
+    this.selectStructureTab(tabIndex);
+
+    if (this.variablesHighlightTimeout) clearTimeout(this.variablesHighlightTimeout);
+    if (this.variablesHighlightSubTimeout) clearTimeout(this.variablesHighlightSubTimeout);
+
+    this.variablesHighlightTimeout = setTimeout(() => {
+      this.isVariablesTabHighlighting.set(true);
+      this.variablesHighlightSubTimeout = setTimeout(() => {
+        this.isVariablesTabHighlighting.set(false);
       }, Math.max(50, this.stepDelay - 50));
     }, 10);
   }
@@ -549,5 +599,7 @@ export class RunCodeComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.resetState();
     if (this.resumeTimeout) clearTimeout(this.resumeTimeout);
+    if (this.variablesHighlightTimeout) clearTimeout(this.variablesHighlightTimeout);
+    if (this.variablesHighlightSubTimeout) clearTimeout(this.variablesHighlightSubTimeout);
   }
 }

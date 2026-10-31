@@ -290,7 +290,10 @@
                 </mat-tab>
                 }
                 @if (variableStates().length > 0) {
-                <mat-tab label="Variables">
+                <mat-tab [labelClass]="isVariablesTabHighlighting() ? 'glow-active' : ''">
+                    <ng-template mat-tab-label>
+                        <span>Variables</span>
+                    </ng-template>
                     <section class="variables-panel" aria-label="Scalar variable state">
                         <div class="variables-panel-header">
                             <strong>Variables</strong>

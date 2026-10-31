@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { RunCodeComponent } from './run-code.component';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -325,5 +325,51 @@ describe('RunCodeComponent', () => {
       const compiled = fixture.nativeElement as HTMLElement;
       expect(compiled.textContent).toContain('Variables');
     });
+
+    it('auto-switches to Variables tab and activates highlight when scalar changes', fakeAsync(() => {
+      const events: ExecutionLogEntry[] = [
+        { schema: 'av.event.v2', time: 1, type: 'array', path: 'arr', op: 'init', line: 1, func: 'main', frame: 1, value: [1, 2] },
+        { schema: 'av.event.v2', time: 2, type: 'scalar', path: 'val', op: 'init', line: 2, func: 'main', frame: 1, value: 10 },
+        { schema: 'av.event.v2', time: 3, type: 'array', path: 'arr', op: 'snapshot', line: 3, func: 'main', frame: 1, value: [9, 2] },
+        { schema: 'av.event.v2', time: 4, type: 'scalar', path: 'val', op: 'snapshot', line: 4, func: 'main', frame: 1, value: 20 },
+        { schema: 'av.event.v2', time: 5, type: 'scalar', path: 'val', op: 'snapshot', line: 5, func: 'main', frame: 1, value: 30 },
+      ];
+
+      component['loadEvents'](events);
+      expect(component.structures.length).toBe(1);
+      expect(component.variablesTabIndex).toBe(1);
+
+      // Step 0 is 'arr' snapshot -> should select tab 0
+      component.goToStep(0, false);
+      expect(component.selectedTabIndex()).toBe(0);
+
+      // Step 1 is 'val' snapshot -> should switch to Variables tab (index 1) and highlight
+      component.goToStep(1, false);
+      expect(component.selectedTabIndex()).toBe(1);
+      expect(component.isVariablesTabHighlighting()).toBe(true);
+
+      tick(1000);
+      expect(component.isVariablesTabHighlighting()).toBe(false);
+    }));
+
+    it('does not auto-switch to Variables tab when autoSwitchTabs is disabled', fakeAsync(() => {
+      const events: ExecutionLogEntry[] = [
+        { schema: 'av.event.v2', time: 1, type: 'array', path: 'arr', op: 'init', line: 1, func: 'main', frame: 1, value: [1, 2] },
+        { schema: 'av.event.v2', time: 2, type: 'scalar', path: 'val', op: 'init', line: 2, func: 'main', frame: 1, value: 10 },
+        { schema: 'av.event.v2', time: 3, type: 'array', path: 'arr', op: 'snapshot', line: 3, func: 'main', frame: 1, value: [9, 2] },
+        { schema: 'av.event.v2', time: 4, type: 'scalar', path: 'val', op: 'snapshot', line: 4, func: 'main', frame: 1, value: 20 },
+      ];
+
+      component['loadEvents'](events);
+      component.goToStep(0, false);
+      expect(component.selectedTabIndex()).toBe(0);
+
+      component.autoSwitchTabs.set(false);
+      component.goToStep(1, false);
+
+      // Should remain on tab 0
+      expect(component.selectedTabIndex()).toBe(0);
+      tick(1000);
+    }));
   });
 });
