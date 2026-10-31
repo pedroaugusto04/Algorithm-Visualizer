@@ -18,7 +18,7 @@ Run your own custom algorithm and input to watch a step-by-step animation of you
 ## Create Structure
 In 'Create Structure', you can build your own graph
 
-You can also use the AI Prompt (in any language) to easily create any graph you want using AI
+You can also use the AI Prompt to easily create any graph you want using AI
 
 <img width="1901" height="861" alt="image" src="https://github.com/user-attachments/assets/e0c505eb-50f4-4d6e-9bc4-0f0353b94509" />
 
