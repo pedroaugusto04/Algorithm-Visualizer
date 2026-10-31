@@ -1,4 +1,5 @@
 import { Injectable } from "@angular/core";
+import * as d3 from 'd3';
 import { Renderer } from "./Renderer";
 import { isStructuredValue, refreshStructuredSelection, toggleStructuredSelection } from './structured-value-selection';
 
@@ -8,6 +9,16 @@ export function formatArrayCellValue(value: unknown): string {
   if (typeof value === 'string') return value;
   if (typeof value === 'object') return JSON.stringify(value) ?? String(value);
   return String(value);
+}
+
+function isValueRelevant(value: unknown): boolean {
+  if (value === 0 || value === null || value === undefined || value === '' || value === false) {
+    return false;
+  }
+  if (Array.isArray(value) && value.length === 0) {
+    return false;
+  }
+  return true;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -29,9 +40,34 @@ export class ArrayRenderer implements Renderer {
 
     let flatData: any[] = [];
     if (is2D) {
-      for (let r = 0; r < arrayData.length; r++) {
+      let maxRelevantRow = -1;
+      let maxRelevantCol = -1;
+      if (arrayData.length > 15) {
+        for (let r = 0; r < arrayData.length; r++) {
+          const row = arrayData[r];
+          if (Array.isArray(row)) {
+            for (let c = 0; c < row.length; c++) {
+              if (isValueRelevant(row[c])) {
+                maxRelevantRow = Math.max(maxRelevantRow, r);
+                maxRelevantCol = Math.max(maxRelevantCol, c);
+              }
+            }
+          } else if (isValueRelevant(row)) {
+            maxRelevantRow = Math.max(maxRelevantRow, r);
+          }
+        }
+      }
+      const rowLimit = arrayData.length > 15
+        ? Math.min(arrayData.length, Math.max(maxRelevantRow + 2, 5))
+        : arrayData.length;
+
+      for (let r = 0; r < rowLimit; r++) {
         const row = arrayData[r] || [];
-        for (let c = 0; c < row.length; c++) {
+        const colLimit = (maxRelevantCol >= 0 && row.length > 20)
+          ? Math.min(row.length, Math.max(maxRelevantCol + 2, 8))
+          : row.length;
+
+        for (let c = 0; c < colLimit; c++) {
           flatData.push({
             value: row[c],
             r: r,
@@ -41,16 +77,85 @@ export class ArrayRenderer implements Renderer {
             label: `[${r}][${c}]`
           });
         }
+        if (colLimit < row.length) {
+          flatData.push({
+            value: '...',
+            r: r,
+            c: colLimit,
+            key: `row-${r}-omitted`,
+            valuePath: `__omitted__`,
+            label: `+${row.length - colLimit}`,
+            isOmitted: true
+          });
+        }
+      }
+      if (rowLimit < arrayData.length) {
+        flatData.push({
+          value: '...',
+          r: rowLimit,
+          c: 0,
+          key: `rows-omitted`,
+          valuePath: `__omitted__`,
+          label: `+${arrayData.length - rowLimit} vazias`,
+          isOmitted: true
+        });
       }
     } else {
-      flatData = arrayData.map((d: any, i: number) => ({
-        value: d,
-        r: 0,
-        c: i,
-        key: `${i}`,
-        valuePath: `${d3Data.ownerPath ?? 'value'}[${i}]`,
-        label: `[${i}]`
-      }));
+      let maxRelevantIndex = -1;
+      if (arrayData.length > 20) {
+        for (let i = 0; i < arrayData.length; i++) {
+          if (isValueRelevant(arrayData[i])) {
+            maxRelevantIndex = Math.max(maxRelevantIndex, i);
+          }
+        }
+        if (Array.isArray(d3Data.activePointers)) {
+          for (const ptr of d3Data.activePointers) {
+            if (ptr.active !== false && typeof ptr.value === 'number' && Number.isInteger(ptr.value)) {
+              if (ptr.value >= 0 && ptr.value < arrayData.length) {
+                maxRelevantIndex = Math.max(maxRelevantIndex, ptr.value);
+              }
+            }
+          }
+        }
+        if (d3Data.changedPaths instanceof Set) {
+          for (const p of d3Data.changedPaths) {
+            const match = p.match(/\[(\d+)\]/);
+            if (match) {
+              const idx = parseInt(match[1], 10);
+              if (idx >= 0 && idx < arrayData.length) {
+                maxRelevantIndex = Math.max(maxRelevantIndex, idx);
+              }
+            }
+          }
+        }
+      }
+
+      const displayLimit = arrayData.length > 20
+        ? Math.min(arrayData.length, Math.max(maxRelevantIndex + 3, 10))
+        : arrayData.length;
+
+      for (let i = 0; i < displayLimit; i++) {
+        flatData.push({
+          value: arrayData[i],
+          r: 0,
+          c: i,
+          key: `${i}`,
+          valuePath: `${d3Data.ownerPath ?? 'value'}[${i}]`,
+          label: `[${i}]`
+        });
+      }
+
+      if (displayLimit < arrayData.length) {
+        flatData.push({
+          value: '...',
+          r: 0,
+          c: displayLimit,
+          key: 'tail-omitted',
+          valuePath: '__omitted__',
+          label: `+${arrayData.length - displayLimit}`,
+          isOmitted: true
+        });
+      }
     }
 
     refreshStructuredSelection(d3Data, flatData.map((cell: any) => ({ path: cell.valuePath, value: cell.value })));
@@ -103,30 +208,34 @@ export class ArrayRenderer implements Renderer {
     allCells.select('rect')
       .attr('width', cellWidth)
       .attr('height', cellHeight)
-      .attr('fill', (d: any) => isChanged(d.valuePath) ? '#fef08a' : '#fff')
+      .attr('fill', (d: any) => d.isOmitted ? '#f8fafc' : (isChanged(d.valuePath) ? '#fef08a' : '#fff'))
       .attr('stroke', (d: any) => {
+        if (d.isOmitted) return '#94a3b8';
         if (d.valuePath === d3Data.selectedValuePath) return '#ff9800';
         if (isChanged(d.valuePath)) return '#eab308';
         return '#333';
       })
-      .attr('stroke-width', (d: any) => (d.valuePath === d3Data.selectedValuePath || isChanged(d.valuePath)) ? 3 : 2);
+      .attr('stroke-dasharray', (d: any) => d.isOmitted ? '4 4' : null)
+      .attr('stroke-width', (d: any) => (d.valuePath === d3Data.selectedValuePath || isChanged(d.valuePath)) ? 3 : (d.isOmitted ? 1.5 : 2));
     allCells.select('text.cell-text').attr('x', cellWidth / 2);
     allCells.select('text.index-text').attr('x', cellWidth / 2);
-    allCells.style('cursor', (d: any) => isStructuredValue(d.value) ? 'pointer' : 'default')
+    allCells.style('cursor', (d: any) => (isStructuredValue(d.value) && !d.isOmitted) ? 'pointer' : 'default')
       .on('click.structured-value', (_event: unknown, d: any) => {
-        if (!isStructuredValue(d.value)) return;
+        if (d.isOmitted || !isStructuredValue(d.value)) return;
         toggleStructuredSelection(d3Data, { path: d.valuePath, value: d.value });
         allCells.select('rect')
-          .attr('stroke', (cell: any) => cell.valuePath === d3Data.selectedValuePath ? '#ff9800' : '#333')
-          .attr('stroke-width', (cell: any) => cell.valuePath === d3Data.selectedValuePath ? 3 : 2);
+          .attr('stroke', (cell: any) => cell.isOmitted ? '#94a3b8' : (cell.valuePath === d3Data.selectedValuePath ? '#ff9800' : '#333'))
+          .attr('stroke-width', (cell: any) => (cell.valuePath === d3Data.selectedValuePath || isChanged(cell.valuePath)) ? 3 : (cell.isOmitted ? 1.5 : 2));
       });
 
     const isStack = d3Data.viewMode === 'stack' && !is2D;
     const isQueue = d3Data.viewMode === 'queue' && !is2D;
     const columnCount = is2D
-      ? Math.max(0, ...arrayData.map((row: any[]) => row?.length ?? 0))
-      : flatData.length;
-    const rowCount = is2D ? arrayData.length : (isStack ? flatData.length : 1);
+      ? Math.max(1, ...flatData.map((d: any) => d.c + 1))
+      : Math.max(1, flatData.length);
+    const rowCount = is2D
+      ? Math.max(1, ...flatData.map((d: any) => d.r + 1))
+      : (isStack ? flatData.length : 1);
     const viewWidth = isStack
       ? Math.max(240, cellWidth + 160)
       : Math.max(160, columnCount * (cellWidth + padding) + 80);
@@ -146,10 +255,9 @@ export class ArrayRenderer implements Renderer {
 
     allCells.select('text.cell-text')
       .text((d: any) => formatArrayCellValue(d.value))
-      .style('font-size', hasStructuredValues ? '10px' : null);
-
-    allCells.select('title')
-      .text((d: any) => formatArrayCellValue(d.value));
+      .style('font-size', (d: any) => d.isOmitted ? '11px' : (hasStructuredValues ? '10px' : null))
+      .style('fill', (d: any) => d.isOmitted ? '#64748b' : null)
+      .style('font-style', (d: any) => d.isOmitted ? 'italic' : null);
 
     allCells.select('text.index-text')
       .text((d: any) => d.label)
@@ -185,34 +293,91 @@ export class ArrayRenderer implements Renderer {
     for (const ptr of activePointers) {
       if (ptr.active === false) continue;
       if (typeof ptr.value === 'number' && Number.isInteger(ptr.value) && ptr.value >= 0 && ptr.value < flatData.length) {
+        const cleanName = ptr.path.split('@')[0];
         const existing = pointersByIndex.get(ptr.value) ?? { names: [], hasChanged: false };
-        existing.names.push(ptr.path);
+        if (!existing.names.includes(cleanName)) {
+          existing.names.push(cleanName);
+        }
         if (ptr.changed) existing.hasChanged = true;
         pointersByIndex.set(ptr.value, existing);
       }
     }
 
-    const pointerItems = Array.from(pointersByIndex.entries()).map(([index, data]) => ({
-      index,
-      label: `▼ ${data.names.join(', ')}`,
-      hasChanged: data.hasChanged
-    }));
+    allCells.select('title')
+      .text((d: any) => {
+        if (d.isOmitted) return `${d.label} células não modificadas omitidas para foco nos dados relevantes`;
+        const ptrs = pointersByIndex.get(d.c);
+        const base = formatArrayCellValue(d.value);
+        if (ptrs && ptrs.names.length > 0) {
+          return `${base} (Índice ${d.label}, Ponteiros: ${ptrs.names.join(', ')})`;
+        }
+        return base;
+      });
+
+    const pointerItems = Array.from(pointersByIndex.entries()).map(([index, data]) => {
+      let label = `▼ ${data.names.join(', ')}`;
+      const isCollapsed = data.names.length > 2 || label.length > 14;
+      const displayLabel = isCollapsed
+        ? `▼ ${data.names[0]} (+${data.names.length - 1})`
+        : label;
+      return {
+        index,
+        label: displayLabel,
+        fullLabel: `▼ ${data.names.join(', ')}`,
+        names: data.names,
+        hasChanged: data.hasChanged,
+        isCollapsed,
+        y: 36
+      };
+    });
+
+    // Stagger heights if adjacent indices both have pointers to avoid horizontal collision
+    pointerItems.sort((a, b) => a.index - b.index);
+    let lastIndex = -999;
+    let currentLevel = 0;
+    for (const item of pointerItems) {
+      if (item.index - lastIndex <= 1) {
+        currentLevel = (currentLevel + 1) % 2;
+      } else {
+        currentLevel = 0;
+      }
+      item.y = currentLevel === 1 ? 20 : 36;
+      lastIndex = item.index;
+    }
 
     const pointerSelection = svg.selectAll('text.array-pointer-marker')
       .data(pointerItems, (d: any) => d.index);
 
     pointerSelection.exit().remove();
 
-    pointerSelection.join('text')
+    const pointerTexts = pointerSelection.join('text')
       .attr('class', 'array-pointer-marker')
       .attr('x', (d: any) => d.index * (cellWidth + padding) + 40 + cellWidth / 2)
-      .attr('y', 36)
+      .attr('y', (d: any) => d.y)
       .attr('text-anchor', 'middle')
       .attr('fill', (d: any) => d.hasChanged ? '#d97706' : '#2563eb')
       .style('font-size', '11px')
       .style('font-weight', 700)
       .style('font-family', 'ui-monospace, monospace')
+      .style('cursor', 'pointer')
       .text((d: any) => d.label);
+
+    pointerTexts
+      .attr('title', (d: any) => `Ponteiros no índice [${d.index}]: ${d.names.join(', ')}`);
+
+    pointerTexts
+      .on('mouseenter', (event: MouseEvent, d: any) => {
+        d3.select(event.currentTarget as SVGTextElement)
+          .text(d.fullLabel)
+          .attr('fill', '#1d4ed8')
+          .style('font-size', '12px');
+      })
+      .on('mouseleave', (event: MouseEvent, d: any) => {
+        d3.select(event.currentTarget as SVGTextElement)
+          .text(d.label)
+          .attr('fill', d.hasChanged ? '#d97706' : '#2563eb')
+          .style('font-size', '11px');
+      });
   }
 
 }

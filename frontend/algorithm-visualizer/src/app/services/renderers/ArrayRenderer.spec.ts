@@ -101,4 +101,71 @@ describe('ArrayRenderer', () => {
     expect(pointers.length).toBe(1);
     expect(pointers[0].textContent).toBe('▼ l, r');
   });
+
+  it('collapses more than 2 variable pointers at the same cell index', () => {
+    const d3Data = {
+      svg,
+      arrayData: [10, 20, 30],
+      viewMode: 'array',
+      ownerPath: 'arr',
+      activePointers: [
+        { path: 'u', value: 1, changed: false },
+        { path: 'v', value: 1, changed: false },
+        { path: 'head', value: 1, changed: false },
+      ]
+    };
+
+    renderer.renderElements(d3Data);
+
+    const pointers = container.querySelectorAll<SVGTextElement>('text.array-pointer-marker');
+    expect(pointers.length).toBe(1);
+    expect(pointers[0].textContent).toBe('▼ u (+2)');
+    expect(pointers[0].getAttribute('title')).toContain('u, v, head');
+  });
+
+  it('staggers vertically pointer markers on adjacent indices to avoid overlapping', () => {
+    const d3Data = {
+      svg,
+      arrayData: [10, 20, 30, 40],
+      viewMode: 'array',
+      ownerPath: 'arr',
+      activePointers: [
+        { path: 'i', value: 1, changed: false },
+        { path: 'j', value: 2, changed: false },
+      ]
+    };
+
+    renderer.renderElements(d3Data);
+
+    const pointers = Array.from(container.querySelectorAll<SVGTextElement>('text.array-pointer-marker'));
+    expect(pointers.length).toBe(2);
+    const y1 = parseFloat(pointers[0].getAttribute('y') || '0');
+    const y2 = parseFloat(pointers[1].getAttribute('y') || '0');
+    expect(y1).not.toBe(y2);
+  });
+
+  it('slices large arrays with trailing default zeros to show only relevant elements and an omitted marker', () => {
+    const largeArr = new Array(100).fill(0);
+    largeArr[0] = 42;
+    largeArr[1] = 99;
+    largeArr[2] = 7;
+
+    const d3Data = {
+      svg,
+      arrayData: largeArr,
+      viewMode: 'array',
+      ownerPath: 'arr',
+      activePointers: []
+    };
+
+    renderer.renderElements(d3Data);
+
+    const cells = container.querySelectorAll<SVGRectElement>('rect');
+    expect(cells.length).toBeLessThan(15);
+
+    const omittedLabel = Array.from(container.querySelectorAll<SVGTextElement>('text.index-text'))
+      .find(t => t.textContent?.startsWith('+'));
+    expect(omittedLabel).toBeDefined();
+    expect(omittedLabel!.textContent).toMatch(/\+\d+/);
+  });
 });

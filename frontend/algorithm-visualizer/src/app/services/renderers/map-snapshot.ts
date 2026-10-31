@@ -90,7 +90,35 @@ export function buildMapGraphSnapshot(
 
   let rawEntries: [unknown, unknown][] = [];
   if (isArray && Array.isArray(value)) {
-    rawEntries = value.map((neighbors, i) => [i, neighbors]);
+    if (value.length > 15) {
+      const referencedTargets = new Set<string>();
+      value.forEach(neighbors => {
+        if (Array.isArray(neighbors)) {
+          neighbors.forEach(neighbor => {
+            const target = Array.isArray(neighbor) ? neighbor[0] : neighbor;
+            if (target !== null && target !== undefined) {
+              referencedTargets.add(String(target));
+            }
+          });
+        }
+      });
+
+      rawEntries = value
+        .map((neighbors, i): [unknown, unknown] => [i, neighbors])
+        .filter(([i, neighbors]) => {
+          const hasOutgoing = Array.isArray(neighbors)
+            ? neighbors.length > 0
+            : Boolean(neighbors && typeof neighbors === 'object' && Object.keys(neighbors).length > 0);
+          const hasIncoming = referencedTargets.has(String(i));
+          return hasOutgoing || hasIncoming;
+        });
+
+      if (rawEntries.length === 0) {
+        rawEntries = value.slice(0, Math.min(value.length, 6)).map((neighbors, i) => [i, neighbors]);
+      }
+    } else {
+      rawEntries = value.map((neighbors, i) => [i, neighbors]);
+    }
   } else if (Array.isArray(value)) {
     rawEntries = value.filter((entry): entry is JsonValue[] => Array.isArray(entry) && entry.length >= 2)
       .map(entry => [entry[0], entry[1]]);
