@@ -67,8 +67,8 @@ export class StructureVisualizerComponent implements AfterViewInit, OnChanges, O
     const container = this.graphContainer.nativeElement;
     const bounds = container.getBoundingClientRect();
     const isGraph = this.struct.viewMode === 'graph';
-    const width = bounds.width || (isGraph ? 0 : 800);
-    const height = bounds.height || (isGraph ? 0 : 600);
+    const width = bounds.width || 800;
+    const height = bounds.height || 600;
     if (width <= 0 || height <= 0) return;
 
     d3.select(container).selectAll('svg').remove();

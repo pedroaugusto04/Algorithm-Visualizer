@@ -82,5 +82,35 @@ describe('RunCodeComponent', () => {
     expect(component.structures.find(item => item.path === 'frequency')?.d3Data?.nodes.slice(1)
       .map(node => node.value)).toEqual(['1: 2', '2: 1']);
   });
+  it('switches structure view mode to graph and immediately triggers render', () => {
+    const renderSpy = spyOn(component['globalRenderer'], 'renderElements');
+    const logs: ExecutionLogEntry[] = [
+      { schema: 'av.event.v2', time: 1, type: 'map', path: 'adj', op: 'init', line: 1, value: { 'A': ['B'] } }
+    ];
 
+    component['processResult']({
+      schema: 'av.execution.v1',
+      success: true,
+      stage: 'completed',
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+      durationMs: 1,
+      events: logs,
+      error: null
+    });
+    component.pause();
+
+    const struct = component.structures.find(s => s.path === 'adj');
+    expect(struct).toBeTruthy();
+    expect(struct!.viewMode).toBe('map');
+
+    renderSpy.calls.reset();
+    component.changeStructureViewMode(struct!, 'graph');
+
+    const updatedStruct = component.structures.find(s => s.path === 'adj');
+    expect(updatedStruct!.viewMode).toBe('graph');
+    expect(renderSpy).toHaveBeenCalled();
+    expect(updatedStruct!.d3Data?.nodes.length).toBeGreaterThan(0);
+  });
 });

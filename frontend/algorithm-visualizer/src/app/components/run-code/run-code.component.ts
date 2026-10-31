@@ -202,6 +202,7 @@ export class RunCodeComponent implements OnDestroy {
     for (const known of this.player.structures) {
       if (known.type === 'scalar') continue;
       const struct = createStructureWindow(known.path, known.type);
+      struct.initialized = true;
       applySnapshotToStructure(struct, known.initialValue, struct.viewMode);
       this.structures.push(struct);
     }
@@ -457,9 +458,15 @@ export class RunCodeComponent implements OnDestroy {
   ): void {
     if (struct.viewMode === newMode) return;
     struct.viewMode = newMode;
-    if (struct.initialized && this.player) {
-      this.syncStructuresToStep(this.currentStep());
+    if (this.player) {
+      this.syncStructuresToStep(Math.max(0, this.currentStep()));
     }
+    const index = this.structures.findIndex(s => s.path === struct.path);
+    if (index >= 0) {
+      this.structures[index] = { ...struct };
+      this.structures = [...this.structures];
+    }
+    this.globalRenderer.renderElements(this.structures);
   }
 
   ngOnDestroy(): void {

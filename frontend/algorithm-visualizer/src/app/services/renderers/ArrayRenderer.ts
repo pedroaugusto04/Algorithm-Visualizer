@@ -15,6 +15,12 @@ export class ArrayRenderer implements Renderer {
   renderElements(d3Data: any) {
     if (!d3Data || !d3Data.svg || !d3Data.arrayData) return;
 
+    if (d3Data.simulation) {
+      d3Data.simulation.stop();
+      d3Data.simulation = null;
+    }
+    d3Data.svg.selectAll('g.links-group, g.nodes-group, g.map-header, g.map-entry').remove();
+
     const { svg, arrayData } = d3Data;
     const cellHeight = 50;
     const padding = 10;

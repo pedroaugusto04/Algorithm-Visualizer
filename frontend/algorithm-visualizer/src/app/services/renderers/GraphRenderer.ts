@@ -10,8 +10,25 @@ export class GraphRenderer implements Renderer {
         d3Data: any
     ) {
 
-        if (!d3Data || !d3Data.svg || !d3Data.simulation) {
+        if (!d3Data || !d3Data.svg) {
             return;
+        }
+
+        const { width, height } = this.getDimensions(d3Data, d3Data.svg);
+        const radius = 20;
+
+        d3Data.svg
+            .attr('viewBox', `0 0 ${width} ${height}`)
+            .attr('preserveAspectRatio', 'none');
+
+        d3Data.svg.selectAll('g.array-cell, text.array-end-marker, g.map-header, g.map-entry').remove();
+
+        if (!d3Data.simulation) {
+            d3Data.simulation = d3.forceSimulation(d3Data.nodes)
+                .force('link', d3.forceLink(d3Data.links).id((d: any) => d.id).distance(100))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collide', d3.forceCollide(radius + 5));
         }
 
         this.ensureArrowMarker(d3Data.svg);
@@ -25,9 +42,6 @@ export class GraphRenderer implements Renderer {
             .data(d3Data.nodes, (d: any) => d.id);
 
         node.exit().remove();
-
-        const { width, height } = this.getDimensions(d3Data.svg);
-        const radius = 20;
 
         let linkGroup = d3Data.svg.select('g.links-group');
         if (linkGroup.empty()) {
@@ -159,6 +173,8 @@ export class GraphRenderer implements Renderer {
         d3Data.simulation.nodes(d3Data.nodes);
         if (d3Data.simulation.force('link')) {
             d3Data.simulation.force('link').links(d3Data.links);
+        } else {
+            d3Data.simulation.force('link', d3.forceLink(d3Data.links).id((d: any) => d.id).distance(100));
         }
         d3Data.simulation.force('center', d3.forceCenter(width / 2, height / 2));
         d3Data.simulation.force('collide', d3.forceCollide(radius + 5));
@@ -248,18 +264,19 @@ export class GraphRenderer implements Renderer {
         return String(node?.label ?? node?.id ?? 'Node');
     }
 
-    private getDimensions(svg: any): { width: number, height: number } {
-        const svgNode = svg.node() as SVGSVGElement;
-        const viewBox = svgNode.viewBox.baseVal;
-        let width = viewBox.width;
-        let height = viewBox.height;
+    private getDimensions(d3Data: any, svg: any): { width: number, height: number } {
+        const svgNode = svg?.node ? (svg.node() as SVGSVGElement) : null;
+        let width = d3Data?.width;
+        let height = d3Data?.height;
 
-        if (width === 0 || height === 0) {
-            width = svgNode.clientWidth || 800;
-            height = svgNode.clientHeight || 600;
+        if (!width || width <= 0) {
+            width = svgNode?.clientWidth || 800;
+        }
+        if (!height || height <= 0) {
+            height = svgNode?.clientHeight || 600;
         }
 
-        return { width, height };
+        return { width: width || 800, height: height || 600 };
     }
 
     private drag(simulation: any) {

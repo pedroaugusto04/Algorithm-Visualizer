@@ -13,6 +13,7 @@ export class GlobalRenderer {
       const nextMode = `${structure.type}:${structure.viewMode ?? structure.type}`;
       if (data.renderedMode && data.renderedMode !== nextMode) {
         data.simulation?.stop();
+        data.simulation = null;
         data.svg.selectAll('*').remove();
       }
       data.viewMode = structure.viewMode;

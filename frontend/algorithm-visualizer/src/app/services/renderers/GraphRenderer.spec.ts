@@ -81,4 +81,34 @@ describe('GraphRenderer', () => {
 
     simulation.stop();
   });
+
+  it('creates simulation on the fly and renders immediately when simulation is null', () => {
+    const nodeA: any = { id: '0', value: '0' };
+    const nodeB: any = { id: '1', value: '1' };
+    const links = [{ source: nodeA, target: nodeB }];
+
+    // Pre-populate with array-cell or other old elements to verify cleanup
+    svg.append('g').attr('class', 'array-cell');
+    svg.append('g').attr('class', 'map-header');
+
+    const d3Data: any = {
+      svg,
+      nodes: [nodeA, nodeB],
+      links,
+      simulation: null,
+      ownerPath: 'adj',
+      width: 800,
+      height: 600
+    };
+
+    renderer.renderElements(d3Data);
+
+    expect(d3Data.simulation).toBeTruthy();
+    expect(container.querySelectorAll('g.array-cell').length).toBe(0);
+    expect(container.querySelectorAll('g.map-header').length).toBe(0);
+    expect(container.querySelectorAll('g.node-item').length).toBe(2);
+    expect(container.querySelectorAll('path.edge-path').length).toBe(1);
+
+    d3Data.simulation.stop();
+  });
 });

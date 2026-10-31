@@ -8,7 +8,11 @@ export class MapRenderer implements Renderer {
     if (!d3Data?.svg) return;
 
     const svg = d3Data.svg;
-    d3Data.simulation?.stop();
+    if (d3Data.simulation) {
+      d3Data.simulation.stop();
+      d3Data.simulation = null;
+    }
+    svg.selectAll('g.links-group, g.nodes-group, g.array-cell, text.array-end-marker').remove();
     const entries = d3Data.mapEntries ?? [];
     const svgNode = svg.node() as SVGSVGElement;
     const width = svgNode.clientWidth || d3Data.width || 800;
