@@ -158,7 +158,7 @@ app-structure-visualizer {
     }
 
     strong { color: #1e293b; font-size: 15px; }
-    span { color: #64748b; font-size: 11px; }
+    .header-line-info { color: #64748b; font-size: 11px; }
 
     .header-actions {
         display: flex;
@@ -313,10 +313,23 @@ app-structure-visualizer {
                 width: 16px;
                 height: 16px;
                 line-height: 16px;
+                color: #ffffff;
+            }
+
+            span {
+                color: #ffffff !important;
+                font-size: 12px;
+                font-weight: 600;
             }
 
             &:hover {
                 background-color: #1d4ed8;
+                color: #ffffff;
+
+                span,
+                mat-icon {
+                    color: #ffffff;
+                }
             }
 
             &:active {
