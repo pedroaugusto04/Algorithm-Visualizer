@@ -217,22 +217,35 @@
         </section>
     </div>
 
-    <section class="output-panel" [class.collapsed]="!outputConsoleExpanded()" aria-label="Execution output">
+    <aside class="output-panel" [class.collapsed]="!outputConsoleExpanded()" aria-label="Execution output">
+        @if (!outputConsoleExpanded()) {
+        <div class="collapsed-sidebar" (click)="toggleOutputConsole()" role="button" tabindex="0"
+            (keydown.enter)="toggleOutputConsole()" (keydown.space)="toggleOutputConsole()"
+            aria-label="Expand output console" title="Expand output console">
+            <button mat-icon-button type="button" class="sidebar-toggle-btn"
+                (click)="toggleOutputConsole(); $event.stopPropagation()"
+                aria-label="Expand output console" title="Expand output console">
+                <mat-icon>chevron_left</mat-icon>
+            </button>
+            <div class="collapsed-title">
+                <mat-icon class="terminal-icon">terminal</mat-icon>
+                <span class="vertical-text">Output Console</span>
+            </div>
+        </div>
+        } @else {
         <header class="output-panel-header">
-            <div>
+            <div class="header-title">
                 <mat-icon>terminal</mat-icon>
                 <strong>Output Console</strong>
             </div>
-            <button mat-icon-button type="button" (click)="toggleOutputConsole()"
-                [attr.aria-label]="outputConsoleExpanded() ? 'Collapse output console' : 'Expand output console'"
-                [title]="outputConsoleExpanded() ? 'Collapse output console' : 'Expand output console'">
-                <mat-icon>{{ outputConsoleExpanded() ? 'expand_more' : 'expand_less' }}</mat-icon>
+            <button mat-icon-button type="button" class="sidebar-toggle-btn" (click)="toggleOutputConsole()"
+                aria-label="Collapse output console" title="Collapse output console">
+                <mat-icon>chevron_right</mat-icon>
             </button>
         </header>
-        @if (outputConsoleExpanded()) {
         <div class="console-output">
             <pre><code>{{ executionResult() || 'Waiting for execution...' }}</code></pre>
         </div>
         }
-    </section>
+    </aside>
 </div>

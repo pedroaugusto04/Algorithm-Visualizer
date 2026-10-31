@@ -136,7 +136,7 @@ export class RunCodeComponent implements OnDestroy {
 
     this.executionStarted.set(true);
     this.sourceEditorVisible.set(false);
-    this.outputConsoleExpanded.set(false);
+
     this.resetState();
     this.executionResult.set('Compiling and running...');
     this.executionWarnings.set([]);
