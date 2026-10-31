@@ -132,6 +132,7 @@ class ContainerStepRunner {
         Process process = new ProcessBuilder(
                 "docker", "run", "--pull", pullPolicy, "--rm", "--name", containerName, "--network", "none", "--cpus", cpuLimit,
                 "--memory", memoryLimit, "--pids-limit", pidsLimit,
+                "--ulimit", "stack=268435456:268435456",
                 "--security-opt", "no-new-privileges", "--cap-drop", "ALL",
                 "-v", workspace.toAbsolutePath() + ":/work",
                 "-e", "AV_EVENT_FILE=/work/events.jsonl",
