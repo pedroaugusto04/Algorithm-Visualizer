@@ -42,12 +42,15 @@ std::string __serialize(const T& v) {
     }
 }
 
+static constexpr size_t MAX_SERIALIZED_CONTAINER_ITEMS = 1000;
+
 template<typename T, typename Allocator>
 std::string __serialize(const std::vector<T, Allocator>& v) {
+    const size_t limit = v.size() < MAX_SERIALIZED_CONTAINER_ITEMS ? v.size() : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::string out = "[";
-    for (size_t i = 0; i < v.size(); i++) {
+    for (size_t i = 0; i < limit; i++) {
         out += __serialize(v[i]);
-        if (i + 1 < v.size()) out += ", ";
+        if (i + 1 < limit) out += ", ";
     }
     out += "]";
     return out;
@@ -55,8 +58,9 @@ std::string __serialize(const std::vector<T, Allocator>& v) {
 
 template<typename Allocator>
 std::string __serialize(const std::vector<bool, Allocator>& values) {
+    const size_t limit = values.size() < MAX_SERIALIZED_CONTAINER_ITEMS ? values.size() : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::string out = "[";
-    for (size_t i = 0; i < values.size(); ++i) {
+    for (size_t i = 0; i < limit; ++i) {
         if (i) out += ", ";
         out += values[i] ? "true" : "false";
     }
@@ -66,10 +70,11 @@ std::string __serialize(const std::vector<bool, Allocator>& values) {
 
 template<typename T, typename Allocator>
 std::string __serialize(const std::deque<T, Allocator>& v) {
+    const size_t limit = v.size() < MAX_SERIALIZED_CONTAINER_ITEMS ? v.size() : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::string out = "[";
-    for (size_t i = 0; i < v.size(); i++) {
+    for (size_t i = 0; i < limit; i++) {
         out += __serialize(v[i]);
-        if (i + 1 < v.size()) out += ", ";
+        if (i + 1 < limit) out += ", ";
     }
     out += "]";
     return out;
@@ -77,10 +82,11 @@ std::string __serialize(const std::deque<T, Allocator>& v) {
 
 template<typename T, size_t N>
 std::string __serialize(const std::array<T, N>& values) {
+    const size_t limit = values.size() < MAX_SERIALIZED_CONTAINER_ITEMS ? values.size() : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::string out = "[";
-    for (size_t i = 0; i < values.size(); i++) {
+    for (size_t i = 0; i < limit; i++) {
         out += __serialize(values[i]);
-        if (i + 1 < values.size()) out += ", ";
+        if (i + 1 < limit) out += ", ";
     }
     out += "]";
     return out;
@@ -114,10 +120,11 @@ std::string __serialize(const std::forward_list<T, Allocator>& values) {
 
 template<typename T, size_t N>
 std::string __serialize(const T (&values)[N]) {
+    const size_t limit = N < MAX_SERIALIZED_CONTAINER_ITEMS ? N : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::string out = "[";
-    for (size_t i = 0; i < N; i++) {
+    for (size_t i = 0; i < limit; i++) {
         out += __serialize(values[i]);
-        if (i + 1 < N) out += ", ";
+        if (i + 1 < limit) out += ", ";
     }
     out += "]";
     return out;
