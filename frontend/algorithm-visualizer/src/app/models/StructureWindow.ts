@@ -10,6 +10,7 @@ export interface StructureD3Data {
   mapEntries?: Array<{ key: string; value: any; path: string }>;
   ownerPath?: string;
   changedPaths?: Set<string>;
+  activePointers?: Array<{ path: string; value: unknown; changed?: boolean }>;
   renderedMode?: string;
   selectedValuePath?: string;
   selectedValueSnapshot?: JsonValue;

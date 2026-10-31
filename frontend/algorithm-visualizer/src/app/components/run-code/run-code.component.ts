@@ -261,6 +261,10 @@ export class RunCodeComponent implements OnDestroy {
       struct.initialized = known.initialValue !== null && known.initialValue !== undefined;
       struct.active = true;
       applySnapshotToStructure(struct, known.initialValue, struct.viewMode);
+      if (struct.d3Data) {
+        struct.d3Data.ownerPath = struct.path;
+        struct.d3Data.activePointers = this.variableStates();
+      }
       this.structures.push(struct);
     }
 
@@ -374,6 +378,7 @@ export class RunCodeComponent implements OnDestroy {
       if (struct.d3Data) {
         struct.d3Data.ownerPath = struct.path;
         struct.d3Data.changedPaths = changedPaths;
+        struct.d3Data.activePointers = this.variableStates();
       }
     }
     this.globalRenderer.renderElements(this.structures);

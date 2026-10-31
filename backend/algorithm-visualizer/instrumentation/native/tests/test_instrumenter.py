@@ -121,6 +121,34 @@ int main() {
         self.assertEqual(len(counter_events), 3)
         self.assertEqual([e["value"] for e in counter_events], [10, 15, 30])
 
+    def test_multidimensional_c_array_is_snapshotted(self):
+        stdout, events = self.run_program(r"""
+#include <iostream>
+int main() {
+    int dp[2][2] = {{1, 2}, {3, 4}};
+    dp[0][1] = 9;
+    std::cout << dp[0][1] << '\n';
+}
+""")
+        self.assertEqual(stdout, "9\n")
+        states = [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "dp"]
+        self.assertEqual(states, [[[1, 2], [3, 4]], [[1, 9], [3, 4]]])
+
+    def test_array_of_vectors_is_snapshotted(self):
+        stdout, events = self.run_program(r"""
+#include <iostream>
+#include <vector>
+int main() {
+    std::vector<int> adj[2];
+    adj[0].push_back(1);
+    adj[1].push_back(0);
+    std::cout << adj[0].size() + adj[1].size() << '\n';
+}
+""")
+        self.assertEqual(stdout, "2\n")
+        states = [event["value"] for event in events if event.get("op") != "exit" and event["path"] == "adj"]
+        self.assertEqual(states, [[[], []], [[1], []], [[1], [0]]])
+
     def test_fixed_array_is_snapshotted_each_loop_iteration(self):
         stdout, events = self.run_program(r"""
 #include <iostream>

@@ -174,6 +174,44 @@ export class ArrayRenderer implements Renderer {
     } else {
       svg.selectAll('text.array-end-marker').remove();
     }
+
+    // Render active variable pointers (e.g. l, r, mid, i) above 1D array cells
+    const activePointers: Array<{ path: string; value: unknown; changed?: boolean }> =
+      (!is2D && !isStack && !isQueue && Array.isArray(d3Data.activePointers))
+        ? d3Data.activePointers
+        : [];
+
+    const pointersByIndex = new Map<number, { names: string[]; hasChanged: boolean }>();
+    for (const ptr of activePointers) {
+      if (typeof ptr.value === 'number' && Number.isInteger(ptr.value) && ptr.value >= 0 && ptr.value < flatData.length) {
+        const existing = pointersByIndex.get(ptr.value) ?? { names: [], hasChanged: false };
+        existing.names.push(ptr.path);
+        if (ptr.changed) existing.hasChanged = true;
+        pointersByIndex.set(ptr.value, existing);
+      }
+    }
+
+    const pointerItems = Array.from(pointersByIndex.entries()).map(([index, data]) => ({
+      index,
+      label: `▼ ${data.names.join(', ')}`,
+      hasChanged: data.hasChanged
+    }));
+
+    const pointerSelection = svg.selectAll('text.array-pointer-marker')
+      .data(pointerItems, (d: any) => d.index);
+
+    pointerSelection.exit().remove();
+
+    pointerSelection.join('text')
+      .attr('class', 'array-pointer-marker')
+      .attr('x', (d: any) => d.index * (cellWidth + padding) + 40 + cellWidth / 2)
+      .attr('y', 36)
+      .attr('text-anchor', 'middle')
+      .attr('fill', (d: any) => d.hasChanged ? '#d97706' : '#2563eb')
+      .style('font-size', '11px')
+      .style('font-weight', 700)
+      .style('font-family', 'ui-monospace, monospace')
+      .text((d: any) => d.label);
   }
 
 }

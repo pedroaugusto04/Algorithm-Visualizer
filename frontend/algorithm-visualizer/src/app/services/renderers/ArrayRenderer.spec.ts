@@ -58,4 +58,47 @@ describe('ArrayRenderer', () => {
     const bottomY = parseFloat(bottomMarker!.getAttribute('y') || '0');
     expect(topY).toBeLessThan(bottomY);
   });
+
+  it('renders variable pointer markers above 1D array cells', () => {
+    const d3Data = {
+      svg,
+      arrayData: [10, 20, 30, 40, 50],
+      viewMode: 'array',
+      ownerPath: 'arr',
+      activePointers: [
+        { path: 'l', value: 0, changed: false },
+        { path: 'mid', value: 2, changed: true },
+        { path: 'r', value: 4, changed: false },
+      ]
+    };
+
+    renderer.renderElements(d3Data);
+
+    const pointers = container.querySelectorAll<SVGTextElement>('text.array-pointer-marker');
+    expect(pointers.length).toBe(3);
+
+    const labels = Array.from(pointers).map(p => p.textContent);
+    expect(labels).toContain('▼ l');
+    expect(labels).toContain('▼ mid');
+    expect(labels).toContain('▼ r');
+  });
+
+  it('groups multiple variable pointers at the same cell index', () => {
+    const d3Data = {
+      svg,
+      arrayData: [10, 20, 30],
+      viewMode: 'array',
+      ownerPath: 'arr',
+      activePointers: [
+        { path: 'l', value: 1, changed: false },
+        { path: 'r', value: 1, changed: false },
+      ]
+    };
+
+    renderer.renderElements(d3Data);
+
+    const pointers = container.querySelectorAll<SVGTextElement>('text.array-pointer-marker');
+    expect(pointers.length).toBe(1);
+    expect(pointers[0].textContent).toBe('▼ l, r');
+  });
 });
