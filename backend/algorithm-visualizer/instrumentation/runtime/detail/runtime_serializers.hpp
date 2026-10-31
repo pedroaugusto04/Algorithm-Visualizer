@@ -95,10 +95,10 @@ std::string __serialize(const std::array<T, N>& values) {
 template<typename T, typename Allocator>
 std::string __serialize(const std::list<T, Allocator>& values) {
     std::string out = "[";
-    bool first = true;
+    size_t count = 0;
     for (const auto& value : values) {
-        if (!first) out += ", ";
-        first = false;
+        if (count >= MAX_SERIALIZED_CONTAINER_ITEMS) break;
+        if (count++) out += ", ";
         out += __serialize(value);
     }
     out += "]";
@@ -108,10 +108,10 @@ std::string __serialize(const std::list<T, Allocator>& values) {
 template<typename T, typename Allocator>
 std::string __serialize(const std::forward_list<T, Allocator>& values) {
     std::string out = "[";
-    bool first = true;
+    size_t count = 0;
     for (const auto& value : values) {
-        if (!first) out += ", ";
-        first = false;
+        if (count >= MAX_SERIALIZED_CONTAINER_ITEMS) break;
+        if (count++) out += ", ";
         out += __serialize(value);
     }
     out += "]";
@@ -133,10 +133,10 @@ std::string __serialize(const T (&values)[N]) {
 template<typename T, typename Compare, typename Allocator>
 std::string __serialize(const std::set<T, Compare, Allocator>& values) {
     std::string out = "[";
-    bool first = true;
+    size_t count = 0;
     for (const auto& value : values) {
-        if (!first) out += ", ";
-        first = false;
+        if (count >= MAX_SERIALIZED_CONTAINER_ITEMS) break;
+        if (count++) out += ", ";
         out += __serialize(value);
     }
     out += "]";
@@ -146,10 +146,10 @@ std::string __serialize(const std::set<T, Compare, Allocator>& values) {
 template<typename T, typename Compare, typename Allocator>
 std::string __serialize(const std::multiset<T, Compare, Allocator>& values) {
     std::string out = "[";
-    bool first = true;
+    size_t count = 0;
     for (const auto& value : values) {
-        if (!first) out += ", ";
-        first = false;
+        if (count >= MAX_SERIALIZED_CONTAINER_ITEMS) break;
+        if (count++) out += ", ";
         out += __serialize(value);
     }
     out += "]";
@@ -158,9 +158,14 @@ std::string __serialize(const std::multiset<T, Compare, Allocator>& values) {
 
 template<typename T, typename Hash, typename Equal, typename Allocator>
 std::string __serialize(const std::unordered_set<T, Hash, Equal, Allocator>& values) {
+    const size_t limit = values.size() < MAX_SERIALIZED_CONTAINER_ITEMS ? values.size() : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::vector<std::string> items;
-    items.reserve(values.size());
-    for (const auto& value : values) items.push_back(__serialize(value));
+    items.reserve(limit);
+    size_t count = 0;
+    for (const auto& value : values) {
+        if (count++ >= limit) break;
+        items.push_back(__serialize(value));
+    }
     std::sort(items.begin(), items.end());
     std::string out = "[";
     for (size_t i = 0; i < items.size(); ++i) {
@@ -173,9 +178,14 @@ std::string __serialize(const std::unordered_set<T, Hash, Equal, Allocator>& val
 
 template<typename T, typename Hash, typename Equal, typename Allocator>
 std::string __serialize(const std::unordered_multiset<T, Hash, Equal, Allocator>& values) {
+    const size_t limit = values.size() < MAX_SERIALIZED_CONTAINER_ITEMS ? values.size() : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::vector<std::string> items;
-    items.reserve(values.size());
-    for (const auto& value : values) items.push_back(__serialize(value));
+    items.reserve(limit);
+    size_t count = 0;
+    for (const auto& value : values) {
+        if (count++ >= limit) break;
+        items.push_back(__serialize(value));
+    }
     std::sort(items.begin(), items.end());
     std::string out = "[";
     for (size_t i = 0; i < items.size(); ++i) {
@@ -190,10 +200,9 @@ template<typename T, typename Container>
 std::string __serialize(const std::stack<T, Container>& values) {
     auto copy = values;
     std::string out = "[";
-    bool first = true;
-    while (!copy.empty()) {
-        if (!first) out += ", ";
-        first = false;
+    size_t count = 0;
+    while (!copy.empty() && count < MAX_SERIALIZED_CONTAINER_ITEMS) {
+        if (count++) out += ", ";
         out += __serialize(copy.top());
         copy.pop();
     }
@@ -205,10 +214,9 @@ template<typename T, typename Container>
 std::string __serialize(const std::queue<T, Container>& values) {
     auto copy = values;
     std::string out = "[";
-    bool first = true;
-    while (!copy.empty()) {
-        if (!first) out += ", ";
-        first = false;
+    size_t count = 0;
+    while (!copy.empty() && count < MAX_SERIALIZED_CONTAINER_ITEMS) {
+        if (count++) out += ", ";
         out += __serialize(copy.front());
         copy.pop();
     }
@@ -220,10 +228,9 @@ template<typename T, typename Container, typename Compare>
 std::string __serialize(const std::priority_queue<T, Container, Compare>& values) {
     auto copy = values;
     std::string out = "[";
-    bool first = true;
-    while (!copy.empty()) {
-        if (!first) out += ", ";
-        first = false;
+    size_t count = 0;
+    while (!copy.empty() && count < MAX_SERIALIZED_CONTAINER_ITEMS) {
+        if (count++) out += ", ";
         out += __serialize(copy.top());
         copy.pop();
     }
@@ -252,8 +259,9 @@ std::string __serialize(const std::tuple<Values...>& value) {
 
 template<size_t N>
 std::string __serialize(const std::bitset<N>& value) {
+    const size_t limit = N < MAX_SERIALIZED_CONTAINER_ITEMS ? N : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::string out = "[";
-    for (size_t index = 0; index < N; ++index) {
+    for (size_t index = 0; index < limit; ++index) {
         if (index) out += ", ";
         out += value[index] ? "true" : "false";
     }
@@ -264,10 +272,10 @@ std::string __serialize(const std::bitset<N>& value) {
 template<typename K, typename V, typename Compare, typename Allocator>
 std::string __serialize(const std::map<K, V, Compare, Allocator>& m) {
     std::string out = "{";
-    bool first = true;
+    size_t count = 0;
     for (const auto& kv : m) {
-        if (!first) out += ", ";
-        first = false;
+        if (count >= MAX_SERIALIZED_CONTAINER_ITEMS) break;
+        if (count++) out += ", ";
         out += __json_string(__to_str(kv.first)) + ": " + __serialize(kv.second);
     }
     out += "}";
@@ -277,9 +285,10 @@ std::string __serialize(const std::map<K, V, Compare, Allocator>& m) {
 template<typename K, typename V, typename Compare, typename Allocator>
 std::string __serialize(const std::multimap<K, V, Compare, Allocator>& m) {
     std::string out = "[";
-    size_t index = 0;
+    size_t count = 0;
     for (const auto& kv : m) {
-        if (index++) out += ", ";
+        if (count >= MAX_SERIALIZED_CONTAINER_ITEMS) break;
+        if (count++) out += ", ";
         out += "[" + __serialize(kv.first) + ", " + __serialize(kv.second) + "]";
     }
     out += "]";
@@ -288,9 +297,12 @@ std::string __serialize(const std::multimap<K, V, Compare, Allocator>& m) {
 
 template<typename K, typename V, typename Hash, typename Equal, typename Allocator>
 std::string __serialize(const std::unordered_map<K, V, Hash, Equal, Allocator>& m) {
+    const size_t limit = m.size() < MAX_SERIALIZED_CONTAINER_ITEMS ? m.size() : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::vector<std::pair<std::string, std::string>> items;
-    items.reserve(m.size());
+    items.reserve(limit);
+    size_t count = 0;
     for (const auto& kv : m) {
+        if (count++ >= limit) break;
         items.push_back({__to_str(kv.first), __serialize(kv.second)});
     }
     std::sort(
@@ -315,9 +327,14 @@ std::string __serialize(const std::unordered_map<K, V, Hash, Equal, Allocator>& 
 
 template<typename K, typename V, typename Hash, typename Equal, typename Allocator>
 std::string __serialize(const std::unordered_multimap<K, V, Hash, Equal, Allocator>& m) {
+    const size_t limit = m.size() < MAX_SERIALIZED_CONTAINER_ITEMS ? m.size() : MAX_SERIALIZED_CONTAINER_ITEMS;
     std::vector<std::pair<std::string, std::string>> items;
-    items.reserve(m.size());
-    for (const auto& kv : m) items.push_back({__serialize(kv.first), __serialize(kv.second)});
+    items.reserve(limit);
+    size_t count = 0;
+    for (const auto& kv : m) {
+        if (count++ >= limit) break;
+        items.push_back({__serialize(kv.first), __serialize(kv.second)});
+    }
     std::sort(items.begin(), items.end());
     std::string out = "[";
     for (size_t i = 0; i < items.size(); ++i) {

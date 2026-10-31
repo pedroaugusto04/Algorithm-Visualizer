@@ -140,27 +140,38 @@ export function buildMapGraphSnapshot(
   // If isArray and it's a square matrix of numbers/booleans, interpret as Adjacency Matrix
   if (isArray && Array.isArray(value) && isSquareMatrixOfNumbers(value)) {
     const n = value.length;
+    const connectedNodes = new Set<number>();
+    const edges: MapVisualLink[] = [];
+
     for (let i = 0; i < n; i++) {
-      const node = getNode(i);
-      node.structuredValuePath = `${path}[${i}]`;
-      node.structuredValue = value[i] as JsonValue;
-    }
-    for (let i = 0; i < n; i++) {
-      const source = getNode(i);
       const row = value[i] as unknown[];
       for (let j = 0; j < n; j++) {
         const cell = row[j];
         if (cell !== 0 && cell !== false && cell !== null && cell !== undefined) {
-          const target = getNode(j);
-          const link: MapVisualLink = { source, target };
+          connectedNodes.add(i);
+          connectedNodes.add(j);
+          const link: MapVisualLink = { source: getNode(i), target: getNode(j) };
           if (cell !== 1 && cell !== true) {
             link.label = String(cell);
           }
-          links.push(link);
+          edges.push(link);
         }
       }
     }
-    return { ...map, nodes: [...nodeById.values()], links };
+
+    const verticesToKeep = (n > 15 && connectedNodes.size > 0)
+      ? Array.from(connectedNodes)
+      : Array.from({ length: Math.min(n, 15) }, (_, i) => i);
+
+    for (const i of verticesToKeep) {
+      const node = getNode(i);
+      node.structuredValuePath = `${path}[${i}]`;
+      node.structuredValue = value[i] as JsonValue;
+    }
+
+    const verticesSet = new Set(verticesToKeep.map(String));
+    const filteredNodes = [...nodeById.values()].filter(node => verticesSet.has(node.id));
+    return { ...map, nodes: filteredNodes.length > 0 ? filteredNodes : [...nodeById.values()], links: edges };
   }
 
   rawEntries.forEach((raw: any) => {

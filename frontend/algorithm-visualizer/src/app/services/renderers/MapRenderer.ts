@@ -13,7 +13,22 @@ export class MapRenderer implements Renderer {
       d3Data.simulation = null;
     }
     svg.selectAll('g.links-group, g.nodes-group, g.array-cell, text.array-end-marker').remove();
-    const entries = d3Data.mapEntries ?? [];
+    const rawEntries = d3Data.mapEntries ?? [];
+    const maxMapRows = 50;
+    const isTruncated = rawEntries.length > maxMapRows;
+    const entries = isTruncated
+      ? rawEntries.slice(0, maxMapRows)
+      : [...rawEntries];
+
+    if (isTruncated) {
+      entries.push({
+        key: '...',
+        value: `+${rawEntries.length - maxMapRows} more entries omitted`,
+        path: '__omitted_map_entries__',
+        isOmitted: true
+      });
+    }
+
     const svgNode = svg.node() as SVGSVGElement;
     const width = svgNode.clientWidth || d3Data.width || 800;
     const rowHeight = 48;
@@ -67,16 +82,25 @@ export class MapRenderer implements Renderer {
     allRows.select('rect')
       .attr('width', keyWidth + valueWidth)
       .attr('height', rowHeight - 5)
-      .attr('fill', (entry: any) => isChanged(entry.path) ? '#fef08a' : '#fff')
+      .attr('fill', (entry: any) => entry.isOmitted ? '#f8fafc' : (isChanged(entry.path) ? '#fef08a' : '#fff'))
       .attr('stroke', (entry: any) => {
+        if (entry.isOmitted) return '#94a3b8';
         if (entry.path === d3Data.selectedValuePath) return '#ff9800';
         if (isChanged(entry.path)) return '#eab308';
         return '#d8dee8';
       })
+      .attr('stroke-dasharray', (entry: any) => entry.isOmitted ? '4 4' : null)
       .attr('stroke-width', (entry: any) => (entry.path === d3Data.selectedValuePath || isChanged(entry.path)) ? 2 : 1);
-    allRows.select('line').attr('x1', keyWidth).attr('x2', keyWidth).attr('y1', 0).attr('y2', rowHeight - 5);
-    allRows.select('.map-key').text((entry: any) => entry.key);
-    allRows.select('.map-value').attr('x', keyWidth + 12).text((entry: any) => display(entry.value).slice(0, 100));
+    allRows.select('line').attr('x1', keyWidth).attr('x2', keyWidth).attr('y1', 0).attr('y2', rowHeight - 5)
+      .attr('stroke-dasharray', (entry: any) => entry.isOmitted ? '4 4' : null);
+    allRows.select('.map-key')
+      .text((entry: any) => entry.key)
+      .style('fill', (entry: any) => entry.isOmitted ? '#94a3b8' : '#334155');
+    allRows.select('.map-value')
+      .attr('x', keyWidth + 12)
+      .text((entry: any) => display(entry.value).slice(0, 100))
+      .style('fill', (entry: any) => entry.isOmitted ? '#64748b' : '#1e293b')
+      .style('font-style', (entry: any) => entry.isOmitted ? 'italic' : null);
     allRows.select('title').text((entry: any) => `${entry.key}: ${display(entry.value)}`);
 
     refreshStructuredSelection(d3Data, entries

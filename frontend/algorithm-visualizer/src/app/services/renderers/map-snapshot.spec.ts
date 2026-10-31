@@ -27,4 +27,20 @@ describe('buildMapSnapshot', () => {
     expect(snapshot.nodes.length).toBe(2);
     expect(snapshot.links.length).toBe(2);
   });
+
+  it('filters empty disconnected nodes when graph is built from large adjacency matrices', () => {
+    const matrix: number[][] = Array.from({ length: 30 }, () => new Array(30).fill(0));
+    matrix[1][2] = 1;
+    matrix[2][1] = 1;
+
+    const snapshot = buildMapGraphSnapshot('matrix', matrix, 800, 600, true);
+
+    const nodeIds = snapshot.nodes.map(n => n.id);
+    expect(nodeIds).toContain('1');
+    expect(nodeIds).toContain('2');
+    expect(nodeIds).not.toContain('0');
+    expect(nodeIds).not.toContain('25');
+    expect(snapshot.nodes.length).toBe(2);
+    expect(snapshot.links.length).toBe(2);
+  });
 });
