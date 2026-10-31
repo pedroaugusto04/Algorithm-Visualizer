@@ -18,6 +18,6 @@
   {"template": "multimap", "visual_type": "map", "label": "std::multimap"},
   {"template": "unordered_map", "visual_type": "map", "label": "std::unordered_map"},
   {"template": "unordered_multimap", "visual_type": "map", "label": "std::unordered_multimap"},
-  {"template": "basic_string<char>", "visual_type": "array", "label": "std::string mutável"},
-  {"template": "C array", "visual_type": "array", "label": "arrays C de tamanho fixo"}
+  {"template": "basic_string<char>", "visual_type": "array", "label": "mutable std::string"},
+  {"template": "C array", "visual_type": "array", "label": "fixed-size C arrays"}
 ]

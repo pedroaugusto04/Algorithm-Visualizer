@@ -1,85 +1,72 @@
-# Subconjunto C++ instrumentado
+# Instrumented C++ Subset
 
-O visualizador executa o código original com `g++` e coleta snapshots das
-estruturas reconhecidas. O AST é analisado por Clang LibTooling, configurado
-com o mesmo padrão GNU C++ (17, 20 ou 23) da compilação.
+The visualizer executes the original code with `g++` and captures snapshots of
+supported structures. The AST is analyzed with Clang LibTooling, configured
+with the same GNU C++ standard (17, 20, or 23) as the compilation.
 
-## Suportado nesta versão
+## Supported in this version
 
-- Um arquivo-fonte com função `main`.
-- Variáveis globais com nome qualificado e variáveis locais declaradas
-  diretamente em um bloco:
+- A single source file containing a `main` function.
+- Qualified global variables and local variables declared directly in a block:
 <!-- generated-supported-types-start -->
-- `std::vector`, `std::deque`, `std::list`, `std::forward_list`, `std::array`, `std::set`, `std::multiset`, `std::unordered_set`, `std::unordered_multiset`, `std::stack`, `std::queue`, `std::priority_queue`, `std::bitset`, `std::pair`, `std::tuple`, `std::map`, `std::multimap`, `std::unordered_map`, `std::unordered_multimap`, `std::string mutável`, `arrays C de tamanho fixo`.
+- `std::vector`, `std::deque`, `std::list`, `std::forward_list`, `std::array`, `std::set`, `std::multiset`, `std::unordered_set`, `std::unordered_multiset`, `std::stack`, `std::queue`, `std::priority_queue`, `std::bitset`, `std::pair`, `std::tuple`, `std::map`, `std::multimap`, `std::unordered_map`, `std::unordered_multimap`, `mutable std::string`, `fixed-size C arrays`.
 <!-- generated-supported-types-end -->
-- `std::pair` e `std::tuple` declarados diretamente também são acompanhados e
-  emitidos como arrays.
-- Variáveis escalares e tipos aritméticos (`int`, `long`, `double`, `float`, `char`, `bool` e enums)
-  declarados diretamente em blocos ou em escopo global são acompanhados e
-  emitidos com tipo `scalar` para inspeção na aba de variáveis (Variables).
-- Structs definidos antes de `main`, em escopo global ou namespace, podem ser
-  usados dentro de contêineres observados. Seus campos públicos podem combinar
-  tipos escalares, enums, `std::string`, arrays, `pair`, `tuple`, contêineres
-  suportados e outras structs elegíveis. São emitidos como objetos JSON usando
-  os nomes dos campos.
-- Elementos serializáveis aritméticos, `bool`, `char`, `std::string`, pares,
-  tuplas e
-  combinações aninhadas dos contêineres serializados pelo runtime.
-- `std::tuple` vira sequência na ordem dos elementos. `std::bitset<N>` vira um
-  array de booleanos do índice `0` a `N - 1`.
-- Contêineres com comparadores, hash, igualdade ou alocadores personalizados,
-  desde que seus elementos e chaves possam ser serializados; `vector<bool>` é
-  emitido como sequência de booleanos.
-- Mutação feita na própria instrução, incluindo chamadas a funções auxiliares
-  que recebem a variável observada e algoritmos STL chamados com iteradores
-  derivados dela. Cada instrução gera no máximo um snapshot por variável.
-- Condições de controle podem consultar estruturas observadas por operações
-  reconhecidas como leitura (`size`, `empty`, `find`, entre outras). Efeitos
-  colaterais detectáveis no cabeçalho são rejeitados em vez de serem atribuídos
-  ao corpo do ramo ou do loop.
-- Corpos sem chaves de `if`, `else`, `for`, `while`, `do`, `switch` e
-  `for` baseado em intervalo: o instrumentador adiciona chaves para posicionar
-  o snapshot com segurança.
-- Mapas são apresentados como grafo simples de raiz e pares chave/valor;
-  `multimap` preserva chaves repetidas como entradas separadas. Sequências e
-  arrays são apresentados como arrays.
+- `std::pair` and `std::tuple` declared directly are also tracked and emitted as arrays.
+- Scalar and arithmetic types (`int`, `long`, `double`, `float`, `char`, `bool`, and enums)
+  declared directly in blocks or in global scope are tracked and emitted with type
+  `scalar` for inspection in the Variables tab.
+- Structs defined before `main`, in global scope or namespace, can be used inside
+  observed containers. Their public fields can combine scalar types, enums,
+  `std::string`, arrays, `pair`, `tuple`, supported containers, and other eligible structs.
+  They are emitted as JSON objects using field names.
+- Serializable arithmetic elements, `bool`, `char`, `std::string`, pairs, tuples, and
+  nested combinations of containers serialized by the runtime.
+- `std::tuple` is serialized as a sequence in element order. `std::bitset<N>` is serialized
+  as an array of booleans from index `0` to `N - 1`.
+- Containers with custom comparators, hash functions, equality, or allocators, provided
+  their elements and keys can be serialized; `vector<bool>` is emitted as a sequence of booleans.
+- Mutations performed directly in the statement, including calls to helper functions
+  receiving the observed variable and STL algorithms called with iterators derived from it.
+  Each statement produces at most one snapshot per variable.
+- Control conditions can query observed structures through operations recognized
+  as read-only (`size`, `empty`, `find`, among others). Detectable side effects in
+  control headers are rejected instead of attributed to the branch or loop body.
+- Unbraced bodies of `if`, `else`, `for`, `while`, `do`, `switch`, and range-based `for`:
+  the instrumenter adds braces to position snapshots safely.
+- Maps are rendered as a simple graph of root and key/value pairs; `multimap` preserves
+  repeated keys as separate entries. Sequences and arrays are rendered as arrays.
 
-Um evento `init` registra o primeiro estado observado. Depois dele, só são
-emitidos eventos `snapshot` quando o estado serializado muda. O campo `line`
-aponta para a linha da instrução original que encerrou o snapshot.
-Globais recebem seu evento `init` no início de `main`, antes da primeira
-instrução do usuário; nesse evento, `line` aponta para a declaração global.
+An `init` event records the first observed state. After it, `snapshot` events are only
+emitted when the serialized state changes. The `line` field points to the line of the
+original statement that completed the snapshot.
+Globals receive their `init` event at the beginning of `main`, before the user's first
+instruction; in this event, `line` points to the global declaration.
 
-## Limites conhecidos
+## Known Limitations
 
-- Só são acompanhadas declarações locais diretas em blocos, além de variáveis
-  globais com nome qualificado. Contêineres em namespace anônimo, campos de
-  classe e contêineres declarados no cabeçalho de `for` são rejeitados
-  explicitamente. Contêineres próprios ficam fora do escopo.
-- Structs observados com herança, templates, escopo local, campos privados,
-  bitfields ou campos ponteiro/referência são rejeitados com erro de
-  instrumentação. Tipos de campo fora da lista suportada também são rejeitados.
-- Aliases locais detectáveis por referência, ponteiro, iterador armazenado,
-  `span`, `string_view` ou captura por referência em lambda são rejeitados com
-  erro. Iteradores temporários usados por algoritmos de leitura não são tratados
-  como aliases persistentes. Escape indireto para global ou estado oculto de
-  função ainda não pode ser detectado em geral.
-- O estado é capturado por instrução completa, não por subexpressão ou por
-  cada operação interna. As instruções no corpo são observadas a cada iteração
-  quando têm referência direta à variável. Inicialização e incremento de loop
-  não aparecem como passos separados. Efeitos indiretos escondidos em globais
-  ou em funções que não recebem a estrutura observada não podem ser detectados
-  em geral.
-- Macros que envolvem uma instrução com variável observada são rejeitadas.
-  Múltiplos arquivos, templates instanciados fora do arquivo principal,
-  exceções durante a execução e estado interno de objetos não são visualizados.
-- Pilhas são exibidas do topo para a base; filas da frente para o fim; filas de
-  prioridade em ordem de prioridade. Conjuntos sem ordem são ordenados pelo
-  valor serializado para que a visualização seja estável.
-- Valores de tipos definidos pelo usuário sem serializer específico aparecem
-  como marcador opaco. Chaves de mapa são convertidas em texto e podem colidir
-  para tipos personalizados.
+- Only direct local declarations in blocks and qualified global variables are tracked.
+  Containers in anonymous namespaces, class fields, and containers declared in a `for`
+  header are explicitly rejected. Custom containers are outside the scope.
+- Observed structs with inheritance, templates, local scope, private fields, bitfields,
+  or pointer/reference fields are rejected with an instrumentation error. Field types
+  outside the supported list are also rejected.
+- Local aliases detectable via reference, pointer, stored iterator, `span`, `string_view`,
+  or reference capture in lambdas are rejected with an error. Temporary iterators used
+  by read-only algorithms are not treated as persistent aliases. Indirect escape to global
+  or hidden function state cannot be detected in general.
+- State is captured per complete statement, not per sub-expression or individual internal
+  operation. Statements in the loop body are observed on each iteration when they have
+  a direct reference to the variable. Loop initialization and increment do not appear as
+  separate steps. Indirect side effects hidden in globals or in functions that do not
+  receive the observed structure cannot be detected in general.
+- Macros enclosing a statement with an observed variable are rejected. Multiple files,
+  templates instantiated outside the main file, runtime exceptions, and private internal
+  object state are not visualized.
+- Stacks are displayed from top to bottom; queues from front to back; priority queues in
+  priority order. Unordered sets are sorted by serialized value to ensure a stable visualization.
+- Values of user-defined types without a specific serializer appear as opaque markers.
+  Map keys are converted to text and may collide for custom types.
 
-Esses limites são deliberados para manter a transformação simples e preservar
-uma única execução do programa. Não é uma visualização de cada passo da máquina
-virtual nem uma prova de equivalência semântica para C++ arbitrário.
+These limitations are deliberate to keep the code transformation simple and preserve a
+single execution of the program. This is not a virtual-machine step debugger nor a proof
+of semantic equivalence for arbitrary C++.
