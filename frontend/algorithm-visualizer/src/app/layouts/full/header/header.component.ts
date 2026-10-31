@@ -34,7 +34,7 @@ export class HeaderComponent implements OnInit {
   @Input() showToggle = true;
   @Input() toggleChecked = false;
   @Output() toggleMobileNav = new EventEmitter<void>();
-  user: UserDTO;
+  user: UserDTO | null = null;
 
   constructor(private cookieService: CookieService, private userService: UserService, private router: Router,
     private authService: AuthService

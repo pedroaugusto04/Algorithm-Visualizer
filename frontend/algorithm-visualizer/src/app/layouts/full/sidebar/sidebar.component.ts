@@ -23,7 +23,7 @@ export class SidebarComponent {
   @Input() showToggle = true;
   @Output() toggleMobileNav = new EventEmitter<void>();
   @Output() toggleCollapsed = new EventEmitter<void>();
-  user: UserDTO;
+  user: UserDTO | null = null;
 
   constructor(private cookieService: CookieService, private userService: UserService, private router: Router,
     private authService: AuthService

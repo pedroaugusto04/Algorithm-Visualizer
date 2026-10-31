@@ -111,7 +111,7 @@ export class RunCodeComponent implements OnDestroy {
     };
   });
 
-  private resumeTimeout: any;
+  private resumeTimeout: ReturnType<typeof setTimeout> | null = null;
   private sourceScrollContainer?: HTMLDivElement;
   private tabSelectionVersion = 0;
   private autoSwitchTargetIndex: number | null = null;

@@ -5,7 +5,7 @@ import type { MapVisualNode, MapVisualLink } from '../services/renderers/map-sna
 export type StructureViewMode = 'map' | 'graph' | 'array' | 'queue' | 'stack';
 
 export interface StructureD3Data {
-  arrayData?: any[];
+  arrayData?: unknown[];
   viewMode?: StructureViewMode;
   mapEntries?: Array<{ key: string; value: any; path: string }>;
   ownerPath?: string;
