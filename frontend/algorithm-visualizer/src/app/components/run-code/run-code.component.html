@@ -1,9 +1,104 @@
-<div class="content">
+<div class="content" [class.mobile-view-editor]="mobileTab() === 'editor'"
+                     [class.mobile-view-visualizer]="mobileTab() === 'visualizer'"
+                     [class.mobile-view-trace]="mobileTab() === 'trace'"
+                     [class.mobile-view-console]="mobileTab() === 'console'">
+
+    <!-- Reusable Animation Player Template -->
+    <ng-template #playerControls>
+        <div class="animation-player">
+            <div class="controls-row">
+                <div class="playback-buttons-group">
+                    <button mat-icon-button (click)="prevStep()" [disabled]="currentStep() === 0" title="Previous step" aria-label="Previous step">
+                        <mat-icon>skip_previous</mat-icon>
+                    </button>
+
+                    <button mat-mini-fab color="primary" (click)="togglePlay()" [title]="isPlaying() ? 'Pause' : 'Play'" [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'">
+                        <mat-icon>{{ isPlaying() ? 'pause' : 'play_arrow' }}</mat-icon>
+                    </button>
+
+                    <button mat-icon-button (click)="nextStep()" [disabled]="currentStep() >= totalSteps() - 1" title="Next step" aria-label="Next step">
+                        <mat-icon>skip_next</mat-icon>
+                    </button>
+
+                    <mat-button-toggle-group class="speed-toggle-group" [value]="playbackSpeed()"
+                        (change)="setPlaybackSpeed($any($event.value))" exclusive appearance="legacy" aria-label="Playback speed">
+                        <mat-button-toggle [value]="0.5">0.5x</mat-button-toggle>
+                        <mat-button-toggle [value]="1">1x</mat-button-toggle>
+                        <mat-button-toggle [value]="2">2x</mat-button-toggle>
+                        <mat-button-toggle [value]="4">4x</mat-button-toggle>
+                    </mat-button-toggle-group>
+                </div>
+
+                <div class="playback-info-group">
+                    @if (currentCallStack(); as stack) {
+                    <span class="call-stack-badge" [title]="'Frame #' + stack.frame + ' in ' + stack.func">
+                        <mat-icon>account_tree</mat-icon>
+                        <code>{{ stack.func }}()</code>
+                        <span class="depth-tag">d:{{ stack.depth }}</span>
+                    </span>
+                    }
+
+                    <div class="toggle-container">
+                        <mat-slide-toggle color="accent" [checked]="autoSwitchTabs()"
+                            (change)="autoSwitchTabs.set($any($event).checked)">
+                            <span class="f-s-12">Auto-switch</span>
+                        </mat-slide-toggle>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slider-row">
+                <div class="slider-meta">
+                    <span class="step-label">Step {{ currentStep() + 1 }} of {{ totalSteps() }}</span>
+                    <span class="change-summary">{{ currentChangeSummary() }}</span>
+                </div>
+                <input type="range" class="custom-slider" [min]="0" [max]="totalSteps() - 1" [value]="currentStep()"
+                    (input)="onSliderInput($any($event.target).valueAsNumber)" (change)="onSliderChange()" aria-label="Step slider">
+            </div>
+        </div>
+    </ng-template>
+
+    <!-- Mobile Navigation Tabs (visible only on mobile) -->
+    <nav class="mobile-nav-tabs" aria-label="Mobile navigation">
+        <button type="button" class="mobile-tab-btn" [class.active]="mobileTab() === 'editor'"
+                (click)="setMobileTab('editor')" aria-label="Code Editor">
+            <mat-icon>edit_note</mat-icon>
+            <span>Editor</span>
+        </button>
+        <button type="button" class="mobile-tab-btn" [class.active]="mobileTab() === 'visualizer'"
+                [disabled]="totalSteps() === 0" (click)="setMobileTab('visualizer')" aria-label="Visualization">
+            <mat-icon>visibility</mat-icon>
+            <span>Visualizer</span>
+            @if (totalSteps() > 0) {
+            <span class="mobile-tab-badge">{{ totalSteps() }}</span>
+            }
+        </button>
+        <button type="button" class="mobile-tab-btn" [class.active]="mobileTab() === 'trace'"
+                [disabled]="totalSteps() === 0" (click)="setMobileTab('trace')" aria-label="Trace">
+            <mat-icon>alt_route</mat-icon>
+            <span>Trace</span>
+            @if (activeLine(); as line) {
+            <span class="mobile-tab-badge">L{{ line }}</span>
+            }
+        </button>
+        <button type="button" class="mobile-tab-btn" [class.active]="mobileTab() === 'console'"
+                (click)="setMobileTab('console')" aria-label="Console Output">
+            <mat-icon>terminal</mat-icon>
+            <span>Console</span>
+            @if (executionResult()) {
+            <span class="mobile-tab-dot"></span>
+            }
+        </button>
+    </nav>
+
     <div class="main-workspace">
         <section class="form-container" aria-label="Code and execution input">
             <div class="code-panel-header">
                 <div>
-                    <strong>Run Code</strong>
+                    <strong>{{ sourceEditorVisible() ? 'Run Code' : 'Execution Trace' }}</strong>
+                    @if (!sourceEditorVisible() && activeLine(); as line) {
+                    <span class="header-line-info">Active line: {{ line }}</span>
+                    }
                 </div>
                 @if (executionStarted()) {
                 <button mat-stroked-button type="button" (click)="toggleSourceEditor()"
@@ -57,6 +152,13 @@
                     <mat-icon>play_arrow</mat-icon> RUN CODE
                 </button>
                 } @else {
+                <!-- Animation player for Trace tab on mobile -->
+                @if (totalSteps() > 0) {
+                <div class="mobile-trace-player mobile-only">
+                    <ng-container *ngTemplateOutlet="playerControls"></ng-container>
+                </div>
+                }
+
                 <section class="source-preview" aria-label="Source code synchronized with execution">
                     <div class="source-preview-header">
                         <strong>Source code</strong>
@@ -85,6 +187,21 @@
                 }
             </div>
 
+            <!-- Active line indicator on mobile (tap to jump to Trace) -->
+            @if (activeLine(); as line) {
+            <div class="mobile-active-line-bar mobile-only" (click)="setMobileTab('trace')" role="button" tabindex="0" title="Tap to view in Trace">
+                <span class="active-line-chip">
+                    <mat-icon>play_arrow</mat-icon>
+                    Line {{ line }}
+                </span>
+                <code class="active-line-code">{{ activeLineText() || 'Executing...' }}</code>
+                <span class="active-line-action">
+                    <span>Trace</span>
+                    <mat-icon>chevron_right</mat-icon>
+                </span>
+            </div>
+            }
+
             @if (totalSteps() > 0) {
             @if (isTraceTruncated()) {
             <div class="trace-truncated-banner">
@@ -95,50 +212,8 @@
                 }
             </div>
             }
-            <div class="animation-player">
-                <div class="controls-row">
-                    <button mat-icon-button (click)="prevStep()" [disabled]="currentStep() === 0" title="Previous step">
-                        <mat-icon>skip_previous</mat-icon>
-                    </button>
-
-                    <button mat-mini-fab color="primary" (click)="togglePlay()" [title]="isPlaying() ? 'Pause' : 'Play'">
-                        <mat-icon>{{ isPlaying() ? 'pause' : 'play_arrow' }}</mat-icon>
-                    </button>
-
-                    <button mat-icon-button (click)="nextStep()" [disabled]="currentStep() >= totalSteps() - 1" title="Next step">
-                        <mat-icon>skip_next</mat-icon>
-                    </button>
-
-                    <mat-button-toggle-group class="speed-toggle-group" [value]="playbackSpeed()"
-                        (change)="setPlaybackSpeed($any($event.value))" exclusive appearance="legacy" aria-label="Playback speed">
-                        <mat-button-toggle [value]="0.5">0.5x</mat-button-toggle>
-                        <mat-button-toggle [value]="1">1x</mat-button-toggle>
-                        <mat-button-toggle [value]="2">2x</mat-button-toggle>
-                        <mat-button-toggle [value]="4">4x</mat-button-toggle>
-                    </mat-button-toggle-group>
-
-                    @if (currentCallStack(); as stack) {
-                    <span class="call-stack-badge" [title]="'Frame #' + stack.frame + ' in ' + stack.func">
-                        <mat-icon>account_tree</mat-icon>
-                        <code>{{ stack.func }}()</code>
-                        <span class="depth-tag">d:{{ stack.depth }}</span>
-                    </span>
-                    }
-
-                    <div class="toggle-container">
-                        <mat-slide-toggle color="accent" [checked]="autoSwitchTabs()"
-                            (change)="autoSwitchTabs.set($any($event).checked)">
-                            <span class="f-s-12">Auto-switch Tabs</span>
-                        </mat-slide-toggle>
-                    </div>
-                </div>
-
-                <div class="slider-row">
-                    <span class="step-label">Step {{ currentStep() + 1 }} of {{ totalSteps() }}</span>
-                    <span class="change-summary">{{ currentChangeSummary() }}</span>
-                    <input type="range" class="custom-slider" [min]="0" [max]="totalSteps() - 1" [value]="currentStep()"
-                        (input)="onSliderInput($any($event.target).valueAsNumber)" (change)="onSliderChange()">
-                </div>
+            <div class="desktop-player">
+                <ng-container *ngTemplateOutlet="playerControls"></ng-container>
             </div>
             }
 
@@ -213,13 +288,13 @@
                     </section>
                 </mat-tab>
                 }
-                </mat-tab-group>
+            </mat-tab-group>
         </section>
     </div>
 
-    <aside class="output-panel" [class.collapsed]="!outputConsoleExpanded()" aria-label="Execution output">
-        @if (!outputConsoleExpanded()) {
-        <div class="collapsed-sidebar" (click)="toggleOutputConsole()" role="button" tabindex="0"
+    <aside class="output-panel" [class.collapsed]="!outputConsoleExpanded() && !isConsoleMobileTab()" aria-label="Execution output">
+        @if (!outputConsoleExpanded() && !isConsoleMobileTab()) {
+        <div class="collapsed-sidebar desktop-only" (click)="toggleOutputConsole()" role="button" tabindex="0"
             (keydown.enter)="toggleOutputConsole()" (keydown.space)="toggleOutputConsole()"
             aria-label="Expand output console" title="Expand output console">
             <button mat-icon-button type="button" class="sidebar-toggle-btn"
@@ -238,10 +313,15 @@
                 <mat-icon>terminal</mat-icon>
                 <strong>Output Console</strong>
             </div>
-            <button mat-icon-button type="button" class="sidebar-toggle-btn" (click)="toggleOutputConsole()"
-                aria-label="Collapse output console" title="Collapse output console">
-                <mat-icon>chevron_right</mat-icon>
-            </button>
+            <div class="output-panel-actions">
+                <button class="mobile-only return-editor-btn" mat-stroked-button type="button" (click)="setMobileTab('editor')">
+                    <mat-icon>edit</mat-icon> Edit Code
+                </button>
+                <button mat-icon-button type="button" class="sidebar-toggle-btn desktop-only" (click)="toggleOutputConsole()"
+                    aria-label="Collapse output console" title="Collapse output console">
+                    <mat-icon>chevron_right</mat-icon>
+                </button>
+            </div>
         </header>
         <div class="console-output">
             <pre><code>{{ executionResult() || 'Waiting for execution...' }}</code></pre>

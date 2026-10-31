@@ -150,9 +150,11 @@ td.hljs-ln-line.hljs-ln-numbers {
 
 @media (max-width: 767px) {
   .pageWrapper.run-code-page {
-    height: auto;
-    min-height: calc(100vh - 70px);
-    overflow: visible;
-    padding: 8px;
+    height: calc(100dvh - 70px);
+    height: calc(100vh - 70px);
+    max-height: calc(100dvh - 70px);
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
   }
 }

@@ -113,4 +113,86 @@ describe('RunCodeComponent', () => {
     expect(renderSpy).toHaveBeenCalled();
     expect(updatedStruct!.d3Data?.nodes.length).toBeGreaterThan(0);
   });
+
+  describe('mobile responsive tabs and trace view', () => {
+    it('initializes on the editor tab', () => {
+      expect(component.mobileTab()).toBe('editor');
+      expect(component.sourceEditorVisible()).toBe(true);
+      expect(component.isConsoleMobileTab()).toBe(false);
+    });
+
+    it('switches between mobile tabs and syncs sourceEditorVisible', () => {
+      component.setMobileTab('trace');
+      expect(component.mobileTab()).toBe('trace');
+      expect(component.sourceEditorVisible()).toBe(false);
+
+      component.setMobileTab('visualizer');
+      expect(component.mobileTab()).toBe('visualizer');
+
+      component.setMobileTab('console');
+      expect(component.mobileTab()).toBe('console');
+      expect(component.isConsoleMobileTab()).toBe(true);
+
+      component.setMobileTab('editor');
+      expect(component.mobileTab()).toBe('editor');
+      expect(component.sourceEditorVisible()).toBe(true);
+    });
+
+    it('toggles editor and trace views synchronously', () => {
+      component.sourceEditorVisible.set(true);
+      component.toggleSourceEditor();
+      expect(component.sourceEditorVisible()).toBe(false);
+      expect(component.mobileTab()).toBe('trace');
+
+      component.toggleSourceEditor();
+      expect(component.sourceEditorVisible()).toBe(true);
+      expect(component.mobileTab()).toBe('editor');
+    });
+
+    it('computes activeLineText correctly from source code', () => {
+      component.sourceCode.set('int a = 1;\nint b = 2;\nreturn a + b;');
+      spyOn(component, 'activeLine').and.returnValue(2);
+      expect(component.activeLineText()).toBe('int b = 2;');
+    });
+
+    it('switches mobile tab to visualizer on successful execution', () => {
+      spyOn(component['globalRenderer'], 'renderElements');
+      component.setMobileTab('editor');
+
+      component['processResult']({
+        schema: 'av.execution.v1',
+        success: true,
+        stage: 'completed',
+        stdout: 'ok',
+        stderr: '',
+        exitCode: 0,
+        durationMs: 5,
+        events: [
+          { schema: 'av.event.v2', time: 1, type: 'array', path: 'arr', op: 'init', line: 1, value: [1, 2] }
+        ],
+        error: null
+      });
+
+      expect(component.mobileTab()).toBe('visualizer');
+    });
+
+    it('switches mobile tab to console on execution rejection or compile error', () => {
+      spyOn<any>(component['swalService'], 'errorNoButton');
+      component.setMobileTab('editor');
+
+      component['processResult']({
+        schema: 'av.execution.v1',
+        success: false,
+        stage: 'compilation',
+        stdout: '',
+        stderr: 'syntax error',
+        exitCode: 1,
+        durationMs: 10,
+        events: [],
+        error: { code: 'compilation_error', message: 'Compilation failed' }
+      });
+
+      expect(component.mobileTab()).toBe('console');
+    });
+  });
 });

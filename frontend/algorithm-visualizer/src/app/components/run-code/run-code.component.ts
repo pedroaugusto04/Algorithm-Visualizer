@@ -121,6 +121,14 @@ export class RunCodeComponent implements OnDestroy {
   executionStarted = signal<boolean>(false);
   sourceEditorVisible = signal<boolean>(true);
   outputConsoleExpanded = signal<boolean>(false);
+  mobileTab = signal<'editor' | 'visualizer' | 'trace' | 'console'>('editor');
+  isConsoleMobileTab = computed(() => this.mobileTab() === 'console');
+
+  activeLineText = computed(() => {
+    const line = this.activeLine();
+    if (line === null || line < 1) return '';
+    return (this.sourceLineList()[line - 1] ?? '').trim();
+  });
 
   constructor(
     private codeService: CodeService,
@@ -131,6 +139,7 @@ export class RunCodeComponent implements OnDestroy {
   onRunCode(): void {
     if (!this.sourceCode() || !this.languageControl.value) {
       this.executionResult.set('Error: Code and language are required.');
+      this.setMobileTab('editor');
       return;
     }
 
@@ -154,6 +163,7 @@ export class RunCodeComponent implements OnDestroy {
       },
       error: (error) => {
         this.executionResult.set(`Execution failed: ${error.message || "Provided code is not supported"}`);
+        this.setMobileTab('console');
         this.swalService.errorNoButton("Execution Failed", "The provided code is not yet supported.");
       }
     });
@@ -168,8 +178,10 @@ export class RunCodeComponent implements OnDestroy {
         this.isTraceTruncated.set(true);
         this.executionWarnings.set(warnings);
         this.loadEvents(res.events);
+        this.setMobileTab('visualizer');
       } else {
         this.resetState();
+        this.setMobileTab('console');
       }
       const message = [
         res.error?.message || 'The program could not be instrumented or executed.',
@@ -190,6 +202,7 @@ export class RunCodeComponent implements OnDestroy {
     this.isTraceTruncated.set(truncated);
     this.executionWarnings.set(warnings);
     this.loadEvents(res.events);
+    this.setMobileTab('visualizer');
   }
 
   private loadEvents(allEvents: ExecutionLogEntry[]): void {
@@ -391,8 +404,22 @@ export class RunCodeComponent implements OnDestroy {
     else this.stdinEditorScrollTop.set(scrollTop);
   }
 
+  setMobileTab(tab: 'editor' | 'visualizer' | 'trace' | 'console'): void {
+    this.mobileTab.set(tab);
+    if (tab === 'editor') {
+      this.sourceEditorVisible.set(true);
+    } else if (tab === 'trace') {
+      this.sourceEditorVisible.set(false);
+    }
+  }
+
   toggleSourceEditor(): void {
     this.sourceEditorVisible.update(visible => !visible);
+    if (this.sourceEditorVisible()) {
+      this.mobileTab.set('editor');
+    } else {
+      this.mobileTab.set('trace');
+    }
   }
 
   toggleOutputConsole(): void {
