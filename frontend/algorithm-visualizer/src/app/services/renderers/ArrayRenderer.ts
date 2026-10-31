@@ -96,7 +96,7 @@ export class ArrayRenderer implements Renderer {
           c: 0,
           key: `rows-omitted`,
           valuePath: `__omitted__`,
-          label: `+${arrayData.length - rowLimit} vazias`,
+          label: `+${arrayData.length - rowLimit} empty`,
           isOmitted: true
         });
       }
@@ -305,11 +305,11 @@ export class ArrayRenderer implements Renderer {
 
     allCells.select('title')
       .text((d: any) => {
-        if (d.isOmitted) return `${d.label} células não modificadas omitidas para foco nos dados relevantes`;
+        if (d.isOmitted) return `${d.label} unmodified cells omitted to focus on relevant data`;
         const ptrs = pointersByIndex.get(d.c);
         const base = formatArrayCellValue(d.value);
         if (ptrs && ptrs.names.length > 0) {
-          return `${base} (Índice ${d.label}, Ponteiros: ${ptrs.names.join(', ')})`;
+          return `${base} (Index ${d.label}, Pointers: ${ptrs.names.join(', ')})`;
         }
         return base;
       });
@@ -363,7 +363,7 @@ export class ArrayRenderer implements Renderer {
       .text((d: any) => d.label);
 
     pointerTexts
-      .attr('title', (d: any) => `Ponteiros no índice [${d.index}]: ${d.names.join(', ')}`);
+      .attr('title', (d: any) => `Pointers at index [${d.index}]: ${d.names.join(', ')}`);
 
     pointerTexts
       .on('mouseenter', (event: MouseEvent, d: any) => {
