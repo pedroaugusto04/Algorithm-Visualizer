@@ -27,6 +27,7 @@ export interface StructureWindow {
   path: string;
   type: string;
   initialized?: boolean;
+  active?: boolean;
   isHighlighting?: boolean;
   viewMode?: StructureViewMode;
   d3Data?: StructureD3Data;
@@ -40,6 +41,8 @@ export function createStructureWindow(
   return {
     path,
     type,
+    initialized: false,
+    active: true,
     viewMode: viewMode || (type === 'map' ? 'map' : 'array'),
     d3Data: {
       arrayData: [],

@@ -247,7 +247,10 @@
                 @for (struct of structures; track struct.path) {
                 <mat-tab [labelClass]="struct.isHighlighting ? 'glow-active' : ''">
                     <ng-template mat-tab-label>
-                        {{ struct.path }} ({{ struct.type | titlecase }})
+                        <span>{{ struct.path }} ({{ struct.type | titlecase }})</span>
+                        @if (struct.active === false) {
+                        <span class="scope-closed-badge" title="Scope closed (retaining final state)">closed</span>
+                        }
                     </ng-template>
                     <div class="structure-render">
                         @if (struct.type === 'map') {

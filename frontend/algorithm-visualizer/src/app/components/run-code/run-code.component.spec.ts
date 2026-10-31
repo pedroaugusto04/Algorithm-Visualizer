@@ -83,6 +83,44 @@ describe('RunCodeComponent', () => {
     expect(component.structures.find(item => item.path === 'frequency')?.d3Data?.nodes.slice(1)
       .map(node => node.value)).toEqual(['1: 2', '2: 1']);
   });
+
+  it('preserves structure visualization and marks active false when scope exits at the end of execution', () => {
+    spyOn(component['globalRenderer'], 'renderElements');
+    const logs: ExecutionLogEntry[] = [
+      { schema: 'av.event.v2', time: 1, type: 'array', path: 'dist', op: 'init', line: 1, value: [0, 999] },
+      { schema: 'av.event.v2', time: 2, type: 'array', path: 'dist', op: 'snapshot', line: 3, value: [0, 5] },
+      { schema: 'av.event.v2', time: 3, type: 'array', path: 'dist', op: 'exit', line: 10, frame: 1, func: 'main', depth: 0, value: null }
+    ];
+
+    component['processResult']({
+      schema: 'av.execution.v1',
+      success: true,
+      stage: 'completed',
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+      durationMs: 2,
+      events: logs,
+      error: null
+    });
+    component.pause();
+
+    // Step 0: snapshot [0, 5]
+    component.goFrom0ToStep(0);
+    const distStruct = component.structures.find(s => s.path === 'dist');
+    expect(distStruct).toBeTruthy();
+    expect(component.hasData(distStruct!)).toBe(true);
+    expect(distStruct!.active).toBe(true);
+    expect(distStruct!.d3Data?.arrayData).toEqual([0, 5]);
+
+    // Step 1: exit event at the end of execution
+    component.goFrom0ToStep(1);
+    expect(component.hasData(distStruct!)).toBe(true);
+    expect(distStruct!.initialized).toBe(true);
+    expect(distStruct!.active).toBe(false);
+    expect(distStruct!.d3Data?.arrayData).toEqual([0, 5]);
+  });
+
   it('switches structure view mode to graph and immediately triggers render', () => {
     const renderSpy = spyOn(component['globalRenderer'], 'renderElements');
     const logs: ExecutionLogEntry[] = [

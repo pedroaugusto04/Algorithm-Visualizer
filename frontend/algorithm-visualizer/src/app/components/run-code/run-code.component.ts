@@ -258,7 +258,8 @@ export class RunCodeComponent implements OnDestroy {
     for (const known of this.player.structures) {
       if (known.type === 'scalar') continue;
       const struct = createStructureWindow(known.path, known.type);
-      struct.initialized = true;
+      struct.initialized = known.initialValue !== null && known.initialValue !== undefined;
+      struct.active = true;
       applySnapshotToStructure(struct, known.initialValue, struct.viewMode);
       this.structures.push(struct);
     }
@@ -366,7 +367,8 @@ export class RunCodeComponent implements OnDestroy {
     for (const struct of this.structures) {
       const state = states.get(struct.path);
       if (state) {
-        struct.initialized = state.active;
+        struct.active = state.active;
+        struct.initialized = state.value !== null && state.value !== undefined;
         applySnapshotToStructure(struct, state.value, struct.viewMode);
       }
       if (struct.d3Data) {
